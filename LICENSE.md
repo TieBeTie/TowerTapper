@@ -2,7 +2,7 @@
 
 Copyright 2024 Danil Mishnev and Ramazan Kozhagulov. All rights reserved.
 
-This source code and all accompanying materials are the property of **[Your Name or Company Name]** and are protected by international copyright laws.
+This source code and all accompanying materials are the property of Danil Mishnev and Ramazan Kozhagulov and are protected by international copyright laws.
 
 ## 1. Usage:
 Permission to use this source code and accompanying materials is not granted without explicit written consent from the author (owner).
