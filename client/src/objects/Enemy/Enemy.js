@@ -9,7 +9,7 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.health = 100;
 
         // Получение ссылки на замок
-        this.castle = scene.castle;
+        this.tower = scene.tower;
 
         // Настройка столкновений
         this.body.setCollideWorldBounds(false);
@@ -17,7 +17,7 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     update(time, delta) {
         // Логика движения к замку
-        this.scene.physics.moveToObject(this, this.castle, this.speed);
+        this.scene.physics.moveToObject(this, this.tower, this.speed);
     }
 
     takeDamage(amount) {

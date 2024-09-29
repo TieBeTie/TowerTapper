@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import Castle from '../objects/Castle';
+import Tower from '../objects/Tower';
 import EnemyFactory from '../objects/Enemy/EnemyFactory';
 import Projectile from '../objects/Projectile';
-import Enemy from '../objects/Enemy/Enemy'; // Убедитесь, что импортируете класс Enemy
+import Enemy from '../objects/Enemy/Enemy';
 
 class GameScene extends Phaser.Scene {
     constructor() {
@@ -22,7 +22,7 @@ class GameScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // Инициализация замка в центре экрана
-        this.castle = new Castle(this, width / 2, height / 2, 'castle');
+        this.tower = new Tower(this, width / 2, height / 2, 'tower');
 
         // Создание группы врагов с правильным classType
         this.enemies = this.physics.add.group({
@@ -51,7 +51,7 @@ class GameScene extends Phaser.Scene {
         this.physics.add.overlap(this.projectiles, this.enemies, this.handleProjectileEnemyCollision, null, this);
 
         // Настройка коллайшенов между врагами и замком
-        this.physics.add.overlap(this.enemies, this.castle, this.handleEnemyCastleCollision, null, this);
+        this.physics.add.overlap(this.enemies, this.tower, this.handleEnemyTowerCollision, null, this);
     }
 
     spawnEnemy() {
@@ -63,8 +63,7 @@ class GameScene extends Phaser.Scene {
     }
 
     fireProjectile(pointer) {
-        console.log('Клик обнаружен по координатам:', pointer.worldX, pointer.worldY); // Для отладки
-        const projectile = new Projectile(this, this.castle.x, this.castle.y, 'projectile', pointer.worldX, pointer.worldY);
+        const projectile = new Projectile(this, this.tower.x, this.tower.y, 'projectile');
         this.projectiles.add(projectile);
     }
 
@@ -73,9 +72,19 @@ class GameScene extends Phaser.Scene {
         enemy.takeDamage(50); // Урон от снаряда
     }
 
-    handleEnemyCastleCollision(enemy, castle) {
+    handleEnemyTowerCollision(enemy, tower) {
         enemy.destroy();
-        castle.takeDamage(100); // Урон от врага
+        tower.takeDamage(100); // Урон от врага
+    }
+
+    findNearestEnemy(x, y) {
+        return this.physics.closest(this.enemies.getChildren(), { x, y });
+    }
+
+    update(time, delta) {
+        this.projectiles.getChildren().forEach(projectile => {
+            projectile.update(time, delta);
+        });
     }
 }
 
