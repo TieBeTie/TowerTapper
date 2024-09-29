@@ -5,11 +5,11 @@ class EnemyFactory {
     static createEnemy(type, scene, x, y) {
         switch (type) {
             case 'Orc':
-                return new OrcEnemy(scene, x, y);
+                return new OrcEnemy(scene, x, y, 'orc');
             case 'Goblin':
-                return new GoblinEnemy(scene, x, y);
+                return new GoblinEnemy(scene, x, y, 'goblin');
             default:
-                throw new Error(`Unknown enemy type: ${type}`);
+                throw new Error(`Неизвестный тип врага: ${type}`);
         }
     }
 }
