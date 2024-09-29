@@ -11,11 +11,11 @@ class GameScene extends Phaser.Scene {
 
     preload() {
         // Загрузка игровых ресурсов
-        this.load.image('castle', 'assets/images/castle.png');
-        this.load.image('orc', 'assets/images/enemies/orc.png');
+        this.load.image('castle', 'assets/images/tower.png');
+        this.load.image('orc', 'assets/images/enemies/zombie.png');
         this.load.image('goblin', 'assets/images/enemies/goblin.png');
         this.load.image('logo', 'assets/images/logo.png'); // Если используется
-        this.load.image('projectile', 'assets/images/projectile.png'); // Добавляем снаряд
+        this.load.image('projectile', 'assets/images/fireball.png'); // Добавляем снаряд
     }
 
     create() {
