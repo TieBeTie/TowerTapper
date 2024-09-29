@@ -22,7 +22,7 @@ class GameScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // Инициализация замка в центре экрана
-        this.tower = new Tower(this, width / 2, height / 2, 'tower');
+        this.tower = new Tower(this, width / 2, height / 2, 'castle');
 
         // Создание группы врагов с правильным classType
         this.enemies = this.physics.add.group({
@@ -38,7 +38,7 @@ class GameScene extends Phaser.Scene {
 
         // Спавн врагов с интервалом
         this.time.addEvent({
-            delay: 2000,
+            delay: 300,
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true
@@ -63,7 +63,7 @@ class GameScene extends Phaser.Scene {
     }
 
     fireProjectile(pointer) {
-        const projectile = new Projectile(this, this.tower.x, this.tower.y, 'projectile');
+        const projectile = new Projectile(this, this.tower.x, this.tower.y, 'projectile', pointer.x, pointer.y);
         this.projectiles.add(projectile);
     }
 
@@ -78,7 +78,18 @@ class GameScene extends Phaser.Scene {
     }
 
     findNearestEnemy(x, y) {
-        return this.physics.closest(this.enemies.getChildren(), { x, y });
+        let nearestEnemy = null;
+        let minDistance = Infinity;
+
+        this.enemies.getChildren().forEach(enemy => {
+            const distance = Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestEnemy = enemy;
+            }
+        });
+
+        return nearestEnemy;
     }
 
     update(time, delta) {
