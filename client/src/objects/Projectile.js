@@ -1,16 +1,19 @@
 import Phaser from 'phaser';
 
 class Projectile extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene, x, y, texture, targetX, targetY) {
+    constructor(scene, x, y, texture, target) {
         super(scene, x, y, texture);
 
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
         this.speed = 300; // Скорость снаряда
+        this.target = target; // Цель снаряда
+        this.targetX = target.x;
+        this.targetY = target.y;
 
         // Расчёт направления к цели
-        const angle = Phaser.Math.Angle.Between(x, y, targetX, targetY);
+        const angle = Phaser.Math.Angle.Between(x, y, target.x, target.y);
         this.body.velocity.x = Math.cos(angle) * this.speed; // Скорость X
         this.body.velocity.y = Math.sin(angle) * this.speed; // Скорость Y
     }
@@ -25,13 +28,14 @@ class Projectile extends Phaser.Physics.Arcade.Sprite {
     }
 
     update(time, delta) {
-        const nearestEnemy = this.scene.findNearestEnemy(this.x, this.y);
-        if (nearestEnemy) {
-            // Move towards the nearest enemy
-            this.scene.physics.moveToObject(this, nearestEnemy, this.speed);
-
+        if (this.target && this.target.active) {
             // Rotate projectile to face the direction it's moving
-            this.rotation = Phaser.Math.Angle.Between(this.x, this.y, nearestEnemy.x, nearestEnemy.y);
+            this.rotation = Phaser.Math.Angle.Between(this.x, this.y, this.target.x, this.target.y);
+        }
+        this.scene.physics.moveTo(this, this.targetX, this.targetY, this.speed);
+        const radius = 10; // Define the radius within which the target is considered "hit"
+        if (Phaser.Math.Distance.Between(this.x, this.y, this.targetX, this.targetY) <= radius) {
+            this.destroy();
         }
     }
 }
