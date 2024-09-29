@@ -2,8 +2,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-    mode: 'development', // Измените на 'production' для продакшен-сборки
-    entry: './src/index.js',
+    entry: './src/index.js', // Точка входа вашего приложения
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js',
@@ -39,7 +38,8 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: './public/index.html', // Обновлено на ./public/index.html
+            template: path.resolve(__dirname, 'index.html'), // Correct path to index.html
         }),
     ],
+    mode: 'development', // Режим разработки
 };
