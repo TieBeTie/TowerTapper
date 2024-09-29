@@ -38,7 +38,7 @@ class GameScene extends Phaser.Scene {
 
         // Спавн врагов с интервалом
         this.time.addEvent({
-            delay: 300,
+            delay: 2000,
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true
@@ -63,8 +63,11 @@ class GameScene extends Phaser.Scene {
     }
 
     fireProjectile(pointer) {
-        const projectile = new Projectile(this, this.tower.x, this.tower.y, 'projectile', pointer.x, pointer.y);
-        this.projectiles.add(projectile);
+        const nearestEnemy = this.findNearestEnemy(this.tower.x, this.tower.y);
+        if (nearestEnemy) {
+            const projectile = new Projectile(this, this.tower.x, this.tower.y, 'projectile', nearestEnemy);
+            this.projectiles.add(projectile);
+        }
     }
 
     handleProjectileEnemyCollision(projectile, enemy) {
