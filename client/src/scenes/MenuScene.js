@@ -6,6 +6,12 @@ class MenuScene extends Phaser.Scene {
         super({ key: 'MenuScene' });
     }
 
+    preload() {
+        // Загрузка логотипа и кнопок
+        this.load.image('logo', 'assets/images/logo.png');
+        this.load.image('playButton', 'assets/images/play.png');
+    }
+
     create() {
         const { width, height } = this.scale;
 
