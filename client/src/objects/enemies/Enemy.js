@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 
 class Enemy extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene, x, y, texture) {
+    constructor(scene, x, y, texture, cost) {
         super(scene, x, y, texture);
         scene.add.existing(this);
         scene.physics.add.existing(this);
         this.speed = 100;
         this.health = 100;
+        this.cost = Number(cost); // Убедитесь, что cost является числом
 
         // Получение ссылки на замок
         this.tower = scene.tower;

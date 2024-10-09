@@ -23,6 +23,7 @@ class PauseScene extends Phaser.Scene {
 
         resumeButton.on('pointerdown', () => {
             this.scene.stop(); // Остановить PauseScene для возобновления игры
+            this.scene.run('GameScene');
         });
     }
 }

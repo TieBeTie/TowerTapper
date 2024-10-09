@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import Enemy from './Enemy';
 
 class OrcEnemy extends Enemy {
-    constructor(scene, x, y, texture) {
+    constructor(scene, x, y, cost = 200) {
         super(scene, x, y, texture);
         this.speed = 100;
         this.health = 150; // Увеличенный запас здоровья
