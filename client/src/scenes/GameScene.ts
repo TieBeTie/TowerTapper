@@ -1,4 +1,3 @@
-// GameScene.js
 import Phaser from 'phaser';
 import Tower from '../objects/towers/Tower';
 import UIManager from '../managers/UIManager';
@@ -8,37 +7,37 @@ import TapManager from '../managers/TapManager';
 import CollisionManager from '../managers/CollisionManager';
 
 class GameScene extends Phaser.Scene {
+    tower!: Tower;
+    uiManager!: UIManager;
+    enemyManager!: EnemyManager;
+    projectileManager!: ProjectileManager;
+    tapManager!: TapManager;
+    collisionManager!: CollisionManager;
+    coins!: number;
+
     constructor() {
         super({ key: 'GameScene' });
     }
 
-    create() {
+    create(): void {
         const { width, height } = this.scale;
         const panelHeight = 100;
 
-        // Инициализация UIManager
         this.uiManager = new UIManager(this);
-
-        // Инициализация монет
         this.coins = 0;
-
-        // Инициализация замка
         this.tower = new Tower(this, width / 2, (height - panelHeight) / 2, 'tower');
-
-        // Инициализация менеджеров
+        this.tower.setName('tower'); // Ensure the tower has the correct name
         this.enemyManager = new EnemyManager(this);
         this.projectileManager = new ProjectileManager(this);
-        this.tapManager = new TapManager(this); // Теперь TapManager обрабатывает ввод
+        this.tapManager = new TapManager(this);
         this.collisionManager = new CollisionManager(this);
     }
 
-    update(time, delta) {
+    update(time: number, delta: number): void {
         this.projectileManager.update(time, delta);
         this.enemyManager.update(time, delta);
-        // Если TapManager не требует обновления, можно не вызывать его здесь
+        // TapManager does not require update
     }
-
-    // Удалили метод обработки ввода, так как он перенесен в TapManager
 }
 
 export default GameScene;

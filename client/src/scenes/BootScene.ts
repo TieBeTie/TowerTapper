@@ -8,11 +8,11 @@ class BootScene extends Phaser.Scene {
 
     preload() {
         // Загрузка игровых ресурсов
-        this.load.on('filecomplete', function (key, type, data) {
+        this.load.on('filecomplete', (key: string, type: string, data: any) => {
             console.log(`File complete: ${key}`);
         });
 
-        this.load.on('loaderror', function (file) {
+        this.load.on('loaderror', (file: Phaser.Loader.File) => {
             console.error(`Error loading file: ${file.key}`);
         });
 
