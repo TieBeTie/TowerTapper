@@ -1,45 +1,51 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-module.exports = {
-    entry: './src/index.js', // Точка входа вашего приложения
+/** @type {import('webpack').Configuration} */
+const config = {
+    entry: './src/index.ts', // Updated entry point to TypeScript
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js',
-        clean: true, // Очищает /dist перед каждой сборкой
+        clean: true, // Cleans /dist before each build
     },
     devServer: {
         static: path.resolve(__dirname, 'dist'),
-        port: 3000, // Порт, на котором будет запущен сервер
-        open: true, // Открывает браузер при запуске сервера
-        hot: true, // Включает горячую перезагрузку
+        port: 3000, // Port for the development server
+        open: true, // Opens browser on server start
+        hot: true, // Enables hot module replacement
     },
     module: {
         rules: [
             {
-                test: /\.(js|jsx)$/, // Обработка .js и .jsx файлов
+                test: /\.(ts|tsx)$/, // Added TypeScript handling
                 exclude: /node_modules/,
-                use: {
-                    loader: 'babel-loader',
-                },
+                use: 'ts-loader',
             },
             {
-                test: /\.css$/, // Обработка .css файлов
+                test: /\.(js|jsx)$/, // Handling JS and JSX files
+                exclude: /node_modules/,
+                use: 'babel-loader',
+            },
+            {
+                test: /\.css$/, // Handling CSS files
                 use: ['style-loader', 'css-loader'],
             },
             {
-                test: /\.(png|svg|jpg|jpeg|gif)$/i, // Обработка изображений
+                test: /\.(png|svg|jpg|jpeg|gif)$/i, // Handling images
                 type: 'asset/resource',
             },
         ],
     },
     resolve: {
-        extensions: ['.js', '.jsx'], // Позволяет импортировать без указания расширений
+        extensions: ['.ts', '.tsx', '.js', '.jsx'], // Added .ts and .tsx
     },
     plugins: [
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, 'index.html'), // Correct path to index.html
         }),
     ],
-    mode: 'development', // Режим разработки
+    mode: 'development', // Development mode
 };
+
+module.exports = config;
