@@ -1,18 +1,16 @@
 import Phaser from 'phaser';
-import GameScene from './GameScene';
 
 class MenuScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MenuScene' });
     }
 
-    preload() {
-        // Загрузка логотипа и кнопок
+    preload(): void {
         this.load.image('logo', 'assets/images/logo.png');
         this.load.image('playButton', 'assets/images/play.png');
     }
 
-    create() {
+    create(): void {
         const { width, height } = this.scale;
 
         // Добавление фона
@@ -21,7 +19,7 @@ class MenuScene extends Phaser.Scene {
         // Добавление кнопки "Начать игру"
         const playButton = this.add.text(width / 2, height / 2 + 100, 'Начать игру', {
             fontSize: '32px',
-            fill: '#fff'
+            color: '#fff'
         }).setOrigin(0.5).setInteractive();
 
         playButton.on('pointerdown', () => {
