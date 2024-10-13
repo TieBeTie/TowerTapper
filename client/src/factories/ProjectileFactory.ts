@@ -8,9 +8,8 @@ export class ProjectileFactory {
         this.scene = scene;
     }
 
-    createArrow(x: number, y: number, targetX: number, targetY: number): Arrow {
+    createArrow(x: number, y: number): Arrow {
         const arrow = new Arrow(this.scene, x, y, 'arrowTexture');
-        arrow.fire(targetX, targetY);
         return arrow;
     }
 }
