@@ -28,8 +28,8 @@ class GameScene extends Phaser.Scene {
         this.tower = new Tower(this, width / 2, (height - panelHeight) / 2, 'tower');
         this.tower.setName('tower'); // Ensure the tower has the correct name
         this.enemyManager = new EnemyManager(this);
-        this.projectileManager = new ProjectileManager(this);
-        this.tapManager = new TapManager(this);
+        this.projectileManager = new ProjectileManager(this, this.enemyManager);
+        this.tapManager = new TapManager(this, this.projectileManager);
         this.collisionManager = new CollisionManager(this);
     }
 

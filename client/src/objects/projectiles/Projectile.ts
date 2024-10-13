@@ -8,8 +8,5 @@ export abstract class Projectile extends Phaser.GameObjects.Sprite {
     }
 
     abstract fire(targetX: number, targetY: number): void;
-
-    update(time: number, delta: number): void {
-        // Common update logic for all projectiles
-    }
+    abstract update(time: number, delta: number): void;
 }
