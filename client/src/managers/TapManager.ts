@@ -16,7 +16,7 @@ class TapManager {
 
     handleTap(pointer: Phaser.Input.Pointer): void {
         // Implement tap logic, e.g., increment coins based on tapCoefficient
-        (this.scene as any).coins += 10 * this.tapCoefficient;
+        // (this.scene as any).coins += 10 * this.tapCoefficient;
         (this.scene as any).uiManager.updateCoins((this.scene as any).coins);
         this.projectileManager.fireProjectile()
     }

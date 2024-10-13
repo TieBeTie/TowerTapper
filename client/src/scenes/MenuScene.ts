@@ -25,6 +25,9 @@ class MenuScene extends Phaser.Scene {
         playButton.on('pointerdown', () => {
             this.scene.start('GameScene');
         });
+
+        // Добавление спрайта башни
+        const tower = this.add.sprite(400, 300, 'tower', 0); // Укажите нужные координаты и фрейм
     }
 }
 
