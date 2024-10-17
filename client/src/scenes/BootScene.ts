@@ -16,11 +16,11 @@ class BootScene extends Phaser.Scene {
             console.error(`Error loading file: ${file.key}`);
         });
 
-        this.load.image('tower', './assets/images/towers/tower.png');
-        this.load.image('orc', './assets/images/enemies/orc.png');
-        this.load.image('goblin', './assets/images/enemies/goblin.png');
-        this.load.image('logo', './assets/images/logo.png');
-        this.load.image('projectile', './assets/images/fireball.png');
+        this.load.image('tower', 'assets/images/towers/arrow.png');
+        this.load.image('orc', 'assets/images/enemies/Enemie-1.png');
+        this.load.image('goblin', 'assets/images/enemies/Enemie-1.png');
+        this.load.image('logo', 'assets/images/logo.png');
+        this.load.image('projectile', 'assets/images/projectiles/arrow.png');
 
         // Загрузка ресурсов для кнопок
         this.load.image('playButton', 'assets/images/play.png');

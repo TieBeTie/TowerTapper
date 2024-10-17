@@ -7,14 +7,14 @@ import DeathScene from './scenes/DeathScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
-    width: 480,
-    height: 720,
+    width: 1080,
+    height: 1920,
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
         parent: 'game-container',
-        width: 480,
-        height: 720
+        width: 1080,
+        height: 1920
     },
     physics: {
         default: 'arcade',

@@ -15,7 +15,7 @@ class EnemyManager {
 
         // Spawn enemies at regular intervals
         this.scene.time.addEvent({
-            delay: 1500,
+            delay: 500,
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true
