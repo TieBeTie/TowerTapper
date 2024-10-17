@@ -9,7 +9,7 @@ export class ProjectileFactory {
     }
 
     createArrow(x: number, y: number): Arrow {
-        const arrow = new Arrow(this.scene, x, y, 'arrowTexture');
+        const arrow = new Arrow(this.scene, x, y, 'projectile');
         return arrow;
     }
 }

@@ -33,6 +33,7 @@
     "webpack-dev-server": "^5.1.0"
   },
   "devDependencies": {
+    "copy-webpack-plugin": "^12.0.2",
     "esm": "^3.2.25",
     "ts-node": "^10.9.2"
   }
