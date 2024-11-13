@@ -7,7 +7,7 @@ class BootScene extends Phaser.Scene {
     }
 
     preload() {
-        // Загрузка игровых ресурсов
+        // Обработчики событий загрузки
         this.load.on('filecomplete', (key: string, type: string, data: any) => {
             console.log(`File complete: ${key}`);
         });
@@ -16,11 +16,18 @@ class BootScene extends Phaser.Scene {
             console.error(`Error loading file: ${file.key}`);
         });
 
-        this.load.image('tower', 'assets/images/towers/arrow.png');
-        this.load.image('orc', 'assets/images/enemies/Enemie-1.png');
-        this.load.image('goblin', 'assets/images/enemies/Enemie-1.png');
+        // Загрузка игровых ресурсов как спрайт-листа
+        this.load.spritesheet('enemy', 'assets/images/enemies/Enemie_anim.png', {
+            frameWidth: 75, // Ширина одного кадра в пикселях
+            frameHeight: 125  // Высота одного кадра в пикселях
+        });
+
+        this.load.image('tower', 'assets/images/towers/Tower-type-1.1.png');
         this.load.image('logo', 'assets/images/logo.png');
         this.load.image('projectile', 'assets/images/projectiles/arrow.png');
+
+        // Добавьте ваш файл фона
+        this.load.image('background', 'assets/images/towers/Background.png');
 
         // Загрузка ресурсов для кнопок
         this.load.image('playButton', 'assets/images/play.png');
@@ -30,7 +37,17 @@ class BootScene extends Phaser.Scene {
     }
 
     create() {
+        this.createAnimations();
         this.scene.start('GameScene');
+    }
+
+    createAnimations() {
+        this.anims.create({
+            key: 'enemy_walk',
+            frames: this.anims.generateFrameNumbers('enemy', { start: 0, end: 8 }), // Предположим, что у вас 4 кадра
+            frameRate: 32,
+            repeat: -1 // Зацикливание анимации
+        });
     }
 }
 

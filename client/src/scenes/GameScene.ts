@@ -25,6 +25,7 @@ class GameScene extends Phaser.Scene {
         const { width, height } = this.scale;
         const panelHeight = 100;
 
+        this.add.image(0, 0, 'background').setOrigin(0, 0).setDisplaySize(width * 2, height).setDepth(-1);
         this.uiManager = new UIManager(this);
         this.coins = 0;
         this.tower = new Tower(this, width / 2, (height - panelHeight) / 2, 'tower');
