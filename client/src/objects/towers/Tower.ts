@@ -17,6 +17,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         console.log('Tower создан. Сцена:', this.scene.sys.settings.key);
         this.healthBar = scene.add.graphics();
         this.updateHealthBar();
+
+        // this.setDisplaySize(250, 250);
     }
 
     upgrade(): void {
