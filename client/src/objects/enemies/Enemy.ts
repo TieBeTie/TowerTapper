@@ -24,6 +24,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
         // Configure collisions
         this.setCollideWorldBounds(true);
+
+        // Запуск анимации
+        this.anims.play('enemy_walk', true);
     }
 
     update(time: number, delta: number): void {
