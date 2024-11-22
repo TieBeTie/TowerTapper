@@ -35,9 +35,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     takeDamage(amount: number): void {
+        console.log(`Enemy takes damage: ${amount}`);
         this.health -= amount;
+        console.log(`Enemy health: ${this.health}`);
         if (this.health <= 0) {
-            this.destroy();
+            console.log('Playing death animation');
+            this.anims.play('enemy_death');
+            this.on('animationcomplete', () => {
+                console.log('Animation complete, destroying enemy');
+                this.destroy();
+            });
         }
     }
 
@@ -46,6 +53,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.scene.physics.add.existing(arrow);
         // Additional logic if needed
     }
+
+    
 }
 
 export default Enemy;

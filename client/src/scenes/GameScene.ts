@@ -24,12 +24,15 @@ class GameScene extends Phaser.Scene {
     create(): void {
         const { width, height } = this.scale;
         const panelHeight = 100;
+        const background = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'background');
+        background.setOrigin(0.5, 0.5);
+        background.displayWidth = this.cameras.main.width;
+        background.displayHeight = this.cameras.main.height;
 
-        this.add.image(0, 0, 'background').setOrigin(0, 0).setDisplaySize(width * 2, height).setDepth(-1);
         this.uiManager = new UIManager(this);
         this.coins = 0;
         this.tower = new Tower(this, width / 2, (height - panelHeight) / 2, 'tower');
-        this.tower.setName('tower'); // Ensure the tower has the correct name
+        this.tower.setName('tower');
         this.enemyManager = new EnemyManager(this);
         this.projectileManager = new ProjectileManager(this, this.enemyManager);
         this.tapManager = new TapManager(this, this.projectileManager);
