@@ -57,9 +57,21 @@ class EnemyManager {
     }
 
     handleEnemyDeath(enemy: Phaser.GameObjects.GameObject): void {
-        // Implement enemy death handling if not already present
-        // For example, remove the enemy from the group
+        // Получаем позицию врага
+        const x = (enemy as Enemy).x;
+        const y = (enemy as Enemy).y;
+
+        // Создаем спрайт анимации смерти на позиции врага
+        const deathAnimation = this.scene.add.sprite(x, y, 'enemy_die');
+        deathAnimation.play('enemy_die');
+
+        // Удаляем врага из группы и сцены
         this.enemies.remove(enemy, true, true);
+
+        // Удаляем анимацию после завершения
+        deathAnimation.on('animationcomplete', () => {
+            deathAnimation.destroy();
+        }, this);
     }
 }
 

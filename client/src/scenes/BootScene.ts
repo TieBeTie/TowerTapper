@@ -22,12 +22,17 @@ class BootScene extends Phaser.Scene {
             frameHeight: 125  // Высота одного кадра в пикселях
         });
 
-        this.load.image('tower', 'assets/images/towers/Tower-type-1.1.png');
+        this.load.spritesheet('enemy_death', 'assets/images/enemies/Enemie_anim.png', {
+            frameWidth: 90, // Ширина одного кадра в пикселях
+            frameHeight: 135  // Высота одного кадра в пикселях
+        });
+
+        this.load.image('tower', 'assets/images/towers/Tower-type-3.6@2x.png');
         this.load.image('logo', 'assets/images/logo.png');
         this.load.image('projectile', 'assets/images/projectiles/arrow.png');
 
         // Добавьте ваш файл фона
-        this.load.image('background', 'assets/images/towers/Background.png');
+        this.load.image('background', 'assets/images/towers/Background1.png');
 
         // Загрузка ресурсов для кнопок
         this.load.image('playButton', 'assets/images/play.png');
@@ -44,9 +49,16 @@ class BootScene extends Phaser.Scene {
     createAnimations() {
         this.anims.create({
             key: 'enemy_walk',
-            frames: this.anims.generateFrameNumbers('enemy', { start: 0, end: 8 }), // Предположим, что у вас 4 кадра
+            frames: this.anims.generateFrameNumbers('enemy', { start: 0, end: 8 }),
             frameRate: 32,
             repeat: -1 // Зацикливание анимации
+        });
+
+        this.anims.create({
+            key: 'enemy_death',
+            frames: this.anims.generateFrameNumbers('enemy_death', { start: 0, end: 11 }),
+            frameRate: 32,
+            repeat: 0
         });
     }
 }
