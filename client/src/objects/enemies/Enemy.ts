@@ -35,14 +35,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     takeDamage(amount: number): void {
-        console.log(`Enemy takes damage: ${amount}`);
         this.health -= amount;
-        console.log(`Enemy health: ${this.health}`);
         if (this.health <= 0) {
-            console.log('Playing death animation');
-            this.anims.play('enemy_death');
+            this.anims.play('enemy_die');
             this.on('animationcomplete', () => {
-                console.log('Animation complete, destroying enemy');
+                this.playCoinAnimation();
                 this.destroy();
             });
         }
