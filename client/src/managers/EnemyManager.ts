@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import EnemyFactory from '../factories/EnemyFactory';
 import Enemy from '../objects/enemies/Enemy';
+import Coin from '../objects/Coin';
 
 class EnemyManager {
     scene: Phaser.Scene;
@@ -35,15 +36,19 @@ class EnemyManager {
         }
     }
 
-    findNearestEnemy(x: number, y: number): Enemy | null {
+    findNearestAvailableEnemy(x: number, y: number): Enemy | null {
         let nearestEnemy: Enemy | null = null;
         let minDistance = Infinity;
 
         this.enemies.getChildren().forEach((enemy: Phaser.GameObjects.GameObject) => {
-            const distance = Phaser.Math.Distance.Between(x, y, (enemy as Enemy).x, (enemy as Enemy).y);
+            const enemyInstance = enemy as Enemy;
+            if (enemyInstance.isUnderAttack) {
+                return; // Пропуск врагов, уже обстрелянных
+            }
+            const distance = Phaser.Math.Distance.Between(x, y, enemyInstance.x, enemyInstance.y);
             if (distance < minDistance) {
                 minDistance = distance;
-                nearestEnemy = enemy as Enemy;
+                nearestEnemy = enemyInstance;
             }
         });
 
@@ -72,6 +77,26 @@ class EnemyManager {
         deathAnimation.on('animationcomplete', () => {
             deathAnimation.destroy();
         }, this);
+
+        // Spawn a coin above the castle (Tower)
+        const tower = this.scene.tower; // Assuming 'tower' is accessible from the scene
+        if (tower) {
+            const coin = new Coin({
+                scene: this.scene,
+                x: (enemy as Enemy).x,
+                y: (enemy as Enemy).y - 50, // Position the coin above the castle
+                targetX: tower.x,
+                targetY: tower.y
+            });
+
+            // Listen for the 'reached' event to update the UIManager
+            coin.on('reached', () => {
+                this.scene.coins += 1; // Increment coin count
+                this.scene.uiManager.updateCoins(this.scene.coins);
+            });
+        } else {
+            console.error('Tower not found in the scene.');
+        }
     }
 }
 

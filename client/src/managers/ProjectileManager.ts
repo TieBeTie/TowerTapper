@@ -21,11 +21,12 @@ class ProjectileManager {
     }
 
     fireProjectile(): void {
-        const nearestEnemy = this.enemyManager.findNearestEnemy(this.scene.tower.x, this.scene.tower.y);
-        if (nearestEnemy) {
+        const targetEnemy = this.enemyManager.findNearestAvailableEnemy(this.scene.tower.x, this.scene.tower.y);
+        if (targetEnemy) {
             const arrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
-            arrow.fire(nearestEnemy.x, nearestEnemy.y);
+            arrow.fire(targetEnemy.x, targetEnemy.y);
             this.projectiles.add(arrow);
+            targetEnemy.isUnderAttack = true;
         }
     }
 

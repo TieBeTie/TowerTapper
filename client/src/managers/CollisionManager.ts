@@ -47,6 +47,9 @@ class CollisionManager {
             // Inflict damage on the enemy
             enemy.takeDamage(50); // Adjust damage as needed
 
+            // Reset the isUnderAttack flag
+            enemy.isUnderAttack = false;
+
             // Check if the enemy is dead
             if (enemy.health <= 0) {
                 const enemyCost = Number(enemy.cost);
