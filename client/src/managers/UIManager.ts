@@ -1,18 +1,18 @@
 // managers/UIManager.js
 import Phaser from 'phaser';
 import Button from '../ui/Button';
-// Start of Selection
-class UIManager {
-    // ... existing properties ...
+import Tower from '../objects/towers/Tower';
 
-    // Add missing class properties with definite assignment assertions
+class UIManager {
     private uiContainer!: Phaser.GameObjects.Container;
     private playPauseButton!: Button;
     private upgradeButton!: Button;
-    private coinsText!: Phaser.GameObjects.Text;
+    private coinIcon!: Phaser.GameObjects.Image;
+    private coinNumberText!: Phaser.GameObjects.Text;
     private tapText!: Phaser.GameObjects.Text;
     private isPaused: boolean = false;
     private coinsCount: number = 0;
+    private tapCoefficient: number = 1.0;
 
     constructor(private scene: Phaser.Scene) {
         this.createUI();
@@ -22,19 +22,18 @@ class UIManager {
         const { width, height } = this.scene.scale;
         const panelHeight = 100;
 
-        // Создание нижней панели
+        // Create the bottom panel
         const panel = this.scene.add.graphics();
         panel.fillStyle(0x333333, 1);
         panel.fillRect(0, height - panelHeight, width, panelHeight);
-        // Start of Selection
-        // Start of Selection
-        // Создание контейнера для UI элементов на панели
-        this.uiContainer = this.scene.add.container(0, height - panelHeight) as Phaser.GameObjects.Container;
 
-        // Параметры размещения кнопок
+        // Create a container for UI elements on the panel
+        this.uiContainer = this.scene.add.container(0, height - panelHeight);
+
+        // Button placement parameters
         const buttonSpacing = width / 4;
 
-        // Кнопка Плей/Пауза
+        // Play/Pause Button
         this.playPauseButton = new Button({
             scene: this.scene,
             x: buttonSpacing,
@@ -53,7 +52,7 @@ class UIManager {
             }
         });
 
-        // Кнопка Улучшения
+        // Upgrade Button
         this.upgradeButton = new Button({
             scene: this.scene,
             x: 3 * buttonSpacing,
@@ -65,25 +64,41 @@ class UIManager {
             }
         });
 
-        // Добавление кнопок в контейнер
+        // Add buttons to the container
         this.uiContainer.add([this.playPauseButton, this.upgradeButton]);
 
-        // Инициализация монет и коэффициента тапания
-        this.coinsText = this.scene.add.text(16, 16, 'Монеты: 0', { fontSize: '24px', color: '#fff' });
-        this.tapText = this.scene.add.text(16, 50, 'Коэффициент тапания: 1.0', { fontSize: '24px', color: '#fff' });
+        // Create coin icon and number text
+        this.coinIcon = this.scene.add.image(16, 16, 'coin').setOrigin(0, 0);
+        this.coinIcon.setDisplaySize(24, 24);
+
+        this.coinNumberText = this.scene.add.text(46, 16, `${Math.floor(this.coinsCount)}`, {
+            fontFamily: 'PixelFont',
+            fontSize: '24px',
+            color: '#fff'
+        });
+
+        // Ensure tower is defined and get its position
+        const tower = this.scene.children.getByName('tower') as Tower;
+        if (tower) {
+            const towerPosition = tower.getCenter();
+            this.tapText = this.scene.add.text(towerPosition.x, towerPosition.y + 50, `X ${this.tapCoefficient.toFixed(1)}`, {
+                fontFamily: 'PixelFont',
+                fontSize: '24px',
+                color: '#fff'
+            }).setOrigin(0.5, 0.5);
+        } else {
+            console.error('Tower is not defined in the scene.');
+        }
     }
 
     updateCoins(coins: number) {
         this.coinsCount = coins;
-        this.coinsText.setText(`Монеты: ${Math.floor(this.coinsCount)}`);
-    }
-
-    getCoins(): number {
-        return this.coinsCount;
+        this.coinNumberText.setText(`${Math.floor(this.coinsCount)}`);
     }
 
     updateTapCoefficient(coefficient: number) {
-        this.tapText.setText(`Коэффициент тапания: ${coefficient.toFixed(1)}`);
+        this.tapCoefficient = coefficient;
+        this.tapText.setText(`X ${this.tapCoefficient.toFixed(1)}`);
     }
 }
 

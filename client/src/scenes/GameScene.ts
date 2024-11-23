@@ -9,8 +9,8 @@ import CoinManager from '../managers/CoinManager';
 import { GAME_PORT } from '../utils/Constants'; // Assuming you have a constants file
 
 class GameScene extends Phaser.Scene {
-    tower!: Tower;
-    uiManager!: UIManager;
+    public tower!: Tower;
+    public uiManager!: UIManager;
     enemyManager!: EnemyManager;
     projectileManager!: ProjectileManager;
     tapManager!: TapManager;
@@ -26,15 +26,19 @@ class GameScene extends Phaser.Scene {
     create(): void {
         const { width, height } = this.scale;
         const panelHeight = 100;
+
+        // Create the background
         const background = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'background');
         background.setOrigin(0.5, 0.5);
         background.displayWidth = this.cameras.main.width;
         background.displayHeight = this.cameras.main.height;
 
-        this.uiManager = new UIManager(this);
-        this.coins = 0;
+        // Initialize the tower before UIManager
         this.tower = new Tower(this, width / 2, (height - panelHeight) / 2, 'tower');
         this.tower.setName('tower');
+
+        // Initialize UIManager after the tower is created
+        this.uiManager = new UIManager(this);
 
         // Инициализация CoinManager
         this.coinManager = new CoinManager(this, this.uiManager);
