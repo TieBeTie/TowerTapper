@@ -5,6 +5,7 @@ import EnemyManager from '../managers/EnemyManager';
 import ProjectileManager from '../managers/ProjectileManager';
 import TapManager from '../managers/TapManager';
 import CollisionManager from '../managers/CollisionManager';
+import CoinManager from '../managers/CoinManager';
 import { GAME_PORT } from '../utils/Constants'; // Assuming you have a constants file
 
 class GameScene extends Phaser.Scene {
@@ -14,6 +15,7 @@ class GameScene extends Phaser.Scene {
     projectileManager!: ProjectileManager;
     tapManager!: TapManager;
     collisionManager!: CollisionManager;
+    coinManager!: CoinManager;
     coins!: number;
     socket!: WebSocket;
 
@@ -33,9 +35,14 @@ class GameScene extends Phaser.Scene {
         this.coins = 0;
         this.tower = new Tower(this, width / 2, (height - panelHeight) / 2, 'tower');
         this.tower.setName('tower');
-        this.enemyManager = new EnemyManager(this);
+
+        // Инициализация CoinManager
+        this.coinManager = new CoinManager(this, this.uiManager);
+
+        // Передача CoinManager в другие менеджеры без повторного создания
+        this.enemyManager = new EnemyManager(this, this.uiManager, this.coinManager);
         this.projectileManager = new ProjectileManager(this, this.enemyManager);
-        this.tapManager = new TapManager(this, this.projectileManager);
+        this.tapManager = new TapManager(this, this.projectileManager, this.uiManager, this.coinManager);
         this.collisionManager = new CollisionManager(this);
 
         // Initialize WebSocket connection
@@ -87,7 +94,7 @@ class GameScene extends Phaser.Scene {
     update(time: number, delta: number): void {
         this.projectileManager.update(time, delta);
         this.enemyManager.update(time, delta);
-        // TapManager does not require an update cycle
+        // TapManager не требует цикла обновления
     }
 }
 

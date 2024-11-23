@@ -52,16 +52,6 @@ class CollisionManager {
 
             // Check if the enemy is dead
             if (enemy.health <= 0) {
-                const enemyCost = Number(enemy.cost);
-                if (!isNaN(enemyCost)) {
-                    // Add coins to the player's total
-                    this.scene.coins += enemyCost;
-                } else {
-                    console.error('Enemy cost is not a number:', enemy.cost);
-                }
-
-                // Update the UI to reflect the new coin total
-                this.scene.uiManager.updateCoins(this.scene.coins);
 
                 // Notify the EnemyManager about the enemy's death
                 this.scene.enemyManager.handleEnemyDeath(enemy);

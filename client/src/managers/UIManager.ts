@@ -12,6 +12,7 @@ class UIManager {
     private coinsText!: Phaser.GameObjects.Text;
     private tapText!: Phaser.GameObjects.Text;
     private isPaused: boolean = false;
+    private coinsCount: number = 0;
 
     constructor(private scene: Phaser.Scene) {
         this.createUI();
@@ -73,7 +74,12 @@ class UIManager {
     }
 
     updateCoins(coins: number) {
-        this.coinsText.setText(`Монеты: ${Math.floor(coins)}`);
+        this.coinsCount = coins;
+        this.coinsText.setText(`Монеты: ${Math.floor(this.coinsCount)}`);
+    }
+
+    getCoins(): number {
+        return this.coinsCount;
     }
 
     updateTapCoefficient(coefficient: number) {

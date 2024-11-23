@@ -2,21 +2,25 @@ import Phaser from 'phaser';
 import EnemyFactory from '../factories/EnemyFactory';
 import Enemy from '../objects/enemies/Enemy';
 import Coin from '../objects/Coin';
+import CoinManager from './CoinManager';
+import UIManager from './UIManager';
 
 class EnemyManager {
     scene: Phaser.Scene;
     enemies: Phaser.Physics.Arcade.Group;
+    private coinManager: CoinManager;
 
-    constructor(scene: Phaser.Scene) {
+    constructor(scene: Phaser.Scene, uiManager: UIManager, coinManager: CoinManager) {
         this.scene = scene;
         this.enemies = this.scene.physics.add.group({
             classType: Enemy,
             runChildUpdate: true
         });
+        this.coinManager = coinManager;
 
         // Spawn enemies at regular intervals
         this.scene.time.addEvent({
-            delay: 500,
+            delay: 200,  
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true
@@ -63,8 +67,8 @@ class EnemyManager {
 
     handleEnemyDeath(enemy: Phaser.GameObjects.GameObject): void {
         // Получаем позицию врага
-        const x = (enemy as Enemy).x;
-        const y = (enemy as Enemy).y;
+        const x = (enemy as Phaser.Physics.Arcade.Sprite).x;
+        const y = (enemy as Phaser.Physics.Arcade.Sprite).y;
 
         // Создаем спрайт анимации смерти на позиции врага
         const deathAnimation = this.scene.add.sprite(x, y, 'enemy_die');
@@ -79,23 +83,11 @@ class EnemyManager {
         }, this);
 
         // Spawn a coin above the castle (Tower)
-        const tower = this.scene.tower; // Assuming 'tower' is accessible from the scene
+        const tower = this.scene.tower; // Предполагается, что 'tower' доступен из сцены
         if (tower) {
-            const coin = new Coin({
-                scene: this.scene,
-                x: (enemy as Enemy).x,
-                y: (enemy as Enemy).y - 50, // Position the coin above the castle
-                targetX: tower.x,
-                targetY: tower.y
-            });
-
-            // Listen for the 'reached' event to update the UIManager
-            coin.on('reached', () => {
-                this.scene.coins += 1; // Increment coin count
-                this.scene.uiManager.updateCoins(this.scene.coins);
-            });
+            this.coinManager.spawnCoin(new Phaser.Math.Vector2(x, y), tower);
         } else {
-            console.error('Tower not found in the scene.');
+            console.error('Башня не найдена в сцене.');
         }
     }
 }
