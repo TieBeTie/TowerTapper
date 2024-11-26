@@ -5,107 +5,108 @@ import Enemy from '../objects/enemies/Enemy';
 
 class CollisionManager {
     private scene: Phaser.Scene;
+    private projectileEnemyCollider: Phaser.Physics.Arcade.Collider;
+    private towerEnemyCollider: Phaser.Physics.Arcade.Collider;
+    private readonly PROJECTILE_CHECK_DISTANCE = 50;
+    private readonly TOWER_CHECK_DISTANCE = 100;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
 
-        // Setup collisions between projectiles and enemies with processCallback
-        this.scene.physics.add.overlap(
+        // Setup collisions between projectiles and enemies with distance check
+        this.projectileEnemyCollider = this.scene.physics.add.overlap(
             this.scene.projectileManager.projectiles,
             this.scene.enemyManager.enemies,
             this.handleProjectileEnemyCollision,
-            (object1: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile,
-                object2: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile) => {
-                const projectileSprite = object1 as Phaser.GameObjects.Sprite;
-                const enemySprite = object2 as Phaser.GameObjects.Sprite;
-                const distance = Phaser.Math.Distance.Between(
-                    projectileSprite.x, projectileSprite.y,
-                    enemySprite.x, enemySprite.y
-                );
-                return distance < 50;
-            },
+            this.checkProjectileDistance,
             this
         );
 
-        // Setup collisions between tower and enemies with processCallback
-        this.scene.physics.add.overlap(
+        // Setup collisions between tower and enemies with distance check
+        this.towerEnemyCollider = this.scene.physics.add.overlap(
             this.scene.tower,
             this.scene.enemyManager.enemies,
             this.handleEnemyTowerCollision,
-            (object1: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile,
-                object2: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile) => {
-                const towerSprite = object1 as Phaser.GameObjects.Sprite;
-                const enemySprite = object2 as Phaser.GameObjects.Sprite;
-                const distance = Phaser.Math.Distance.Between(
-                    towerSprite.x, towerSprite.y,
-                    enemySprite.x, enemySprite.y
-                );
-                return distance < 100;
-            },
+            this.checkTowerDistance,
             this
         );
+
+        // Подписываемся на событие shutdown сцены для очистки
+        this.scene.events.once('shutdown', this.cleanup, this);
     }
 
-    /**
-     * Handles collision between a projectile and an enemy.
-     * @param object1 - The first object involved in the collision.
-     * @param object2 - The second object involved in the collision.
-     */
-    private handleProjectileEnemyCollision(
+    private checkProjectileDistance = (
         object1: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile,
         object2: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile
-    ): void {
-        const projectile = object1 instanceof Projectile ? object1 : (object2 as Projectile);
-        const enemy = object1 instanceof Projectile ? (object2 as Enemy) : (object1 as Enemy);
+    ): boolean => {
+        const sprite1 = object1 as Phaser.GameObjects.Sprite;
+        const sprite2 = object2 as Phaser.GameObjects.Sprite;
 
-        if (projectile && enemy) {
-            // Destroy the projectile
-            projectile.destroy();
+        if (!sprite1.active || !sprite2.active) return false;
 
-            // Inflict damage on the enemy
-            enemy.takeDamage(50); // Adjust damage as needed
+        const distance = Phaser.Math.Distance.Between(
+            sprite1.x, sprite1.y,
+            sprite2.x, sprite2.y
+        );
+        return distance < this.PROJECTILE_CHECK_DISTANCE;
+    }
 
-            // Reset the isUnderAttack flag
-            enemy.isUnderAttack = false;
+    private checkTowerDistance = (
+        object1: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile,
+        object2: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile
+    ): boolean => {
+        const sprite1 = object1 as Phaser.GameObjects.Sprite;
+        const sprite2 = object2 as Phaser.GameObjects.Sprite;
 
-            // Check if the enemy is dead
-            if (enemy.health <= 0) {
+        if (!sprite1.active || !sprite2.active) return false;
 
-                // Notify the EnemyManager about the enemy's death
-                this.scene.enemyManager.handleEnemyDeath(enemy);
-            }
-        } else {
-            console.error('Invalid collision objects:', object1, object2);
+        const distance = Phaser.Math.Distance.Between(
+            sprite1.x, sprite1.y,
+            sprite2.x, sprite2.y
+        );
+        return distance < this.TOWER_CHECK_DISTANCE;
+    }
+
+    private handleProjectileEnemyCollision = (
+        object1: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile,
+        object2: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile
+    ): void => {
+        const projectile = object1 as Projectile;
+        const enemy = object2 as Enemy;
+
+        if (!projectile.active || !enemy.active) return;
+
+        projectile.destroy();
+        enemy.takeDamage(50);
+        enemy.isUnderAttack = false;
+
+        if (enemy.health <= 0) {
+            this.scene.enemyManager.handleEnemyDeath(enemy);
         }
     }
 
-    /**
-     * Handles collision between the tower and an enemy.
-     * @param object1 - The first object involved in the collision.
-     * @param object2 - The second object involved in the collision.
-     */
-    private handleEnemyTowerCollision(
+    private handleEnemyTowerCollision = (
         object1: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile,
         object2: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile
-    ): void {
-        const tower = object1 instanceof Tower ? object1 : (object2 as Tower);
-        const enemy = object1 instanceof Tower ? (object2 as Enemy) : (object1 as Enemy);
+    ): void => {
+        const tower = object1 as Tower;
+        const enemy = object2 as Enemy;
 
-        if (tower && enemy) {
-            // Destroy the enemy
-            enemy.destroy();
+        if (!tower.active || !enemy.active) return;
 
-            // Inflict damage on the tower
-            tower.takeDamage(100); // Adjust damage as needed
+        enemy.destroy();
+        tower.takeDamage(100);
+    }
 
-            // Check if the tower's health has dropped to zero or below
-            if (tower.health <= 0) {
-                // Transition to the DeathScene
-                this.scene.scene.start('DeathScene');
-            }
-        } else {
-            console.error('Invalid collision objects:', object1, object2);
+    private cleanup = (): void => {
+        if (this.projectileEnemyCollider) {
+            this.projectileEnemyCollider.destroy();
         }
+        if (this.towerEnemyCollider) {
+            this.towerEnemyCollider.destroy();
+        }
+
+        this.scene.events.off('shutdown', this.cleanup);
     }
 }
 
