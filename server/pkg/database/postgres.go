@@ -1,40 +1,68 @@
 package database
 
 import (
-	"log"
-	"time"
-
 	"database/sql"
+	"fmt"
 
 	_ "github.com/lib/pq"
-	"github.com/tiebetie/TowerTapper/pkg/config"
 )
 
-// DB is the global database connection pool
-var DB *sql.DB
+type Config struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DBName   string
+}
 
-// Connect initializes the database connection with retry logic
-func Connect() {
-	var err error
-	retries := 5
-	for i := 0; i < retries; i++ {
-		DB, err = sql.Open("postgres", config.AppConfig.DatabaseURL)
-		if err != nil {
-			log.Printf("Failed to open database connection: %v", err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
+func NewPostgresDB(cfg Config) (*sql.DB, error) {
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName)
 
-		err = DB.Ping()
-		if err != nil {
-			log.Printf("Failed to ping database: %v", err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-
-		log.Println("Successfully connected to the PostgreSQL database")
-		return
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		return nil, err
 	}
 
-	log.Fatalf("Could not connect to the database after %d attempts", retries)
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+// Создание таблиц
+func CreateTables(db *sql.DB) error {
+	// Создаем таблицу players
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS players (
+			id BIGSERIAL PRIMARY KEY,
+			telegram_id BIGINT UNIQUE NOT NULL,
+			username VARCHAR(255) NOT NULL,
+			coins BIGINT NOT NULL DEFAULT 0,
+			created_at TIMESTAMP NOT NULL,
+			updated_at TIMESTAMP NOT NULL
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating players table: %v", err)
+	}
+
+	// Создаем таблицу castles
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS castles (
+			id BIGSERIAL PRIMARY KEY,
+			player_id BIGINT NOT NULL REFERENCES players(id),
+			level INT NOT NULL DEFAULT 1,
+			health INT NOT NULL DEFAULT 100,
+			arrow_speed FLOAT NOT NULL DEFAULT 1.0,
+			arrow_damage INT NOT NULL DEFAULT 1
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating castles table: %v", err)
+	}
+
+	return nil
 }
