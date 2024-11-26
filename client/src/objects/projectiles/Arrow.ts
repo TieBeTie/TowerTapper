@@ -25,7 +25,7 @@ export class Arrow extends Projectile {
         this.maxSpeed = 800; // Reduced from 1500
         this.acceleration = 5000; // Reduced from 10000
         this.deceleration = 3000; // Reduced from 5000
-        this.initialDelay = 25;
+        this.initialDelay = 0;
         this.elapsedTime = 0;
         this.direction = new Phaser.Math.Vector2(0, 0);
     }
