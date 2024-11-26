@@ -7,7 +7,7 @@ class CollisionManager {
     private scene: Phaser.Scene;
     private projectileEnemyCollider: Phaser.Physics.Arcade.Collider;
     private towerEnemyCollider: Phaser.Physics.Arcade.Collider;
-    private readonly PROJECTILE_CHECK_DISTANCE = 50;
+    private readonly PROJECTILE_CHECK_DISTANCE = 150;
     private readonly TOWER_CHECK_DISTANCE = 100;
 
     constructor(scene: Phaser.Scene) {
@@ -78,7 +78,6 @@ class CollisionManager {
 
         projectile.destroy();
         enemy.takeDamage(50);
-        enemy.isUnderAttack = false;
 
         if (enemy.health <= 0) {
             this.scene.enemyManager.handleEnemyDeath(enemy);
