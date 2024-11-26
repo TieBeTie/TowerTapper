@@ -22,12 +22,14 @@ class Coin extends Phaser.GameObjects.Sprite {
         scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
         scene.physics.add.existing(this as unknown as Phaser.GameObjects.GameObject);
 
+        this.setScale(0.6);
+
         this.play('coin_spin');
         this.startMovement();
     }
 
     private startMovement() {
-        const duration = 1000;
+        const duration = 800;
 
         this.scene.tweens.add({
             targets: this,

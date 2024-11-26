@@ -11,14 +11,22 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
         this.health = 500;
         this.maxHealth = 500;
-        // Start of Selection
+
         this.setImmovable(true);
         this.setCollideWorldBounds(true);
+
+        // Ensure body exists before setting properties
+        if (this.body) {
+            this.body.setSize(this.width * 0.6, this.height * 0.6);
+            this.body.setOffset(this.width * 0.2, this.height * 0.2);
+        }
+
+        // Adjust the visual size
+        this.setScale(0.8);
+
         console.log('Tower создан. Сцена:', this.scene.sys.settings.key);
         this.healthBar = scene.add.graphics();
         this.updateHealthBar();
-
-        // this.setDisplaySize(250, 250);
     }
 
     upgrade(): void {

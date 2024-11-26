@@ -68,29 +68,30 @@ class UIManager {
         this.uiContainer.add([this.playPauseButton, this.upgradeButton]);
 
         // Create coin icon and number text
-        this.coinIcon = this.scene.add.image(16, 16, 'coin').setOrigin(0, 0);
-        this.coinIcon.setDisplaySize(24, 24);
+        this.coinIcon = this.scene.add.image(20, 20, 'coin').setOrigin(0, 0);
+        this.coinIcon.setDisplaySize(40, 40);
 
-        this.coinNumberText = this.scene.add.text(46, 16, `${Math.floor(this.coinsCount)}`, {
-            fontFamily: 'PixelFont',
-            fontSize: '24px',
-            color: '#fff'
-        });
+        const textConfig = {
+            fontFamily: 'pixelFont',
+            fontSize: '32px',
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        };
+
+        this.coinNumberText = this.scene.add.text(70, 25, `${Math.floor(this.coinsCount)}`, textConfig);
 
         // Ensure tower is defined and get its position
         const tower = this.scene.children.getByName('tower') as Tower;
         if (tower) {
             const towerPosition = tower.getCenter();
             this.tapText = this.scene.add.text(towerPosition.x - 25, towerPosition.y + 170, `X ${this.tapCoefficient.toFixed(1)}`, {
-                fontFamily: 'PixelFont',
-                fontSize: '32px',
-                color: '#fff'
+                ...textConfig,
+                fontSize: '32px'
             }).setOrigin(0.5, 0.5);
         } else {
             console.error('Tower is not defined in the scene.');
         }
-
-        // Применение кастомного шрифта к текстовому объекту
     }
 
     updateCoins(coins: number) {

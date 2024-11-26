@@ -16,11 +16,18 @@ class MenuScene extends Phaser.Scene {
         // Добавление фона
         this.add.image(width / 2, height / 2, 'logo');
 
-        // Добавление кнопки "Начать игру"
-        const playButton = this.add.text(width / 2, height / 2 + 100, 'Начать игру', {
+        const textConfig = {
+            fontFamily: 'pixelFont',
             fontSize: '32px',
-            color: '#fff'
-        }).setOrigin(0.5).setInteractive();
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        };
+
+        // Добавление кнопки "Начать игру"
+        const playButton = this.add.text(width / 2, height / 2 + 100, 'Начать игру', textConfig)
+            .setOrigin(0.5)
+            .setInteractive();
 
         playButton.on('pointerdown', () => {
             this.scene.start('GameScene');

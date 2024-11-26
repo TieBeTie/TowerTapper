@@ -7,6 +7,9 @@ class BootScene extends Phaser.Scene {
     }
 
     preload() {
+        // Load the pixel font
+        this.load.bitmapFont('pixelFont', 'assets/fonts/pixelFont.ttf');
+
         // Обработчики событий загрузки
         this.load.on('filecomplete', (key: string, type: string, data: any) => {
             console.log(`File complete: ${key}`);

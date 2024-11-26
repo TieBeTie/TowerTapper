@@ -18,11 +18,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.health = 100;
         this.cost = Number(cost);
 
+        this.setScale(0.7);
+
         this.tower = scene.children.getByName('tower') as Phaser.Physics.Arcade.Sprite;
 
         this.projectileFactory = new ProjectileFactory(scene);
 
         this.setCollideWorldBounds(true);
+
+        if (this.body) {
+            this.body.setSize(this.width * 0.7, this.height * 0.7);
+            this.body.setOffset(this.width * 0.15, this.height * 0.15);
+        }
 
         this.anims.play('enemy_walk', true);
 
