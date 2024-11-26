@@ -50,20 +50,19 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         const reducedAmount = amount * (1 - (this.defense / 100));
         this.health -= reducedAmount;
 
-        console.log('Замок получил урон:', reducedAmount, 'Текущее здоровье:', this.health);
         this.updateHealthBar();
 
         if (this.health <= 0) {
             this.stopRegeneration();
-            this.destroy();
             this.healthBar.destroy();
 
-            console.log('Замок уничтожен!');
             if (this.scene && this.scene.scene) {
                 this.scene.scene.start('DeathScene');
             } else {
                 console.error('Сцена не определена при попытке перейти в DeathScene.');
             }
+
+            super.destroy();
         }
     }
 
@@ -109,12 +108,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.healthBar.fillRect(barX, barY, barWidth * healthPercentage, barHeight);
     }
 
-    destroy(): void {
-        if (this.scene) {
-            this.scene.scene.start('DeathScene');
-        } else {
-            console.error('Сцена не определена при попытке перейти в DeathScene.');
-        }
+    destroy(fromScene?: boolean): void {
+        super.destroy(fromScene);
     }
 }
 
