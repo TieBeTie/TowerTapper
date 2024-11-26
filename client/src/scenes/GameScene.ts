@@ -54,25 +54,16 @@ class GameScene extends Phaser.Scene {
         this.socket = new WebSocket(`${protocol}://${window.location.hostname}:${GAME_PORT}/ws`);
 
         this.socket.onopen = () => {
-            console.log('Connected to server via WebSocket');
-            // Send an initialization message
-            const initMessage = { game_id: 1, action: 'init' };
-            this.socket.send(JSON.stringify(initMessage));
+            // Connection established
         };
 
         this.socket.onmessage = (event) => {
             const message = JSON.parse(event.data);
-            console.log('Received message from server:', message);
-            // Handle incoming messages (e.g., game state updates)
             this.handleServerMessage(message);
         };
 
         this.socket.onclose = () => {
-            console.log('WebSocket connection closed');
-            // Optionally, attempt to reconnect after a delay
-            setTimeout(() => {
-                this.create(); // Reinitialize the WebSocket connection
-            }, 5000);
+            // Connection closed
         };
 
         this.socket.onerror = (error) => {

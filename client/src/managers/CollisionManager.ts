@@ -9,21 +9,39 @@ class CollisionManager {
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
 
-        // Setup collisions between projectiles and enemies
+        // Setup collisions between projectiles and enemies with processCallback
         this.scene.physics.add.overlap(
             this.scene.projectileManager.projectiles,
             this.scene.enemyManager.enemies,
             this.handleProjectileEnemyCollision,
-            undefined,
+            (object1: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile,
+                object2: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile) => {
+                const projectileSprite = object1 as Phaser.GameObjects.Sprite;
+                const enemySprite = object2 as Phaser.GameObjects.Sprite;
+                const distance = Phaser.Math.Distance.Between(
+                    projectileSprite.x, projectileSprite.y,
+                    enemySprite.x, enemySprite.y
+                );
+                return distance < 50;
+            },
             this
         );
 
-        // Setup collisions between tower and enemies
+        // Setup collisions between tower and enemies with processCallback
         this.scene.physics.add.overlap(
             this.scene.tower,
             this.scene.enemyManager.enemies,
             this.handleEnemyTowerCollision,
-            undefined,
+            (object1: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile,
+                object2: Phaser.GameObjects.GameObject | Phaser.Physics.Arcade.Body | Phaser.Tilemaps.Tile) => {
+                const towerSprite = object1 as Phaser.GameObjects.Sprite;
+                const enemySprite = object2 as Phaser.GameObjects.Sprite;
+                const distance = Phaser.Math.Distance.Between(
+                    towerSprite.x, towerSprite.y,
+                    enemySprite.x, enemySprite.y
+                );
+                return distance < 100;
+            },
             this
         );
     }

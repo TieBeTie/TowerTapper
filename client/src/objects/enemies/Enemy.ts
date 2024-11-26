@@ -42,7 +42,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     takeDamage(amount: number): void {
         this.health -= amount;
-        console.log('Замок получил урон:', amount, 'Текущее здоровье:', this.health);
         if (this.health <= 0 && !this.isDying) {
             this.isDying = true;
             this.anims.play('enemy_die');

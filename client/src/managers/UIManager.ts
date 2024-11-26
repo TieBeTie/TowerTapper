@@ -103,6 +103,14 @@ class UIManager {
         this.tapCoefficient = coefficient;
         this.tapText.setText(`X ${this.tapCoefficient.toFixed(1)}`);
     }
+
+    private updateTowerHealth() {
+        const tower = this.scene.children.getByName('tower') as Tower;
+        if (!tower) {
+            console.error('Tower is not defined in the scene.');
+            return;
+        }
+    }
 }
 
 export default UIManager;

@@ -11,11 +11,11 @@ class BootScene extends Phaser.Scene {
         this.load.bitmapFont('pixelFont', 'assets/fonts/pixelFont.ttf');
 
         // Обработчики событий загрузки
-        this.load.on('filecomplete', (key: string, type: string, data: any) => {
+        this.load.on('filecomplete', (key: string) => {
             console.log(`File complete: ${key}`);
         });
 
-        this.load.on('loaderror', (file: Phaser.Loader.File) => {
+        this.load.on('loaderror', (file: any) => {
             console.error(`Error loading file: ${file.key}`);
         });
 
