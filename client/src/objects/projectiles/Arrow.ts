@@ -66,14 +66,5 @@ export class Arrow extends Projectile {
         if (this.speed > 0) {
             this.rotation = Phaser.Math.Angle.Between(this.x, this.y, this.targetX, this.targetY);
         }
-
-        const hitRadius = 20;
-        if (distanceToTarget <= hitRadius) {
-            this.destroy();
-        }
-
-        if (this.speed === 0 && distanceToTarget > hitRadius) {
-            this.destroy();
-        }
     }
 }

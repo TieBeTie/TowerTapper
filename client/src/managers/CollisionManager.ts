@@ -3,6 +3,7 @@ import Tower from '../objects/towers/Tower';
 import { Projectile } from '../objects/projectiles/Projectile';
 import Enemy from '../objects/enemies/Enemy';
 
+// CollisionManager handles the logic for managing collisions between projectiles and enemies, as well as between the tower and enemies
 class CollisionManager {
     private scene: Phaser.Scene;
     private projectileEnemyCollider: Phaser.Physics.Arcade.Collider;

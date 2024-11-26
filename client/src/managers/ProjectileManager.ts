@@ -4,6 +4,8 @@ import { ProjectileFactory } from '../factories/ProjectileFactory';
 import { Enemy } from '../objects/enemies/Enemy';
 import EnemyManager from './EnemyManager';
 
+
+// ProjectileManager handles the logic for managing and firing projectiles at enemies
 class ProjectileManager {
     scene: Phaser.Scene;
     projectiles: Phaser.Physics.Arcade.Group;

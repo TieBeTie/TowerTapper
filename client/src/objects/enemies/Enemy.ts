@@ -61,13 +61,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    fireArrow(targetX: number, targetY: number): void {
-        const arrow = this.projectileFactory.createArrow(targetX, targetY);
-        this.scene.physics.add.existing(arrow);
-        // Additional logic if needed
-    }
-
-
 }
 
 export default Enemy;

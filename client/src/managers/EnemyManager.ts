@@ -5,6 +5,7 @@ import Coin from '../objects/Coin';
 import CoinManager from './CoinManager';
 import UIManager from './UIManager';
 
+// EnemyManager handles the logic for managing and spawning enemies
 class EnemyManager {
     scene: Phaser.Scene;
     enemies: Phaser.Physics.Arcade.Group;
@@ -20,7 +21,7 @@ class EnemyManager {
 
         // Spawn enemies at regular intervals
         this.scene.time.addEvent({
-            delay: 200,
+            delay: 150,
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true

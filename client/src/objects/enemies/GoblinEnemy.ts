@@ -14,10 +14,6 @@ class GoblinEnemy extends Enemy {
         // Additional behavior logic for Goblin if needed
     }
 
-    // Override fire method if necessary
-    attack(targetX: number, targetY: number): void {
-        this.fireArrow(targetX, targetY);
-    }
 }
 
 export default GoblinEnemy;
