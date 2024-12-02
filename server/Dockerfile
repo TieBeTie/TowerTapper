@@ -2,9 +2,6 @@ FROM golang:1.21-alpine
 
 WORKDIR /app
 
-# Install git for private repositories if needed
-RUN apk add --no-cache git
-
 # Copy go mod and sum files
 COPY go.mod go.sum ./
 
@@ -21,4 +18,4 @@ RUN go build -o main ./cmd/bot/main.go
 EXPOSE 8080
 
 # Command to run the executable
-CMD ["./main"]
+CMD ["./main"] 

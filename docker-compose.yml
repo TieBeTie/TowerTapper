@@ -12,13 +12,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - tower_tapper_network
 
   server:
     build:
-      context: ../../server
-      dockerfile: ../deploy/docker/Dockerfile.server
+      context: ./server
+      dockerfile: Dockerfile
     container_name: tower_tapper_server
     environment:
       - DB_HOST=db
@@ -27,27 +25,10 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=tower_tapper
       - BOT_TOKEN=${BOT_TOKEN}
-      - TEST_MODE=${TEST_MODE:-false}
     ports:
       - "8080:8080"
     depends_on:
       - db
-    networks:
-      - tower_tapper_network
-
-  client:
-    build:
-      context: ../../client
-      dockerfile: ../deploy/docker/Dockerfile.client
-    container_name: tower_tapper_client
-    ports:
-      - "80:80"
-    networks:
-      - tower_tapper_network
-
-networks:
-  tower_tapper_network:
-    driver: bridge
 
 volumes:
-  postgres_data:
+  postgres_data: 

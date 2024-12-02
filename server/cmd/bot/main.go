@@ -19,29 +19,37 @@ func main() {
 		log.Printf("Error loading .env file: %v", err)
 	}
 
-	// Инициализация базы данных
-	dbConfig := database.Config{
-		Host:     os.Getenv("DB_HOST"),
-		Port:     os.Getenv("DB_PORT"),
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		DBName:   os.Getenv("DB_NAME"),
-	}
+	var playerUseCase *usecase.PlayerUseCase
 
-	db, err := database.NewPostgresDB(dbConfig)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer db.Close()
+	// Проверяем переменную окружения для тестового режима
+	if os.Getenv("TEST_MODE") == "true" {
+		log.Println("Running in test mode without database")
+		playerUseCase = usecase.NewMockPlayerUseCase()
+	} else {
+		// Инициализация базы данных
+		dbConfig := database.Config{
+			Host:     os.Getenv("DB_HOST"),
+			Port:     os.Getenv("DB_PORT"),
+			User:     os.Getenv("DB_USER"),
+			Password: os.Getenv("DB_PASSWORD"),
+			DBName:   os.Getenv("DB_NAME"),
+		}
 
-	// Создание таблиц
-	if err := database.CreateTables(db); err != nil {
-		log.Panic(err)
-	}
+		db, err := database.NewPostgresDB(dbConfig)
+		if err != nil {
+			log.Panic(err)
+		}
+		defer db.Close()
 
-	// Инициализация репозитория и use case
-	repo := postgres.NewPostgresRepository(db)
-	playerUseCase := usecase.NewPlayerUseCase(repo)
+		// Создание таблиц
+		if err := database.CreateTables(db); err != nil {
+			log.Panic(err)
+		}
+
+		// Инициализация репозитория и use case
+		repo := postgres.NewPostgresRepository(db)
+		playerUseCase = usecase.NewPlayerUseCase(repo)
+	}
 
 	// Инициализация WebSocket хендлера
 	wsHandler := websocket.NewHandler(playerUseCase)
@@ -54,6 +62,12 @@ func main() {
 			log.Printf("WebSocket server error: %v", err)
 		}
 	}()
+
+	// Если мы в тестовом режиме, не запускаем Telegram бота
+	if os.Getenv("TEST_MODE") == "true" {
+		// Бесконечный цикл, чтобы программа не завершилась
+		select {}
+	}
 
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {

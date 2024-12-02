@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tower Tapper WebSocket Test</title>
+</head>
+
+<body>
+    <h1>Tower Tapper WebSocket Test</h1>
+    <div>
+        <label for="telegramId">Telegram ID:</label>
+        <input type="text" id="telegramId" value="123456789">
+        <button onclick="connect()">Connect</button>
+    </div>
+    <div>
+        <button onclick="sendClick()" disabled id="clickBtn">Send Click</button>
+        <button onclick="sendEnemyKilled()" disabled id="enemyBtn">Enemy Killed (+10 coins)</button>
+        <button onclick="sendCastleDamaged()" disabled id="damageBtn">Castle Damaged (-10 health)</button>
+    </div>
+    <div>
+        <h2>Game State:</h2>
+        <pre id="gameState">Not connected</pre>
+    </div>
+    <div>
+        <h2>Log:</h2>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentHealth = 100;
+        let currentCoins = 0;
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            logEl.textContent = new Date().toISOString() + ': ' + message + '\n' + logEl.textContent;
+        }
+
+        function updateButtons(enabled) {
+            document.getElementById('clickBtn').disabled = !enabled;
+            document.getElementById('enemyBtn').disabled = !enabled;
+            document.getElementById('damageBtn').disabled = !enabled;
+        }
+
+        function connect() {
+            const telegramId = document.getElementById('telegramId').value;
+            ws = new WebSocket(`ws://localhost:8080/ws?telegram_id=${telegramId}`);
+
+            ws.onopen = () => {
+                log('Connected to server');
+                updateButtons(true);
+            };
+
+            ws.onclose = () => {
+                log('Disconnected from server');
+                updateButtons(false);
+            };
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                log('Received message: ' + JSON.stringify(message));
+
+                if (message.type === 'initial_state' || message.type === 'game_state') {
+                    document.getElementById('gameState').textContent = JSON.stringify(message.payload, null, 2);
+                    currentHealth = message.payload.castle.health;
+                    currentCoins = message.payload.coins;
+                }
+            };
+
+            ws.onerror = (error) => {
+                log('WebSocket error: ' + error);
+            };
+        }
+
+        function sendClick() {
+            if (ws) {
+                ws.send(JSON.stringify({
+                    type: 'click',
+                    payload: null
+                }));
+                log('Sent click');
+            }
+        }
+
+        function sendEnemyKilled() {
+            if (ws) {
+                currentCoins += 10;
+                ws.send(JSON.stringify({
+                    type: 'enemy_killed',
+                    payload: currentCoins
+                }));
+                log('Sent enemy killed, new coins: ' + currentCoins);
+            }
+        }
+
+        function sendCastleDamaged() {
+            if (ws) {
+                currentHealth -= 10;
+                ws.send(JSON.stringify({
+                    type: 'castle_damaged',
+                    payload: currentHealth
+                }));
+                log('Sent castle damaged, new health: ' + currentHealth);
+            }
+        }
+    </script>
+</body>
+
+</html>
