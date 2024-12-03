@@ -50,11 +50,22 @@ class GameScene extends Phaser.Scene {
         this.collisionManager = new CollisionManager(this);
 
         // Initialize WebSocket connection
+        const urlParams = new URLSearchParams(window.location.search);
+        const telegramId = urlParams.get('telegram_id');
+
+        if (!telegramId) {
+            console.error('No telegram_id provided in URL');
+            return;
+        }
+
         const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-        this.socket = new WebSocket(`${protocol}://${window.location.hostname}:${GAME_PORT}/ws`);
+        const host = window.location.hostname;
+        const wsPort = '8080'; // WebSocket server port
+
+        this.socket = new WebSocket(`${protocol}://${host}:${wsPort}/ws?telegram_id=${telegramId}`);
 
         this.socket.onopen = () => {
-            // Connection established
+            console.log('Connected to game server');
         };
 
         this.socket.onmessage = (event) => {

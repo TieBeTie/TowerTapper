@@ -12,9 +12,11 @@ const config = {
     },
     devServer: {
         static: path.resolve(__dirname, 'dist'),
-        port: 3000, // Port for the development server
-        open: true, // Opens browser on server start
-        hot: true, // Enables hot module replacement
+        port: 80,
+        host: '0.0.0.0',
+        open: true,
+        hot: true,
+        allowedHosts: 'all'
     },
     module: {
         rules: [

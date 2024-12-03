@@ -1,10 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -35,7 +37,17 @@ func main() {
 			DBName:   os.Getenv("DB_NAME"),
 		}
 
-		db, err := database.NewPostgresDB(dbConfig)
+		var db *sql.DB
+		var err error
+		maxRetries := 5
+		for i := 0; i < maxRetries; i++ {
+			db, err = database.NewPostgresDB(dbConfig)
+			if err == nil {
+				break
+			}
+			log.Printf("Failed to connect to database, attempt %d/%d: %v", i+1, maxRetries, err)
+			time.Sleep(time.Second * 5)
+		}
 		if err != nil {
 			log.Panic(err)
 		}
@@ -115,7 +127,7 @@ func main() {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, welcomeMsg)
 
 			// Создаем URL-кнопку для открытия игры с telegram_id
-			gameURL := fmt.Sprintf("https://your-game-url.com?telegram_id=%d", update.Message.From.ID)
+			gameURL := fmt.Sprintf("http://%s?telegram_id=%d", os.Getenv("GAME_URL"), update.Message.From.ID)
 			keyboard := tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonURL("Play Tower Tapper", gameURL),
