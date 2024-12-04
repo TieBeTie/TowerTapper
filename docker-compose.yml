@@ -21,17 +21,16 @@ services:
       context: ./server
       dockerfile: Dockerfile
     container_name: tower_tapper_server
-    env_file:
-      - ./server/.env
     environment:
-      - BOT_TOKEN=7730016619:AAH27CVP92RPW4qw8mmdEfFyApqzgLVtAz0
       - DB_HOST=db
-      - DB_NAME=tower_tapper
-      - DB_PASSWORD=postgres
       - DB_PORT=5432
       - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=tower_tapper
+      - SERVER_PORT=8080
       - TEST_MODE=false
-      - GAME_URL=bd91-142-93-192-115.ngrok-free.app
+    env_file:
+      - ./server/.env
     ports:
       - "8080:8080"
     depends_on:
