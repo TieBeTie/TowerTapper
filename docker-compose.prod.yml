@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: tower_tapper_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tower_tapper
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    image: ${DOCKER_USERNAME}/towertapper-server:latest
+    container_name: tower_tapper_server
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=tower_tapper
+      - SERVER_PORT=8080
+      - TEST_MODE=false
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  client:
+    image: ${DOCKER_USERNAME}/towertapper-client:latest
+    container_name: tower_tapper_client
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    restart: always
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 --cleanup true tower_tapper_server tower_tapper_client
+    restart: always
+
+volumes:
+  postgres_data: 
