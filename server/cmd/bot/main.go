@@ -69,17 +69,17 @@ func main() {
 
 	// Запуск HTTP сервера в отдельной горутине
 	go func() {
-		log.Printf("Starting WebSocket server on :8080")
-		if err := http.ListenAndServe(":8080", nil); err != nil {
+		serverURL := os.Getenv("SERVER_URL")
+		serverPort := os.Getenv("SERVER_PORT")
+		if serverPort == "" {
+			serverPort = "8080"
+		}
+		addr := fmt.Sprintf("%s:%s", serverURL, serverPort)
+		log.Printf("Starting WebSocket server on %s", addr)
+		if err := http.ListenAndServe(addr, nil); err != nil {
 			log.Printf("WebSocket server error: %v", err)
 		}
 	}()
-
-	// Если мы в тестовом режиме, не запускаем Telegram бота
-	if os.Getenv("TEST_MODE") == "true" {
-		// Бесконечный цикл, чтобы программа не завершилась
-		select {}
-	}
 
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
@@ -126,11 +126,11 @@ func main() {
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, welcomeMsg)
 
-			// Создаем URL-кнопку для открытия игры с telegram_id
-			gameURL := fmt.Sprintf("http://%s?telegram_id=%d", os.Getenv("GAME_URL"), update.Message.From.ID)
+			clientURL := os.Getenv("CLIENT_URL")
+			fullGameURL := fmt.Sprintf("http://%s?telegram_id=%d", clientURL, update.Message.From.ID)
 			keyboard := tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
-					tgbotapi.NewInlineKeyboardButtonURL("Play Tower Tapper", gameURL),
+					tgbotapi.NewInlineKeyboardButtonURL("Play Tower Tapper", fullGameURL),
 				),
 			)
 

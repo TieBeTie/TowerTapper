@@ -3,13 +3,15 @@ services:
     image: postgres:latest
     container_name: tower_tapper_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tower_tapper
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    expose:
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tower_tapper_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -20,17 +22,20 @@ services:
     image: ${DOCKER_USERNAME}/towertapper-server:latest
     container_name: tower_tapper_server
     environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=tower_tapper
-      - SERVER_PORT=8080
-      - TEST_MODE=false
-    env_file:
-      - .env
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - SERVER_PORT=${SERVER_PORT}
+      - TEST_MODE=${TEST_MODE}
+      - CLIENT_URL=${CLIENT_URL}
+      - SERVER_URL=${SERVER_URL}
+      - BOT_TOKEN=${BOT_TOKEN}
     ports:
       - "8080:8080"
+    networks:
+      - tower_tapper_net
     depends_on:
       db:
         condition: service_healthy
@@ -41,16 +46,15 @@ services:
     container_name: tower_tapper_client
     ports:
       - "80:80"
+    networks:
+      - tower_tapper_net
     depends_on:
       - server
     restart: always
 
-  watchtower:
-    image: containrrr/watchtower
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 30 --cleanup true tower_tapper_server tower_tapper_client
-    restart: always
+networks:
+  tower_tapper_net:
+    driver: bridge
 
 volumes:
   postgres_data: 
