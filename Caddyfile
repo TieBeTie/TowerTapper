@@ -1,0 +1,14 @@
+towertapper.org {
+    reverse_proxy * tower_tapper_client:443
+}
+
+# Если хотите добавлять бэкенд (server:8080) на /api/:
+# towertapper.org {
+#     route /api* {
+#         uri strip_prefix /api
+#         reverse_proxy tower_tapper_server:8080
+#     }
+#     route * {
+#         reverse_proxy tower_tapper_client:443
+#     }
+# }
