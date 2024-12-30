@@ -11,6 +11,7 @@ export class Arrow extends Projectile {
     private initialDelay: number;
     private elapsedTime: number;
     private direction: Phaser.Math.Vector2;
+    private speedMultiplier: number;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -22,19 +23,21 @@ export class Arrow extends Projectile {
 
         // Initialize movement properties
         this.speed = 0;
-        this.maxSpeed = 800; // Reduced from 1500
-        this.acceleration = 5000; // Reduced from 10000
-        this.deceleration = 3000; // Reduced from 5000
+        this.maxSpeed = 800; // Base max speed
+        this.acceleration = 5000;
+        this.deceleration = 3000;
         this.initialDelay = 0;
         this.elapsedTime = 0;
         this.direction = new Phaser.Math.Vector2(0, 0);
+        this.speedMultiplier = 1;
     }
 
-    fire(targetX: number, targetY: number): void {
+    fire(targetX: number, targetY: number, speedMultiplier: number = 1): void {
         this.targetX = targetX;
         this.targetY = targetY;
         this.speed = 0;
         this.elapsedTime = 0;
+        this.speedMultiplier = speedMultiplier;
         this.direction = new Phaser.Math.Vector2(targetX - this.x, targetY - this.y).normalize();
     }
 
@@ -53,7 +56,8 @@ export class Arrow extends Projectile {
             if (this.speed < 0) this.speed = 0;
         } else {
             this.speed += this.acceleration * (delta / 1000);
-            if (this.speed > this.maxSpeed) this.speed = this.maxSpeed;
+            const currentMaxSpeed = this.maxSpeed * this.speedMultiplier;
+            if (this.speed > currentMaxSpeed) this.speed = currentMaxSpeed;
         }
 
         if (this.body && 'setVelocity' in this.body) {

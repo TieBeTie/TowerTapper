@@ -11,12 +11,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - tower_tapper_net
+      - backnet
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: always
 
   server:
     image: ${DOCKER_USERNAME}/towertapper-server:latest
@@ -35,26 +36,38 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - tower_tapper_net
+      - backnet
+      - frontnet
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: always
 
   client:
     image: ${DOCKER_USERNAME}/towertapper-client:latest
     container_name: tower_tapper_client
     ports:
-      - "80:80"
+      - "443:443"
     networks:
-      - tower_tapper_net
+      - frontnet
     depends_on:
       - server
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:443 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: always
 
 networks:
-  tower_tapper_net:
+  backnet:
     driver: bridge
-
+  frontnet:
+    driver: bridge
 volumes:
   postgres_data: 

@@ -22,11 +22,11 @@ class ProjectileManager {
         this.projectileFactory = new ProjectileFactory(this.scene);
     }
 
-    fireProjectile(): void {
+    fireProjectile(speedMultiplier: number = 1): void {
         const targetEnemy = this.enemyManager.findNearestAvailableEnemy(this.scene.tower.x, this.scene.tower.y);
         if (targetEnemy) {
             const arrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
-            arrow.fire(targetEnemy.x, targetEnemy.y);
+            arrow.fire(targetEnemy.x, targetEnemy.y, speedMultiplier);
             this.projectiles.add(arrow);
             targetEnemy.isUnderAttack = true;
         }

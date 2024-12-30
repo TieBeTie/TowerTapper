@@ -1,0 +1,5 @@
+set up nginx https
+Make autoscalling
+Check CollisionManager and try to make it pretty
+Make PowerUp and rating icons
+Set up telegram bot
