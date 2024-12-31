@@ -1,0 +1,10 @@
+https://towertapper.org {
+    route /api* {
+        uri strip_prefix /api
+        reverse_proxy tower_tapper_server:8080
+    }
+    
+    route * {
+        reverse_proxy tower_tapper_client:80
+    }
+}

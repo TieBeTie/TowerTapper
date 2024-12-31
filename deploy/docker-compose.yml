@@ -14,7 +14,7 @@ services:
     networks:
       - backnet
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -43,7 +43,7 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/health || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -60,7 +60,7 @@ services:
     depends_on:
       - server
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:443 || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:443 || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 5
