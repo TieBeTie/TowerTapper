@@ -69,12 +69,11 @@ func main() {
 
 	// Запуск HTTP сервера в отдельной горутине
 	go func() {
-		serverURL := os.Getenv("SERVER_URL")
 		serverPort := os.Getenv("SERVER_PORT")
 		if serverPort == "" {
 			serverPort = "8080"
 		}
-		addr := fmt.Sprintf("%s:%s", serverURL, serverPort)
+		addr := fmt.Sprintf("0.0.0.0:%s", serverPort)
 		log.Printf("Starting WebSocket server on %s", addr)
 		if err := http.ListenAndServe(addr, nil); err != nil {
 			log.Printf("WebSocket server error: %v", err)
