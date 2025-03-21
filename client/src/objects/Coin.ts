@@ -20,7 +20,6 @@ class Coin extends Phaser.GameObjects.Sprite {
         this.targetX = targetX;
         this.targetY = targetY;
         scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
-        scene.physics.add.existing(this as unknown as Phaser.GameObjects.GameObject);
 
         this.setScale(0.6);
 
