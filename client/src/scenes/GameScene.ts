@@ -6,7 +6,6 @@ import ProjectileManager from '../managers/ProjectileManager';
 import TapManager from '../managers/TapManager';
 import CollisionManager from '../managers/CollisionManager';
 import CoinManager from '../managers/CoinManager';
-import { GAME_PORT } from '../utils/Constants'; // Assuming you have a constants file
 
 class GameScene extends Phaser.Scene {
     public tower!: Tower;
@@ -25,7 +24,6 @@ class GameScene extends Phaser.Scene {
 
     create(): void {
         const { width, height } = this.scale;
-        const panelHeight = 100;
 
         // Create the background
         const background = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'background');
@@ -34,7 +32,7 @@ class GameScene extends Phaser.Scene {
         background.displayHeight = this.cameras.main.height;
 
         // Initialize the tower before UIManager
-        this.tower = new Tower(this, width / 2, (height - panelHeight) / 2, 'tower');
+        this.tower = new Tower(this, width / 2, height / 2, 'tower');
         this.tower.setName('tower');
 
         // Initialize UIManager after the tower is created
@@ -60,7 +58,7 @@ class GameScene extends Phaser.Scene {
 
         const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
         const host = window.location.hostname;
-        const wsPort = '8080'; // WebSocket server port
+        const wsPort = process.env.SERVER_PORT || '8080'; // WebSocket server port
 
         this.socket = new WebSocket(`${protocol}://${host}:${wsPort}/ws?telegram_id=${telegramId}`);
 
