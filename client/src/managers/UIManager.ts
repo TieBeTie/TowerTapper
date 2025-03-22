@@ -25,7 +25,7 @@ export class UIManager {
     private readonly BUTTON_SPACING_RATIO = 0.02; // 2% of screen width
     private readonly GAME_VIEW_HEIGHT_RATIO = 0.75;
     private readonly ICON_SIZE_RATIO = 0.05; // 5% of screen width
-    private readonly FONT_SIZE_RATIO = 0.03; // 3% of screen width
+    private readonly FONT_SIZE_RATIO = 0.04; // 3% of screen width
 
     constructor(
         private scene: Phaser.Scene,

@@ -22,7 +22,7 @@ export class Header {
         
         // Create background
         this.background = this.scene.add.graphics();
-        this.background.fillStyle(0x000000, 0.5);
+        this.background.fillStyle(0x000000, 0.3);
         this.container.add(this.background);
 
         // Create content container for elements
@@ -48,7 +48,7 @@ export class Header {
         this.currentWidth = width;
         this.currentHeight = height;
         this.background.clear();
-        this.background.fillStyle(0x000000, 0.5);
+        this.background.fillStyle(0x000000, 0.3);
         this.background.fillRect(0, 0, width, height);
         this.distributeElements();
     }
