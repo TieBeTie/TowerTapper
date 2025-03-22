@@ -29,9 +29,9 @@ export class ButtonPanel {
         this.container = this.scene.add.container(0, 0);
         this.container.setDepth(1000); // Set high depth to appear above game scene
         
-        // Create background
+        // Create completely transparent background
         this.background = this.scene.add.graphics();
-        this.background.fillStyle(0x000000, 0.5);
+        this.background.fillStyle(0x000000, 0); // Полностью прозрачный
         this.container.add(this.background);
 
         // Create content container for elements
@@ -57,7 +57,7 @@ export class ButtonPanel {
         this.currentWidth = width;
         this.currentHeight = height;
         this.background.clear();
-        this.background.fillStyle(0x000000, 0.5);
+        this.background.fillStyle(0x000000, 0); // Полностью прозрачный
         this.background.fillRect(0, 0, width, height);
         this.distributeElements();
     }

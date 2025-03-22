@@ -15,10 +15,17 @@ export interface UpgradeButtonConfig {
 }
 
 export class UpgradeButton extends UIComponent {
+    // Константы для пропорций
+    private static readonly BUTTON_PADDING_RATIO = 0.4;  // Отступы внутри кнопки как % от fontSize
+    private static readonly COST_ICON_SIZE_RATIO = 0.5;    // Размер иконки монеты относительно fontSize
+    private static readonly LEVEL_TEXT_OFFSET_RATIO = 0.5; // Отступ текста уровня как % от fontSize
+    private static readonly COST_TEXT_OFFSET_RATIO = 1; // Отступ текста стоимости как % от fontSize
+
     private levelText!: Phaser.GameObjects.Text;
     private costText!: Phaser.GameObjects.Text;
     private costIcon!: Phaser.GameObjects.Image;
     private buttonText!: Phaser.GameObjects.Text;
+    private background!: Phaser.GameObjects.Rectangle;
     private upgradeInfoContainer!: Phaser.GameObjects.Container;
     
     // Сохраняем необходимые параметры в отдельных полях
@@ -37,64 +44,123 @@ export class UpgradeButton extends UIComponent {
         };
         super(config.scene, componentConfig);
         
-        // Инициализируем поля до вызова init()
         this.buttonTextValue = config.buttonText;
         this.fontSizeValue = config.fontSize;
         this.upgradeTypeValue = config.upgradeType;
         this.upgradeManagerValue = config.upgradeManager;
+
+        this.createButtonBackground();
         this.createButton();
         this.setupInteractivity();
     }
 
-    protected init(): void {}
+    private createButtonBackground(): void {
+        // Создаем фон кнопки
+        this.background = this.scene.add.rectangle(
+            0,
+            0,
+            this.width,
+            this.height,
+            0x444444,
+            0.8
+        );
+        this.background.setOrigin(0.5);
+        this.add(this.background);
+    }
 
     private createButton(): void {
-        this.buttonText = this.scene.add.text(0, 0, this.buttonTextValue, {
-            fontSize: `${this.fontSizeValue}px`,
-            color: '#ffffff',
-            fontFamily: 'pixelFont',
-            align: 'center'
-        }).setOrigin(1, 0.5);
+        const padding = this.fontSizeValue * UpgradeButton.BUTTON_PADDING_RATIO;
 
-        this.levelText = this.scene.add.text(0, -this.fontSizeValue/2, 'Level 1', {
-            fontSize: `${this.fontSizeValue}px`,
-            color: '#ffffff',
-            fontFamily: 'pixelFont',
-            align: 'center'
-        }).setOrigin(0, 0.5);
+        // Создаем основной текст кнопки
+        this.buttonText = this.scene.add.text(
+            -padding,  // Смещаем влево для центрирования
+            0,
+            this.buttonTextValue,
+            {
+                fontSize: `${this.fontSizeValue}px`,
+                color: '#ffffff',
+                fontFamily: 'pixelFont',
+                align: 'center'
+            }
+        ).setOrigin(1, 0.5);
 
-        this.costIcon = this.scene.add.image(0, this.fontSizeValue/2, 'coin')
-            .setDisplaySize(this.fontSizeValue, this.fontSizeValue)
-            .setOrigin(0, 0.5);
+        // Создаем текст уровня
+        this.levelText = this.scene.add.text(
+            padding,  // Смещаем вправо от основного текста
+            -this.fontSizeValue * UpgradeButton.LEVEL_TEXT_OFFSET_RATIO,
+            'Level 1',
+            {
+                fontSize: `${this.fontSizeValue}px`,
+                color: '#ffffff',
+                fontFamily: 'pixelFont',
+                align: 'center'
+            }
+        ).setOrigin(0, 0.5);
 
-        this.costText = this.scene.add.text(this.fontSizeValue * 1.2, this.fontSizeValue/2, '200', {
-            fontSize: `${this.fontSizeValue}px`,
-            color: '#FFD700',
-            fontFamily: 'pixelFont',
-            align: 'center'
-        }).setOrigin(0, 0.5);
+        // Создаем иконку монеты
+        this.costIcon = this.scene.add.image(
+            padding,
+            this.fontSizeValue * UpgradeButton.LEVEL_TEXT_OFFSET_RATIO,
+            'coin'
+        )
+        .setDisplaySize(
+            this.fontSizeValue * UpgradeButton.COST_ICON_SIZE_RATIO,
+            this.fontSizeValue * UpgradeButton.COST_ICON_SIZE_RATIO
+        )
+        .setOrigin(0, 0.5);
 
+        // Создаем текст стоимости
+        this.costText = this.scene.add.text(
+            padding + this.fontSizeValue * UpgradeButton.COST_TEXT_OFFSET_RATIO,
+            this.fontSizeValue * UpgradeButton.LEVEL_TEXT_OFFSET_RATIO,
+            '200',
+            {
+                fontSize: `${this.fontSizeValue}px`,
+                color: '#FFD700',
+                fontFamily: 'pixelFont',
+                align: 'center'
+            }
+        ).setOrigin(0, 0.5);
+
+        // Создаем контейнер для стоимости
         const costContainer = this.scene.add.container(0, 0, [this.costIcon, this.costText]);
+        
+        // Создаем контейнер для информации об улучшении
         this.upgradeInfoContainer = this.scene.add.container(0, 0, [this.levelText, costContainer]);
-        this.upgradeInfoContainer.setPosition(this.buttonText.width + 20, 0);
 
+        // Добавляем все элементы в кнопку
         this.add([this.buttonText, this.upgradeInfoContainer]);
+
+        // Обновляем UI
         this.updateUI();
     }
 
     private setupInteractivity(): void {
-        this.setInteractive({ useHandCursor: true })
+        // Делаем интерактивным весь контейнер
+        this.setInteractive(this.background, Phaser.Geom.Rectangle.Contains)
+            .on('pointerover', () => {
+                this.background.setFillStyle(0x666666);
+            })
+            .on('pointerout', () => {
+                this.background.setFillStyle(0x444444);
+            })
             .on('pointerdown', () => {
+                this.background.setFillStyle(0x333333);
                 const success = this.upgradeManagerValue.purchaseUpgrade(this.upgradeTypeValue);
                 if (success) {
                     this.updateUI();
                 }
+            })
+            .on('pointerup', () => {
+                this.background.setFillStyle(0x666666);
             });
     }
 
+    protected init(): void {
+        // Пустой метод, так как вся инициализация происходит в конструкторе
+    }
+
     private updateUI(): void {
-        console.log(this.upgradeManagerValue);
-        console.log(this.upgradeTypeValue);
         const currentLevel = this.upgradeManagerValue.getState(this.upgradeTypeValue);
         const newCost = this.upgradeManagerValue.getUpgradeCost(this.upgradeTypeValue);
         

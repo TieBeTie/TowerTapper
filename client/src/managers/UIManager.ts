@@ -23,7 +23,7 @@ export class UIManager {
     private readonly BUTTON_PANEL_HEIGHT_RATIO = 0.2; // 20% of screen height
     private readonly BUTTON_SIZE_RATIO = 0.04; // 4% of screen width
     private readonly BUTTON_SPACING_RATIO = 0.02; // 2% of screen width
-    private readonly GAME_VIEW_HEIGHT_RATIO = 0.7;
+    private readonly GAME_VIEW_HEIGHT_RATIO = 0.75;
     private readonly ICON_SIZE_RATIO = 0.05; // 5% of screen width
     private readonly FONT_SIZE_RATIO = 0.03; // 3% of screen width
 
@@ -92,8 +92,32 @@ export class UIManager {
             width: fontSize * 8,
             height: fontSize * 3
         });
+        const healthButton = new UpgradeButton({
+            scene: this.scene,
+            upgradeType: UpgradeType.HEALTH,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Health',
+            x: 0,
+            y: 0,
+            width: fontSize * 8,
+            height: fontSize * 3
+        })
+        const defenseButton = new UpgradeButton({
+            scene: this.scene,
+            upgradeType: UpgradeType.DEFENSE,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Defense',
+            x: 0,
+            y: 0,
+            width: fontSize * 8,
+            height: fontSize * 3
+        })
 
         this.buttonPanel.addElement(regenButton);
+        this.buttonPanel.addElement(healthButton);
+        this.buttonPanel.addElement(defenseButton);
         this.updatePositions();
     }
 
