@@ -43,6 +43,22 @@ class GameScene extends Phaser.Scene {
     }
 
     create(): void {
+        // Создаем черный прямоугольник на весь экран
+        const { width, height } = this.scale;
+        const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 1);
+        fadeRect.setOrigin(0);
+
+        // Анимируем появление
+        this.tweens.add({
+            targets: fadeRect,
+            alpha: 0,
+            duration: 500,
+            ease: 'Power2',
+            onComplete: () => {
+                fadeRect.destroy();
+            }
+        });
+
         // Set up resize handler
         this.scale.on('resize', this.handleResize, this);
         
