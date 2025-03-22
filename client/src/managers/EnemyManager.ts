@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import EnemyFactory from '../factories/EnemyFactory';
 import Enemy from '../objects/enemies/Enemy';
 import CoinCollectionEffectFromEnemyManager from './CoinCollectionEffectFromEnemyManager';
-import UIManager from './UIManager';
+import { UIManager } from './UIManager';
 
 // EnemyManager handles the logic for managing and spawning enemies
 class EnemyManager {

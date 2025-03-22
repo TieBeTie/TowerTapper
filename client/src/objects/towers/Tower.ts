@@ -59,7 +59,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.healthBar.destroy();
 
         if (this.scene?.scene) {
-            this.scene.scene.start('DeathScene');
+            this.scene.scene.start('MenuScene');
         }
 
         super.destroy();

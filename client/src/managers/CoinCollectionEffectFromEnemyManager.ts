@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import UIManager from './UIManager';
+import { UIManager } from './UIManager';
 import { CoinAnimation } from '../ui/components/CoinAnimation';
 
 class CoinManager {
@@ -22,7 +22,7 @@ class CoinManager {
             new Phaser.Math.Vector2(target.x, target.y),
             () => {
                 this.coins_count += this.tapCoefficient;
-                this.uiManager.updateCoins(Math.floor(this.coins_count));
+                this.updateCoins(Math.floor(this.coins_count));
                 this.removeCoin(coin);
             }
         );
@@ -55,6 +55,10 @@ class CoinManager {
 
     getCoinsCount(): number {
         return this.coins_count;
+    }
+
+    private updateCoins(coins: number): void {
+        this.uiManager.updateCoinCount(coins);
     }
 }
 

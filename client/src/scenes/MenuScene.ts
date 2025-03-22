@@ -5,33 +5,47 @@ class MenuScene extends Phaser.Scene {
         super({ key: 'MenuScene' });
     }
 
-    preload(): void {
-        this.load.image('logo', 'assets/images/logo.png');
-        this.load.image('playButton', 'assets/images/play.png');
-    }
+    create() {
+        // Добавляем фон
+        this.add.image(0, 0, 'background')
+            .setOrigin(0, 0)
+            .setDisplaySize(this.cameras.main.width, this.cameras.main.height);
 
-    create(): void {
-        const { width, height } = this.scale;
+        // Анимированный монстр по центру
+        const monster = this.add.sprite(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY,
+            'enemy'
+        );
+        monster.setScale(1.5); // Делаем монстра побольше
+        monster.play('enemy_walk', true);
 
-        // Добавление фона
-        this.add.image(width / 2, height / 2, 'logo');
+        // Текст "ИГРАТЬ!" с PixelFont внизу
+        const playText = this.add.text(
+            this.cameras.main.centerX,
+            this.cameras.main.height * 0.65,
+            'ИГРАТЬ!',
+            {
+                fontFamily: 'pixelFont',
+                fontSize: '48px',
+                color: '#ffffff',
+                stroke: '#000000',
+                strokeThickness: 4
+            }
+        ).setOrigin(0.5);
 
-        const textConfig = {
-            fontFamily: 'pixelFont',
-            fontSize: '32px',
-            color: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 4
-        };
-
-        // Добавление кнопки "Начать игру"
-        const playButton = this.add.text(width / 2, height / 2 + 100, 'Начать игру', textConfig)
-            .setOrigin(0.5)
-            .setInteractive();
-
-        playButton.on('pointerdown', () => {
-            this.scene.start('GameScene');
-        });
+        // Добавляем интерактивность и эффект при наведении
+        playText
+            .setInteractive({ useHandCursor: true })
+            .on('pointerover', () => {
+                playText.setScale(1.1);
+            })
+            .on('pointerout', () => {
+                playText.setScale(1);
+            })
+            .on('pointerdown', () => {
+                this.scene.start('GameScene');
+            });
     }
 }
 

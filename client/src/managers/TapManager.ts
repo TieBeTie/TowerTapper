@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import ProjectileManager from './ProjectileManager';
 import CoinManager from './CoinCollectionEffectFromEnemyManager';
-import UIManager from './UIManager';
+import { UIManager } from './UIManager';
 
 class TapManager {
     scene: Phaser.Scene;

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import Tower from '../objects/towers/Tower';
-import UIManager from '../managers/UIManager';
+import { UIManager } from '../managers/UIManager';
 import EnemyManager from '../managers/EnemyManager';
 import ProjectileManager from '../managers/ProjectileManager';
 import TapManager from '../managers/TapManager';
@@ -8,6 +8,24 @@ import CollisionManager from '../managers/CollisionManager';
 import CoinManager from '../managers/CoinCollectionEffectFromEnemyManager';
 
 class GameScene extends Phaser.Scene {
+    // Game view constants
+    private readonly GAME_VIEW_HEIGHT_RATIO = 1; // 70% of screen height for game view
+    private readonly GAME_VIEW_TOP_MARGIN = 0.0; // 15% from top for game view
+    private readonly GAME_VIEW_BOTTOM_MARGIN = 0.0; // 15% from bottom for game view
+    
+    // Minimum and maximum dimensions for game view
+    private readonly MIN_GAME_WIDTH = 320;
+    private readonly MIN_GAME_HEIGHT = 480;
+    private readonly MAX_GAME_WIDTH = 16000;
+    private readonly MAX_GAME_HEIGHT = 9000;
+
+    // Game view properties
+    private gameViewHeight!: number;
+    private gameViewWidth!: number;
+    private gameViewY!: number;
+    private gameScale!: number;
+
+    // Game objects
     public tower!: Tower;
     public uiManager!: UIManager;
     enemyManager!: EnemyManager;
@@ -23,31 +41,112 @@ class GameScene extends Phaser.Scene {
     }
 
     create(): void {
+        // Set up resize handler
+        this.scale.on('resize', this.handleResize, this);
+        
+        // Initial setup
+        this.setupGameView();
+    }
+
+    private setupGameView(): void {
         const { width, height } = this.scale;
+        
+        // Calculate game view dimensions with constraints
+        this.gameViewHeight = Math.min(
+            Math.max(height * this.GAME_VIEW_HEIGHT_RATIO, this.MIN_GAME_HEIGHT),
+            this.MAX_GAME_HEIGHT
+        );
+        this.gameViewWidth = Math.min(
+            Math.max(width, this.MIN_GAME_WIDTH),
+            this.MAX_GAME_WIDTH
+        );
+        
+        // Calculate vertical position with margins
+        this.gameViewY = height * this.GAME_VIEW_TOP_MARGIN;
 
-        // Create the background
-        const background = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'background');
+        // Calculate game scale based on orientation
+        this.calculateGameScale();
+
+        // Create the background for game view
+        const background = this.add.image(
+            this.gameViewWidth / 2,
+            this.gameViewY + this.gameViewHeight / 2,
+            'background'
+        );
         background.setOrigin(0.5, 0.5);
-        background.displayWidth = this.cameras.main.width;
-        background.displayHeight = this.cameras.main.height;
+        background.displayWidth = this.gameViewWidth;
+        background.displayHeight = this.gameViewHeight;
 
-        // Initialize the tower before UIManager
-        this.tower = new Tower(this, width / 2, height / 2, 'tower');
+        // Initialize the tower with scaled dimensions
+        this.tower = new Tower(
+            this,
+            this.gameViewWidth / 2,
+            this.gameViewY + this.gameViewHeight / 3,
+            'tower'
+        );
         this.tower.setName('tower');
+        this.tower.setScale(this.gameScale);
 
+        // Initialize managers
+        this.initializeManagers();
+    }
+
+    private calculateGameScale(): void {
+        const { width, height } = this.scale;
+        const baseWidth = this.scale.baseSize.width;
+        const baseHeight = this.scale.baseSize.height;
+        
+        // Calculate scale based on orientation
+        const isPortrait = height > width;
+        if (isPortrait) {
+            this.gameScale = Math.min(
+                this.gameViewWidth / baseWidth,
+                this.gameViewHeight / baseHeight
+            ) * 0.7; // Reduce overall scale by 30%
+        } else {
+            // For landscape, maintain aspect ratio while fitting within bounds
+            const aspectRatio = baseWidth / baseHeight;
+            this.gameScale = Math.min(
+                this.gameViewWidth / baseWidth,
+                this.gameViewHeight / (baseWidth / aspectRatio)
+            ) * 0.7; // Reduce overall scale by 30%
+        }
+    }
+
+    private initializeManagers(): void {
         // Initialize UIManager after the tower is created
-        this.uiManager = new UIManager(this);
+        this.uiManager = new UIManager(
+            this,
+            () => this.scene.pause(),
+            () => this.scene.launch('UpgradeScene'),
+            () => console.log('Settings clicked'),
+            () => console.log('Shop clicked')
+        );
 
-        // Инициализация CoinManager
+        // Initialize CoinManager
         this.coinManager = new CoinManager(this, this.uiManager);
 
-        // Передача CoinManager в другие менеджеры без повторного создания
+        // Initialize other managers
         this.enemyManager = new EnemyManager(this, this.uiManager, this.coinManager);
         this.projectileManager = new ProjectileManager(this, this.enemyManager);
         this.tapManager = new TapManager(this, this.projectileManager, this.uiManager, this.coinManager);
         this.collisionManager = new CollisionManager(this);
 
         // Initialize WebSocket connection
+        this.initializeWebSocket();
+    }
+
+    private handleResize(gameSize: Phaser.Structs.Size): void {
+        // Recalculate game view dimensions
+        this.setupGameView();
+        
+        // Update all game objects with new scale
+        if (this.tower) {
+            this.tower.setScale(this.gameScale);
+        }
+    }
+
+    private initializeWebSocket(): void {
         const urlParams = new URLSearchParams(window.location.search);
         const telegramId = urlParams.get('telegram_id');
 
@@ -58,7 +157,7 @@ class GameScene extends Phaser.Scene {
 
         const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
         const host = window.location.hostname;
-        const wsPort = process.env.SERVER_PORT || '8080'; // WebSocket server port
+        const wsPort = process.env.SERVER_PORT || '8080';
 
         this.socket = new WebSocket(`${protocol}://${host}:${wsPort}/ws?telegram_id=${telegramId}`);
 
@@ -80,25 +179,37 @@ class GameScene extends Phaser.Scene {
         };
     }
 
+    // Getters for game view dimensions
+    getGameViewHeight(): number {
+        return this.gameViewHeight;
+    }
+
+    getGameViewWidth(): number {
+        return this.gameViewWidth;
+    }
+
+    getGameViewY(): number {
+        return this.gameViewY;
+    }
+
     handleServerMessage(message: any): void {
         if (message.new_state) {
-            // Update game state based on server message
             this.updateGameState(message.game_id, message.new_state);
         }
-        // Handle other message types as needed
     }
 
     updateGameState(gameId: number, newState: string): void {
-        // Implement logic to update the game based on new state
         console.log(`Game ${gameId} state updated to: ${newState}`);
-        // Example: Update UI or game objects accordingly
-        // this.uiManager.updateGameState(newState);
     }
 
     update(time: number, delta: number): void {
         this.projectileManager.update(time, delta);
         this.enemyManager.update(time, delta);
-        // TapManager не требует цикла обновления
+    }
+
+    destroy(): void {
+        // Clean up resize listener
+        this.scale.removeListener('resize', this.handleResize, this);
     }
 }
 
