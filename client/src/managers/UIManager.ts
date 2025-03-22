@@ -16,11 +16,53 @@ class UIManager {
 
     constructor(private scene: Phaser.Scene) {
         this.createUI();
+        this.scene.scale.on('resize', this.handleResize, this);
+    }
+
+    private handleResize(gameSize: Phaser.Structs.Size): void {
+        const { width, height } = gameSize;
+        const baseWidth = this.scene.scale.baseSize.width;
+        const baseHeight = this.scene.scale.baseSize.height;
+        const scaleX = width / baseWidth;
+        const scaleY = height / baseHeight;
+        const scale = Math.min(scaleX, scaleY);
+
+        // Update panel position
+        const panelHeight = 100 * scale;
+        this.uiContainer.setY(height - panelHeight);
+
+        // Update button positions
+        const buttonSpacing = width / 4;
+        this.playPauseButton.setX(buttonSpacing);
+        this.upgradeButton.setX(3 * buttonSpacing);
+
+        // Update coin icon and text
+        const iconSize = 40 * scale;
+        this.coinIcon.setDisplaySize(iconSize, iconSize);
+        this.coinIcon.setPosition(20 * scale, 20 * scale);
+
+        // Update text
+        const fontSize = 32 * scale;
+        this.coinNumberText.setPosition(70 * scale, 25 * scale);
+        this.coinNumberText.setStyle({ fontSize: `${fontSize}px` });
+
+        // Update tap text if tower exists
+        const tower = this.scene.children.getByName('tower') as Tower;
+        if (tower) {
+            const towerPosition = tower.getCenter();
+            this.tapText.setPosition(towerPosition.x - 25 * scale, towerPosition.y + 170 * scale);
+            this.tapText.setStyle({ fontSize: `${fontSize}px` });
+        }
     }
 
     createUI() {
         const { width, height } = this.scene.scale;
-        const panelHeight = 100;
+        const baseWidth = this.scene.scale.baseSize.width;
+        const baseHeight = this.scene.scale.baseSize.height;
+        const scaleX = width / baseWidth;
+        const scaleY = height / baseHeight;
+        const scale = Math.min(scaleX, scaleY);
+        const panelHeight = 100 * scale;
 
         // Create the bottom panel
         const panel = this.scene.add.graphics();
@@ -68,27 +110,31 @@ class UIManager {
         this.uiContainer.add([this.playPauseButton, this.upgradeButton]);
 
         // Create coin icon and number text
-        this.coinIcon = this.scene.add.image(20, 20, 'coin').setOrigin(0, 0);
-        this.coinIcon.setDisplaySize(40, 40);
+        const iconSize = 40 * scale;
+        this.coinIcon = this.scene.add.image(20 * scale, 20 * scale, 'coin').setOrigin(0, 0);
+        this.coinIcon.setDisplaySize(iconSize, iconSize);
 
+        const fontSize = 32 * scale;
         const textConfig = {
             fontFamily: 'pixelFont',
-            fontSize: '32px',
+            fontSize: `${fontSize}px`,
             color: '#ffffff',
             stroke: '#000000',
-            strokeThickness: 4
+            strokeThickness: 4 * scale
         };
 
-        this.coinNumberText = this.scene.add.text(70, 25, `${Math.floor(this.coinsCount)}`, textConfig);
+        this.coinNumberText = this.scene.add.text(70 * scale, 25 * scale, `${Math.floor(this.coinsCount)}`, textConfig);
 
         // Ensure tower is defined and get its position
         const tower = this.scene.children.getByName('tower') as Tower;
         if (tower) {
             const towerPosition = tower.getCenter();
-            this.tapText = this.scene.add.text(towerPosition.x - 25, towerPosition.y + 170, `X ${this.tapCoefficient.toFixed(1)}`, {
-                ...textConfig,
-                fontSize: '32px'
-            }).setOrigin(0.5, 0.5);
+            this.tapText = this.scene.add.text(
+                towerPosition.x - 25 * scale,
+                towerPosition.y + 170 * scale,
+                `X ${this.tapCoefficient.toFixed(1)}`,
+                textConfig
+            ).setOrigin(0.5, 0.5);
         } else {
             console.error('Tower is not defined in the scene.');
         }
@@ -110,6 +156,10 @@ class UIManager {
             console.error('Tower is not defined in the scene.');
             return;
         }
+    }
+
+    destroy() {
+        this.scene.scale.removeListener('resize', this.handleResize, this);
     }
 }
 

@@ -27,7 +27,7 @@ export class CoinAnimation extends Phaser.GameObjects.Container {
     private init(): void {
         // Create coin sprite
         this.sprite = this.scene.add.sprite(0, 0, 'coin');
-        this.sprite.setScale(0.5);
+        this.sprite.setScale(0.6);
         this.add(this.sprite);
 
         // Play spin animation if it exists
@@ -40,8 +40,8 @@ export class CoinAnimation extends Phaser.GameObjects.Container {
             targets: this,
             x: this.endPosition.x,
             y: this.endPosition.y,
-            duration: this.duration,
-            ease: 'Power2',
+            duration: 800,
+            ease: 'Power1',
             onComplete: () => {
                 if (this.onComplete) {
                     this.onComplete();
@@ -54,8 +54,8 @@ export class CoinAnimation extends Phaser.GameObjects.Container {
         this.scene.tweens.add({
             targets: this.sprite,
             scale: 0.3,
-            duration: this.duration,
-            ease: 'Power2'
+            duration: 800,
+            ease: 'Power1'
         });
     }
 

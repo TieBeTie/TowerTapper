@@ -10,6 +10,7 @@ export interface UIComponentConfig {
     alpha?: number;
     padding?: number;
     fontSize?: number;
+    responsive?: boolean;
 }
 
 export abstract class UIComponent extends Phaser.GameObjects.Container {
@@ -19,6 +20,7 @@ export abstract class UIComponent extends Phaser.GameObjects.Container {
     public alpha: number;
     protected padding: number;
     protected fontSize: number;
+    protected responsive: boolean;
 
     constructor(config: UIComponentConfig) {
         super(config.scene, config.x || 0, config.y || 0);
@@ -28,14 +30,19 @@ export abstract class UIComponent extends Phaser.GameObjects.Container {
         this.alpha = config.alpha || 1;
         this.padding = config.padding || 10;
         this.fontSize = config.fontSize || 16;
+        this.responsive = config.responsive || false;
         this.setScale(this.scale);
         this.setAlpha(this.alpha);
+
+        if (this.responsive) {
+            this.scene.scale.on('resize', this.handleResize, this);
+        }
     }
 
     abstract init(): void;
 
     getCustomScale(): number {
-        return this.scale;
+        return this.responsive ? this.getResponsiveScale() : this.scale;
     }
 
     getCustomAlpha(): number {
@@ -43,11 +50,38 @@ export abstract class UIComponent extends Phaser.GameObjects.Container {
     }
 
     getPadding(): number {
-        return this.padding;
+        return this.responsive ? this.getResponsivePadding() : this.padding;
     }
 
     getFontSize(): number {
-        return this.fontSize;
+        return this.responsive ? this.getResponsiveFontSize() : this.fontSize;
+    }
+
+    protected getResponsiveScale(): number {
+        const { width, height } = this.scene.scale;
+        const baseWidth = this.scene.scale.baseSize.width;
+        const baseHeight = this.scene.scale.baseSize.height;
+        const scaleX = width / baseWidth;
+        const scaleY = height / baseHeight;
+        return Math.min(scaleX, scaleY) * this.scale;
+    }
+
+    protected getResponsivePadding(): number {
+        const { width } = this.scene.scale;
+        const baseWidth = this.scene.scale.baseSize.width;
+        return (width / baseWidth) * this.padding;
+    }
+
+    protected getResponsiveFontSize(): number {
+        const { width } = this.scene.scale;
+        const baseWidth = this.scene.scale.baseSize.width;
+        return (width / baseWidth) * this.fontSize;
+    }
+
+    protected handleResize(gameSize: Phaser.Structs.Size): void {
+        if (this.responsive) {
+            this.setScale(this.getResponsiveScale());
+        }
     }
 
     layout(): void {
@@ -56,6 +90,9 @@ export abstract class UIComponent extends Phaser.GameObjects.Container {
     }
 
     destroy(fromScene?: boolean): void {
+        if (this.responsive) {
+            this.scene.scale.removeListener('resize', this.handleResize, this);
+        }
         super.destroy(fromScene);
     }
 } 

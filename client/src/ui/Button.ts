@@ -18,6 +18,9 @@ class Button extends Phaser.GameObjects.Sprite {
 
         this.callback = callback;
 
+        // Set initial scale based on screen size
+        this.updateScale();
+
         this.setInteractive({ useHandCursor: true })
             .on('pointerdown', () => {
                 this.callback();
@@ -25,9 +28,29 @@ class Button extends Phaser.GameObjects.Sprite {
 
         // Ensure the Button GameObject exists before setting it as draggable
         scene.input.setDraggable(this, true);
+
+        // Listen for resize events
+        scene.scale.on('resize', this.handleResize, this);
     }
 
-    // Add additional methods and type annotations as needed
+    private handleResize(gameSize: Phaser.Structs.Size): void {
+        this.updateScale();
+    }
+
+    private updateScale(): void {
+        const { width, height } = this.scene.scale;
+        const baseWidth = this.scene.scale.baseSize.width;
+        const baseHeight = this.scene.scale.baseSize.height;
+        const scaleX = width / baseWidth;
+        const scaleY = height / baseHeight;
+        const scale = Math.min(scaleX, scaleY);
+        this.setScale(scale);
+    }
+
+    destroy(fromScene?: boolean): void {
+        this.scene.scale.removeListener('resize', this.handleResize, this);
+        super.destroy(fromScene);
+    }
 }
 
 export default Button;
