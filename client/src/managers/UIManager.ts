@@ -15,7 +15,7 @@ export class UIManager {
     private tapText!: Phaser.GameObjects.Text;
 
     // Responsive design constants
-    private readonly HEADER_HEIGHT_RATIO = 0.05; // 10% of screen height
+    private readonly HEADER_HEIGHT_RATIO = 0.04; // 10% of screen height
     private readonly BUTTON_PANEL_HEIGHT_RATIO = 0.2; // 20% of screen height
     private readonly BUTTON_SIZE_RATIO = 0.04; // 4% of screen width
     private readonly BUTTON_SPACING_RATIO = 0.02; // 2% of screen width
@@ -34,48 +34,70 @@ export class UIManager {
         this.scene.scale.on('resize', this.handleResize, this);
     }
 
-    private initialize(): void {
+    private initilizeHeader(iconSize: number, fontSize: number): void {
         // Create header
         this.header = new Header(this.scene);
+         // Create coin elements
+         this.coinIcon = this.scene.add.image(0, 0, 'coin');
+         this.coinIcon.setDisplaySize(iconSize, iconSize);
+ 
+         this.coinNumberText = this.scene.add.text(0, 0, '0', {
+             fontSize: `${fontSize}px`,
+             color: '#ffffff',
+             fontFamily: 'pixelFont'
+         }).setOrigin(0, 0.5);
+ 
+         // Create tap text
+         this.tapText = this.scene.add.text(0, 0, `X ${this.tapCoefficient.toFixed(1)}`, {
+             fontSize: `${fontSize}px`,
+             color: '#ffffff',
+             fontFamily: 'pixelFont'
+         }).setOrigin(0.5, 0.5);
+ 
+         // Add elements to header
+         // Create a container for coin display
+         const coinContainer = this.scene.add.container(0, 0);
+         coinContainer.add(this.coinIcon);
+         coinContainer.add(this.coinNumberText);
+         
+         // Position the coin text relative to the icon
+         this.coinNumberText.setPosition(this.coinIcon.width * 0.6, 0);
+         
+         // Add the container as a single element
+         this.header.addElement(coinContainer);
+         this.header.addElement(this.tapText);
+    }
 
-        // Create UI elements
-        const { width } = this.scene.scale;
-        const iconSize = width * this.ICON_SIZE_RATIO;
-        const fontSize = width * this.FONT_SIZE_RATIO;
-
-        // Create coin elements
-        this.coinIcon = this.scene.add.image(0, 0, 'coin');
-        this.coinIcon.setDisplaySize(iconSize, iconSize);
-
-        this.coinNumberText = this.scene.add.text(0, 0, '0', {
-            fontSize: `${fontSize}px`,
-            color: '#ffffff',
-            fontFamily: 'pixelFont'
-        }).setOrigin(0, 0.5);
-
-        // Create tap text
-        this.tapText = this.scene.add.text(0, 0, `X ${this.tapCoefficient.toFixed(1)}`, {
-            fontSize: `${fontSize}px`,
-            color: '#ffffff',
-            fontFamily: 'pixelFont'
+    private initilizeButtonPanel(): void {
+        this.buttonPanel = new ButtonPanel(this.scene, 2, 2);
+        const increaseCoinCoefficientButton = new Button({
+            scene: this.scene,
+            x: 0,
+            y: 0,
+            texture: '-',
+            callback: () => console.log('Button clicked')
+        }).setOrigin(0.5, 0.5);
+        const increaseDamamageButton = new Button({
+            scene: this.scene,
+            x: 0,
+            y: 0,
+            texture: '-',
+            callback: () => console.log('Button clicked')
         }).setOrigin(0.5, 0.5);
 
-        // Add elements to header
-        // Create a container for coin display
-        const coinContainer = this.scene.add.container(0, 0);
-        coinContainer.add(this.coinIcon);
-        coinContainer.add(this.coinNumberText);
-        
-        // Position the coin text relative to the icon
-        this.coinNumberText.setPosition(this.coinIcon.width * 0.6, 0);
-        
-        // Add the container as a single element
-        this.header.addElement(coinContainer);
-        this.header.addElement(this.tapText);
-
+        this.buttonPanel.addElement(increaseCoinCoefficientButton);
+        this.buttonPanel.addElement(increaseDamamageButton);
 
         // Position components  
         this.updatePositions();
+    }
+
+    private initialize(): void {
+        const { width } = this.scene.scale;
+        const iconSize = width * this.ICON_SIZE_RATIO;
+        const fontSize = width * this.FONT_SIZE_RATIO;
+        this.initilizeHeader(iconSize, fontSize);
+        this.initilizeButtonPanel();
     }
 
     private handleResize(gameSize: Phaser.Structs.Size): void {
@@ -105,6 +127,9 @@ export class UIManager {
         this.header.setPosition(0, gameViewHeight);
         this.header.setSize(width, headerHeight);
 
+        // Position and size button panel
+        this.buttonPanel.setPosition(0, gameViewHeight + headerHeight);
+        this.buttonPanel.setSize(width, buttonPanelHeight);
     }
 
     updateCoinCount(count: number): void {
