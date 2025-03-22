@@ -112,6 +112,10 @@ export class UpgradeManager {
 
         tower.updateHealthBar();
     }
+
+    getState(type: UpgradeType): number {
+        return this.state[type];
+    }
 }
 
 export default UpgradeManager; 

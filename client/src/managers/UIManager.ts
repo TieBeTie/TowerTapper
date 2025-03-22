@@ -4,6 +4,9 @@ import { Header } from '../ui/components/Header';
 import { ButtonPanel } from '../ui/components/ButtonPanel';
 import Button from '../ui/Button';
 import Tower from '../objects/towers/Tower';
+import { UpgradeButton } from '../ui/components/UpgradeButton';
+import { UpgradeType } from '../types/UpgradeType';
+import { UpgradeManager } from '../managers/UpgradeManager';
 
 export class UIManager {
     private header!: Header;
@@ -13,6 +16,7 @@ export class UIManager {
     private coinIcon!: Phaser.GameObjects.Image;
     private coinNumberText!: Phaser.GameObjects.Text;
     private tapText!: Phaser.GameObjects.Text;
+    private upgradeManager: UpgradeManager;
 
     // Responsive design constants
     private readonly HEADER_HEIGHT_RATIO = 0.04; // 10% of screen height
@@ -28,8 +32,10 @@ export class UIManager {
         private onPauseToggle: () => void,
         private onUpgradeClick: () => void,
         private onSettingsClick: () => void,
-        private onShopClick: () => void
+        private onShopClick: () => void,
+        upgradeManager: UpgradeManager
     ) {
+        this.upgradeManager = upgradeManager;
         this.initialize();
         this.scene.scale.on('resize', this.handleResize, this);
     }
@@ -70,25 +76,24 @@ export class UIManager {
 
     private initilizeButtonPanel(): void {
         this.buttonPanel = new ButtonPanel(this.scene, 2, 2);
-        const increaseCoinCoefficientButton = new Button({
+        
+        const { width } = this.scene.scale;
+        const fontSize = width * this.FONT_SIZE_RATIO;
+
+        // Create interactive text for regen
+        const regenButton = new UpgradeButton({
             scene: this.scene,
+            upgradeType: UpgradeType.REGENERATION,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Regen\nHealth',
             x: 0,
             y: 0,
-            texture: '-',
-            callback: () => console.log('Button clicked')
-        }).setOrigin(0.5, 0.5);
-        const increaseDamamageButton = new Button({
-            scene: this.scene,
-            x: 0,
-            y: 0,
-            texture: '-',
-            callback: () => console.log('Button clicked')
-        }).setOrigin(0.5, 0.5);
+            width: fontSize * 8,
+            height: fontSize * 3
+        });
 
-        this.buttonPanel.addElement(increaseCoinCoefficientButton);
-        this.buttonPanel.addElement(increaseDamamageButton);
-
-        // Position components  
+        this.buttonPanel.addElement(regenButton);
         this.updatePositions();
     }
 

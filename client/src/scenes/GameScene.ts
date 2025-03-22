@@ -6,6 +6,7 @@ import ProjectileManager from '../managers/ProjectileManager';
 import TapManager from '../managers/TapManager';
 import CollisionManager from '../managers/CollisionManager';
 import CoinManager from '../managers/CoinCollectionEffectFromEnemyManager';
+import { UpgradeManager } from '../managers/UpgradeManager';
 
 class GameScene extends Phaser.Scene {
     // Game view constants
@@ -28,6 +29,7 @@ class GameScene extends Phaser.Scene {
     // Game objects
     public tower!: Tower;
     public uiManager!: UIManager;
+    public upgradeManager!: UpgradeManager;
     enemyManager!: EnemyManager;
     projectileManager!: ProjectileManager;
     tapManager!: TapManager;
@@ -114,13 +116,17 @@ class GameScene extends Phaser.Scene {
     }
 
     private initializeManagers(): void {
+        // Initialize UpgradeManager first
+        this.upgradeManager = new UpgradeManager(this);
+
         // Initialize UIManager after the tower is created
         this.uiManager = new UIManager(
             this,
             () => this.scene.pause(),
             () => this.scene.launch('UpgradeScene'),
             () => console.log('Settings clicked'),
-            () => console.log('Shop clicked')
+            () => console.log('Shop clicked'),
+            this.upgradeManager
         );
 
         // Initialize CoinManager
