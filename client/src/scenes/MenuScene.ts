@@ -5,43 +5,52 @@ class MenuScene extends Phaser.Scene {
         super({ key: 'MenuScene' });
     }
 
-    create() {
-        // Добавляем фон
+    create(): void {
+        const { width, height } = this.scale;
+
+        // Создаем фон
         this.add.image(0, 0, 'background')
             .setOrigin(0, 0)
-            .setDisplaySize(this.cameras.main.width, this.cameras.main.height);
+            .setDisplaySize(width, height);
 
-        // Анимированный монстр по центру
-        const monster = this.add.sprite(
-            this.cameras.main.centerX,
-            this.cameras.main.centerY,
-            'enemy'
-        );
-        monster.setScale(1.5); // Делаем монстра побольше
-        monster.play('enemy_walk', true);
+        // Создаем монстра в центре экрана, но с маленьким размером
+        const monster = this.add.sprite(width / 2, height / 2, 'enemy');
+        monster.setScale(0.1);
+        monster.play('enemy_walk');
 
-        // Текст "ИГРАТЬ!" с PixelFont внизу
-        const playText = this.add.text(
-            this.cameras.main.centerX,
-            this.cameras.main.height * 0.65,
-            '►',
-            {
-                fontFamily: 'pixelFont',
-                fontSize: '72px',
-                color: '#ffffff',
-                stroke: '#000000',
-                strokeThickness: 4
+        // Анимация появления монстра
+        this.tweens.add({
+            targets: monster,
+            scale: 1.5,
+            duration: 800,
+            ease: 'Bounce.out',
+            onComplete: () => {
+                // После появления начинаем покачивание
+                this.tweens.add({
+                    targets: monster,
+                    y: height / 2 + 10,
+                    duration: 1000,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
             }
-        ).setOrigin(0.5);
+        });
 
-        // Добавляем интерактивность и эффект при наведении
-        playText
-            .setInteractive({ useHandCursor: true })
+        // Создаем кнопку "Играть"
+        const playButton = this.add.text(width / 2, height * 0.7, '►', {
+            fontSize: '64px',
+            color: '#ffffff',
+            fontFamily: 'Arial'
+        }).setOrigin(0.5);
+
+        // Добавляем интерактивность кнопке
+        playButton.setInteractive()
             .on('pointerover', () => {
-                playText.setScale(1.1);
+                playButton.setScale(1.2);
             })
             .on('pointerout', () => {
-                playText.setScale(1);
+                playButton.setScale(1);
             })
             .on('pointerdown', () => {
                 this.startGame();
