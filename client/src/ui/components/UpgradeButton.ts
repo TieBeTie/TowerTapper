@@ -7,6 +7,14 @@ const BUTTON_BACKGROUND_ALPHA = 0.5;
 const BUTTON_HOVER_ALPHA = 0.5;
 const BUTTON_PRESSED_ALPHA = 0.5;
 
+// Константы для цветов
+const BUTTON_COLOR_DEFAULT = 0x444444;
+const BUTTON_COLOR_HOVER = 0x666666;
+const BUTTON_COLOR_PRESSED = 0x333333;
+const BUTTON_COLOR_AFFORD = 0x45a049;
+const BUTTON_COLOR_AFFORD_HOVER = 0x4CAF50;
+const BUTTON_COLOR_AFFORD_PRESSED = 0x3d8b40;
+
 export interface UpgradeButtonConfig {
     scene: Phaser.Scene;
     upgradeType: UpgradeType;
@@ -57,6 +65,17 @@ export class UpgradeButton extends UIComponent {
         this.createButtonBackground();
         this.createButton();
         this.setupInteractivity();
+
+        // Подписываемся на обновление монет
+        const gameScene = this.scene.scene.get('GameScene');
+        gameScene.events.on('updateCoins', this.updateButtonColor, this);
+    }
+
+    destroy(fromScene?: boolean): void {
+        // Отписываемся от события при уничтожении кнопки
+        const gameScene = this.scene.scene.get('GameScene');
+        gameScene.events.off('updateCoins', this.updateButtonColor, this);
+        super.destroy(fromScene);
     }
 
     private createButtonBackground(): void {
@@ -144,18 +163,39 @@ export class UpgradeButton extends UIComponent {
         // Делаем интерактивным весь контейнер
         this.setInteractive(this.background, Phaser.Geom.Rectangle.Contains)
             .on('pointerover', () => {
-                this.background.setFillStyle(0x666666, BUTTON_HOVER_ALPHA);
+                const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
+                this.background.setFillStyle(baseColor + 0x222222, BUTTON_HOVER_ALPHA);
             })
             .on('pointerout', () => {
-                this.background.setFillStyle(0x444444, BUTTON_BACKGROUND_ALPHA);
+                this.background.setFillStyle(
+                    this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT,
+                    BUTTON_BACKGROUND_ALPHA
+                );
             })
             .on('pointerdown', () => {
-                this.background.setFillStyle(0x333333, BUTTON_PRESSED_ALPHA);
+                const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
+                this.background.setFillStyle(baseColor - 0x222222, BUTTON_PRESSED_ALPHA);
                 this.handleClick();
-            })
+            })  
             .on('pointerup', () => {
-                this.background.setFillStyle(0x666666, BUTTON_HOVER_ALPHA);
+                const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
+                this.background.setFillStyle(baseColor + 0x222222, BUTTON_HOVER_ALPHA);
             });
+
+        // Устанавливаем начальный цвет кнопки
+        this.updateButtonColor();
+    }
+
+    private canAffordUpgrade(): boolean {
+        const cost = this.upgradeManagerValue.getUpgradeCost(this.upgradeTypeValue);
+        const gameScene = this.scene.scene.get('GameScene');
+        const coins = (gameScene as any).coinManager?.coins_count || 0;
+        return coins >= cost;
+    }
+
+    private updateButtonColor(): void {
+        const color = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
+        this.background.setFillStyle(color, BUTTON_BACKGROUND_ALPHA);
     }
 
     protected handleClick(): void {
@@ -175,5 +215,6 @@ export class UpgradeButton extends UIComponent {
         
         this.levelText.setText(`Level ${currentLevel}`);
         this.costText.setText(newCost.toString());
+        this.updateButtonColor();
     }
 } 

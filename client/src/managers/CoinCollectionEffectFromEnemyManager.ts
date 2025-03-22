@@ -59,6 +59,7 @@ class CoinManager {
 
     private updateCoins(coins: number): void {
         this.uiManager.updateCoinCount(coins);
+        this.scene.events.emit('updateCoins', coins);
     }
 }
 
