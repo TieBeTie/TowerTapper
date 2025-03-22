@@ -2,6 +2,11 @@ import { UIComponent } from './UIComponent';
 import { UpgradeType } from '../../types/UpgradeType';
 import { UpgradeManager } from '../../managers/UpgradeManager';
 
+// Константы для прозрачности
+const BUTTON_BACKGROUND_ALPHA = 0.5;
+const BUTTON_HOVER_ALPHA = 0.5;
+const BUTTON_PRESSED_ALPHA = 0.5;
+
 export interface UpgradeButtonConfig {
     scene: Phaser.Scene;
     upgradeType: UpgradeType;
@@ -62,7 +67,7 @@ export class UpgradeButton extends UIComponent {
             this.width,
             this.height,
             0x444444,
-            0.8
+            BUTTON_BACKGROUND_ALPHA
         );
         this.background.setOrigin(0.5);
         this.add(this.background);
@@ -139,20 +144,20 @@ export class UpgradeButton extends UIComponent {
         // Делаем интерактивным весь контейнер
         this.setInteractive(this.background, Phaser.Geom.Rectangle.Contains)
             .on('pointerover', () => {
-                this.background.setFillStyle(0x666666);
+                this.background.setFillStyle(0x666666, BUTTON_HOVER_ALPHA);
             })
             .on('pointerout', () => {
-                this.background.setFillStyle(0x444444);
+                this.background.setFillStyle(0x444444, BUTTON_BACKGROUND_ALPHA);
             })
             .on('pointerdown', () => {
-                this.background.setFillStyle(0x333333);
+                this.background.setFillStyle(0x333333, BUTTON_PRESSED_ALPHA);
                 const success = this.upgradeManagerValue.purchaseUpgrade(this.upgradeTypeValue);
                 if (success) {
                     this.updateUI();
                 }
             })
             .on('pointerup', () => {
-                this.background.setFillStyle(0x666666);
+                this.background.setFillStyle(0x666666, BUTTON_HOVER_ALPHA);
             });
     }
 
