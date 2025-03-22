@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import EnemyFactory from '../factories/EnemyFactory';
 import Enemy from '../objects/enemies/Enemy';
-import Coin from '../objects/Coin';
 import CoinManager from './CoinManager';
 import UIManager from './UIManager';
 

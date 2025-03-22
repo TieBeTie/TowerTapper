@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import Coin from '../objects/Coin';
 import UIManager from './UIManager';
+import { CoinAnimation } from '../ui/components/CoinAnimation';
 
 class CoinManager {
-    private coins: Coin[] = [];
+    private coins: CoinAnimation[] = [];
     private tapCoefficient: number = 1.0;
     private lastTapTime: number = Date.now();
     private uiManager: UIManager;
@@ -15,21 +15,18 @@ class CoinManager {
         this.scene = scene;
     }
 
-    spawnCoin(position: Phaser.Math.Vector2, target: Phaser.GameObjects.GameObject) {
-        const coin = new Coin({
-            scene: this.scene,
-            x: position.x,
-            y: position.y,
-            targetX: (target as Phaser.GameObjects.Sprite).x,
-            targetY: (target as Phaser.GameObjects.Sprite).y
-        });
+    spawnCoin(position: Phaser.Math.Vector2, target: Phaser.GameObjects.Sprite) {
+        const coin = CoinAnimation.createCollectAnimation(
+            this.scene,
+            position,
+            new Phaser.Math.Vector2(target.x, target.y),
+            () => {
+                this.coins_count += this.tapCoefficient;
+                this.uiManager.updateCoins(Math.floor(this.coins_count));
+                this.removeCoin(coin);
+            }
+        );
         this.coins.push(coin);
-
-        coin.on('reached', () => {
-            this.coins_count += this.tapCoefficient;
-            this.uiManager.updateCoins(Math.floor(this.coins_count));
-            this.removeCoin(coin);
-        });
     }
 
     getLastTapTime(): number {
@@ -44,7 +41,7 @@ class CoinManager {
         return this.uiManager;
     }
 
-    private removeCoin(coin: Coin) {
+    private removeCoin(coin: CoinAnimation) {
         const index = this.coins.indexOf(coin);
         if (index > -1) {
             this.coins.splice(index, 1);
@@ -54,6 +51,10 @@ class CoinManager {
 
     setTapCoefficient(coef: number): void {
         this.tapCoefficient = coef;
+    }
+
+    getCoinsCount(): number {
+        return this.coins_count;
     }
 }
 
