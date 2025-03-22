@@ -5,7 +5,7 @@ import EnemyManager from '../managers/EnemyManager';
 import ProjectileManager from '../managers/ProjectileManager';
 import TapManager from '../managers/TapManager';
 import CollisionManager from '../managers/CollisionManager';
-import CoinManager from '../managers/CoinManager';
+import CoinManager from '../managers/CoinCollectionEffectFromEnemyManager';
 
 class GameScene extends Phaser.Scene {
     public tower!: Tower;

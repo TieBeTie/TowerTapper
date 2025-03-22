@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { ProjectileFactory } from '../../factories/ProjectileFactory';
+import CoinManager from '../../managers/CoinCollectionEffectFromEnemyManager';
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
     speed: number;

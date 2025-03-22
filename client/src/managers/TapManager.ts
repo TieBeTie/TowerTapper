@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import ProjectileManager from './ProjectileManager';
-import CoinManager from './CoinManager';
+import CoinManager from './CoinCollectionEffectFromEnemyManager';
 import UIManager from './UIManager';
 
 class TapManager {

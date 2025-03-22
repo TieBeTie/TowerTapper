@@ -1,22 +1,22 @@
 import Phaser from 'phaser';
 import EnemyFactory from '../factories/EnemyFactory';
 import Enemy from '../objects/enemies/Enemy';
-import CoinManager from './CoinManager';
+import CoinCollectionEffectFromEnemyManager from './CoinCollectionEffectFromEnemyManager';
 import UIManager from './UIManager';
 
 // EnemyManager handles the logic for managing and spawning enemies
 class EnemyManager {
     scene: Phaser.Scene;
     enemies: Phaser.Physics.Arcade.Group;
-    private coinManager: CoinManager;
+    private coinCollectionEffectFromEnemy: CoinCollectionEffectFromEnemyManager;
 
-    constructor(scene: Phaser.Scene, uiManager: UIManager, coinManager: CoinManager) {
+    constructor(scene: Phaser.Scene, uiManager: UIManager, coinCollectionEffectFromEnemy: CoinCollectionEffectFromEnemyManager) {
         this.scene = scene;
         this.enemies = this.scene.physics.add.group({
             classType: Enemy,
             runChildUpdate: true
         });
-        this.coinManager = coinManager;
+        this.coinCollectionEffectFromEnemy = coinCollectionEffectFromEnemy;
 
         // Spawn enemies at regular intervals
         this.scene.time.addEvent({
@@ -85,7 +85,7 @@ class EnemyManager {
         // Spawn a coin above the castle (Tower)
         const tower = this.scene.tower; // Предполагается, что 'tower' доступен из сцены
         if (tower) {
-            this.coinManager.spawnCoin(new Phaser.Math.Vector2(x, y), tower);
+            this.coinCollectionEffectFromEnemy.spawnCoin(new Phaser.Math.Vector2(x, y), tower);
         } else {
             console.error('Башня не найдена в сцене.');
         }
