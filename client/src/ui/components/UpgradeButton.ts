@@ -151,14 +151,18 @@ export class UpgradeButton extends UIComponent {
             })
             .on('pointerdown', () => {
                 this.background.setFillStyle(0x333333, BUTTON_PRESSED_ALPHA);
-                const success = this.upgradeManagerValue.purchaseUpgrade(this.upgradeTypeValue);
-                if (success) {
-                    this.updateUI();
-                }
+                this.handleClick();
             })
             .on('pointerup', () => {
                 this.background.setFillStyle(0x666666, BUTTON_HOVER_ALPHA);
             });
+    }
+
+    protected handleClick(): void {
+        const success = this.upgradeManagerValue.purchaseUpgrade(this.upgradeTypeValue);
+        if (success) {
+            this.updateUI();
+        }
     }
 
     protected init(): void {
