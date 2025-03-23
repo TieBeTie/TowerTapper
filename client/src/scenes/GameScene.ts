@@ -43,6 +43,7 @@ export default class GameScene extends Phaser.Scene {
     coins!: number;
     socket!: WebSocket;
     audioManager!: AudioManager;
+    private coinRewardMultiplier: number = 1;
 
     constructor() {
         super({ key: 'GameScene' });
@@ -320,5 +321,9 @@ export default class GameScene extends Phaser.Scene {
         if (this.audioManager) {
             this.audioManager.destroy();
         }
+    }
+
+    getCoinRewardMultiplier(): number {
+        return this.coinRewardMultiplier;
     }
 }

@@ -17,12 +17,12 @@ export class UIManager {
     private upgradeManager: UpgradeManager;
 
     // Responsive design constants
-    private readonly HEADER_HEIGHT_RATIO = 0.04; // 10% of screen height
-    private readonly BUTTON_PANEL_HEIGHT_RATIO = 0.2; // 20% of screen height
-    private readonly BUTTON_SIZE_RATIO = 0.04; // 4% of screen width
-    private readonly BUTTON_SPACING_RATIO = 0.02; // 2% of screen width
-    private readonly GAME_VIEW_HEIGHT_RATIO = 0.75;
-    private readonly ICON_SIZE_RATIO = 0.05; // 5% of screen width
+    private readonly HEADER_HEIGHT_RATIO = 0.03; // 10% of screen height
+    private readonly BUTTON_PANEL_HEIGHT_RATIO = 0.21; // 20% of screen height
+    private readonly BUTTON_SIZE_RATIO = 0.02; // 4% of screen width
+    private readonly BUTTON_SPACING_RATIO = 0.04; // Increased from 0.02 to 0.04 (4% of screen width)
+    private readonly GAME_VIEW_HEIGHT_RATIO = 0.70;
+    private readonly ICON_SIZE_RATIO = 0.04; // 5% of screen width
     private readonly FONT_SIZE_RATIO = 0.04; // 3% of screen width
 
     constructor(
@@ -65,7 +65,7 @@ export class UIManager {
     }
 
     private initilizeButtonPanel(): void {
-        this.buttonPanel = new ButtonPanel(this.scene, 2, 2);
+        this.buttonPanel = new ButtonPanel(this.scene, 2, 3);
         
         const { width } = this.scene.scale;
         const fontSize = width * this.FONT_SIZE_RATIO;
@@ -115,11 +115,23 @@ export class UIManager {
             width: fontSize * 8,
             height: fontSize * 3
         })
+        const goldRewardButton = new UpgradeButton({
+            scene: this.scene,
+            upgradeType: UpgradeType.COIN_REWARD,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Gold\nBonus',
+            x: 0,
+            y: 0,
+            width: fontSize * 8,
+            height: fontSize * 3
+        })
 
         this.buttonPanel.addElement(regenButton);
         this.buttonPanel.addElement(healthButton);
         this.buttonPanel.addElement(defenseButton);
         this.buttonPanel.addElement(damageButton);
+        this.buttonPanel.addElement(goldRewardButton);
         this.updatePositions();
     }
 

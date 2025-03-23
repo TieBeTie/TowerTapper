@@ -1,13 +1,11 @@
 import Phaser from 'phaser';
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { UpgradeHeader } from '../ui/UpgradeHeader';
-import { UpgradeShop } from '../ui/UpgradeShop';
 import AudioManager from '../managers/AudioManager';
 
 export class UpgradeScene extends Phaser.Scene {
     private upgradeManager!: UpgradeManager;
     private header!: UpgradeHeader;
-    private shop!: UpgradeShop;
     private audioManager!: AudioManager;
 
     constructor() {
@@ -41,18 +39,9 @@ export class UpgradeScene extends Phaser.Scene {
             }
         });
 
-        // Create shop
-        this.shop = new UpgradeShop({
-            width,
-            scene: this,
-            y: headerHeight + 40,
-            upgradeManager: this.upgradeManager
-        });
-
         // Listen for coin updates
         const gameScene = this.scene.get('GameScene');
         gameScene.events.on('updateCoins', this.updateCoins, this);
-        this.events.on('upgradePurchased', this.onUpgradePurchased, this);
 
         // Set initial coins
         const initialCoins = (gameScene as any).coinManager?.coins_count || 0;
@@ -63,15 +52,9 @@ export class UpgradeScene extends Phaser.Scene {
         this.header.updateCoins(amount);
     }
 
-    private onUpgradePurchased(): void {
-        const gameScene = this.scene.get('GameScene');
-        this.updateCoins((gameScene as any).coinManager?.coins_count || 0);
-    }
-
     shutdown(): void {
         const gameScene = this.scene.get('GameScene');
         gameScene.events.off('updateCoins', this.updateCoins, this);
-        this.events.off('upgradePurchased', this.onUpgradePurchased, this);
     }
 }
 

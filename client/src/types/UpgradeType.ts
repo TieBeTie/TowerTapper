@@ -1,8 +1,9 @@
 export enum UpgradeType {
-    HEALTH = 'health',
-    DEFENSE = 'defense',
-    REGENERATION = 'regeneration',
-    DAMAGE = 'damage'
+    HEALTH = 'HEALTH',
+    DEFENSE = 'DEFENSE',
+    REGENERATION = 'REGENERATION',
+    DAMAGE = 'DAMAGE',
+    COIN_REWARD = 'COIN_REWARD'
 }
 
 export interface Upgrade {
@@ -21,4 +22,5 @@ export interface UpgradeState {
     [UpgradeType.DEFENSE]: number;
     [UpgradeType.REGENERATION]: number;
     [UpgradeType.DAMAGE]: number;
+    [UpgradeType.COIN_REWARD]: number;
 } 

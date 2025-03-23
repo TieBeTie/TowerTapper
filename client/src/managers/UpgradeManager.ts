@@ -11,7 +11,8 @@ export class UpgradeManager {
             [UpgradeType.HEALTH]: 1,
             [UpgradeType.DEFENSE]: 1,
             [UpgradeType.REGENERATION]: 1,
-            [UpgradeType.DAMAGE]: 1
+            [UpgradeType.DAMAGE]: 1,
+            [UpgradeType.COIN_REWARD]: 1
         };
 
         this.upgrades = new Map([
@@ -19,41 +20,51 @@ export class UpgradeManager {
                 type: UpgradeType.HEALTH,
                 name: 'Прочность замка',
                 description: 'Увеличивает максимальное здоровье замка',
-                cost: 25,
+                cost: 10,
                 level: 1,
                 maxLevel: 10,
                 baseEffect: 100,
-                effectMultiplier: 1.5
+                effectMultiplier: 1.3
             }],
             [UpgradeType.DEFENSE, {
                 type: UpgradeType.DEFENSE,
                 name: 'Защита замка',
                 description: 'Уменьшает получаемый урон',
-                cost: 35,
+                cost: 15,
                 level: 1,
                 maxLevel: 5,
                 baseEffect: 10,
-                effectMultiplier: 1.3
+                effectMultiplier: 1.2
             }],
             [UpgradeType.REGENERATION, {
                 type: UpgradeType.REGENERATION,
                 name: 'Регенерация',
                 description: 'Восстанавливает здоровье замка со временем',
-                cost: 50,
+                cost: 20,
                 level: 1,
                 maxLevel: 3,
                 baseEffect: 1,
-                effectMultiplier: 2
+                effectMultiplier: 1.5
             }],
             [UpgradeType.DAMAGE, {
                 type: UpgradeType.DAMAGE,
                 name: 'Урон',
                 description: 'Увеличивает урон от стрел',
-                cost: 60,
+                cost: 15,
                 level: 1,
                 maxLevel: 8,
                 baseEffect: 10,
-                effectMultiplier: 1.4
+                effectMultiplier: 1.3
+            }],
+            [UpgradeType.COIN_REWARD, {
+                type: UpgradeType.COIN_REWARD,
+                name: 'Gold Reward Bonus',
+                description: 'Увеличивает количество монет с убитых врагов на +1 за уровень',
+                cost: 30,
+                level: 1,
+                maxLevel: 10,
+                baseEffect: 1,
+                effectMultiplier: 1.2
             }]
         ]);
     }
@@ -102,25 +113,31 @@ export class UpgradeManager {
     }
 
     private applyUpgradeEffects(type: UpgradeType): void {
+        const upgrade = this.upgrades.get(type);
+        if (!upgrade) return;
+
         const gameScene = this.scene.scene.get('GameScene');
         const tower = (gameScene as any).tower;
-        if (!tower) return;
-
-        const effect = this.getUpgradeEffect(type);
 
         switch (type) {
             case UpgradeType.HEALTH:
-                tower.maxHealth += effect;
-                tower.health += effect;
+                tower.maxHealth = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
+                tower.health = tower.maxHealth;
                 break;
             case UpgradeType.DEFENSE:
-                tower.defense = effect;
+                tower.defense = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
                 break;
             case UpgradeType.REGENERATION:
-                tower.regeneration = effect;
+                tower.regeneration = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
                 break;
             case UpgradeType.DAMAGE:
-                (gameScene as any).projectileManager.setDamage(effect);
+                tower.damage = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
+                break;
+            case UpgradeType.COIN_REWARD:
+                // Update coin reward multiplier in the game scene
+                if (gameScene) {
+                    (gameScene as any).coinRewardMultiplier = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
+                }
                 break;
         }
 

@@ -8,10 +8,10 @@ export class ButtonPanel {
     private currentHeight: number = 0;
 
     // Layout constants
-    private readonly BUTTON_SIZE_RATIO = 0.05; // 15% of screen width (was 8%)
-    private readonly BUTTON_SPACING_RATIO = 0.05; // 2% of screen width (was 4%)
+    private readonly BUTTON_SIZE_RATIO = 0.03; // 15% of screen width (was 8%)
+    private readonly BUTTON_SPACING_RATIO = 0.04; // 2% of screen width (was 4%)
     private readonly BUTTON_PADDING_RATIO = 0.01; // 1% of screen width (was 2%)
-    private readonly BUTTON_MARGIN_RATIO = 0.03; // 3% of screen width (was 4%)
+    private readonly BUTTON_MARGIN_RATIO = 0.01; // 3% of screen width (was 4%)
     private readonly BUTTON_BORDER_RATIO = 0.005; // 0.5% of screen width (was 1%)
 
     constructor(

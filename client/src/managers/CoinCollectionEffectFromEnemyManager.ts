@@ -14,12 +14,18 @@ class CoinManager {
     }
 
     spawnCoin(position: Phaser.Math.Vector2, target: Phaser.GameObjects.Sprite) {
+        const gameScene = this.scene.scene.get('GameScene');
+        const coinRewardMultiplier = (gameScene as any).getCoinRewardMultiplier?.() || 1;
+        const baseReward = 1;
+        const bonusCoins = coinRewardMultiplier - 1; // Get the bonus coins from the multiplier
+        const finalReward = baseReward + bonusCoins;
+
         const coin = CoinAnimation.createCollectAnimation(
             this.scene,
             position,
             new Phaser.Math.Vector2(target.x, target.y),
             () => {
-                this.coins_count += 1;
+                this.coins_count += finalReward;
                 this.updateCoins(Math.floor(this.coins_count));
                 this.removeCoin(coin);
             }

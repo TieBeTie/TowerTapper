@@ -201,6 +201,25 @@ export class UpgradeButton extends UIComponent {
     protected handleClick(): void {
         const success = this.upgradeManagerValue.purchaseUpgrade(this.upgradeTypeValue);
         if (success) {
+            const gameScene = this.scene.scene.get('GameScene');
+            
+            // Play upgrade sound
+            const audioManager = (gameScene as any).audioManager;
+            if (audioManager) {
+                audioManager.playSound('upgradeButton');
+            }
+
+            // Update tower
+            (gameScene as any).tower?.upgrade();
+            
+            // Update coins immediately
+            const currentCoins = (gameScene as any).coinManager?.coins_count || 0;
+            const uiManager = (gameScene as any).uiManager;
+            if (uiManager) {
+                uiManager.updateCoinCount(currentCoins);
+            }
+
+            // Update button UI
             this.updateUI();
         }
     }

@@ -79,6 +79,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.health = value;
         this.maxHealth = value; // Обновляем максимальное здоровье
     }
+
+    die(): void {
+        if (this.isDying) return;
+        this.isDying = true;
+
+        // Get the game scene to access coin reward multiplier
+        const gameScene = this.scene.scene.get('GameScene');
+        const coinRewardMultiplier = (gameScene as any).getCoinRewardMultiplier?.() || 1;
+
+        // Calculate final coin reward with multiplier
+        const finalReward = Math.floor(this.cost * coinRewardMultiplier);
+
+        // Spawn coins with the multiplied reward
+        const coinManager = (gameScene as any).coinManager;
+        if (coinManager) {
+            coinManager.spawnCoin(
+                new Phaser.Math.Vector2(this.x, this.y),
+                this.tower
+            );
+        }
+
+        // ... rest of existing die() code ...
+    }
 }
 
 export default Enemy;

@@ -60,6 +60,8 @@ class MenuScene extends Phaser.Scene {
                 playButton.setScale(1);
             })
             .on('pointerdown', () => {
+                // Play sound before starting the game
+                this.audioManager.playSound('playButton');
                 this.startGame();
             });
     }
