@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import Tower from '../objects/towers/Tower';
 import { Projectile } from '../objects/projectiles/Projectile';
 import Enemy from '../objects/enemies/Enemy';
+import { DamageNumber } from '../ui/components/DamageNumber';
 
 // CollisionManager handles the logic for managing collisions between projectiles and enemies, as well as between the tower and enemies
 class CollisionManager {
@@ -77,8 +78,8 @@ class CollisionManager {
 
         if (!projectile.active || !enemy.active) return;
 
-        // Get damage from the projectile
-        const damage = (projectile as any).getDamage?.() || 50; // Fallback to 50 if getDamage is not available
+        // Get damage from the projectile using getDamage method
+        const damage = (projectile as any).getDamage?.() || 50;
         
         // Уведомляем ProjectileManager о попадании
         this.scene.projectileManager.handleProjectileHit(projectile, enemy);
@@ -88,6 +89,14 @@ class CollisionManager {
         
         // Наносим урон врагу
         enemy.takeDamage(damage);
+
+        // Показываем число урона
+        new DamageNumber({
+            scene: this.scene,
+            damage: damage,
+            x: enemy.x,
+            y: enemy.y
+        });
 
         if (enemy.health <= 0) {
             this.scene.enemyManager.handleEnemyDeath(enemy);

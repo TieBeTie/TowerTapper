@@ -20,51 +20,51 @@ export class UpgradeManager {
                 type: UpgradeType.HEALTH,
                 name: 'Прочность замка',
                 description: 'Увеличивает максимальное здоровье замка',
-                cost: 10,
+                cost: 4,
                 level: 1,
-                maxLevel: 10,
-                baseEffect: 100,
-                effectMultiplier: 1.3
+                maxLevel: 20,
+                baseEffect: 200,
+                effectMultiplier: 1.35
             }],
             [UpgradeType.DEFENSE, {
                 type: UpgradeType.DEFENSE,
                 name: 'Защита замка',
                 description: 'Уменьшает получаемый урон',
-                cost: 15,
+                cost: 6,
                 level: 1,
-                maxLevel: 5,
-                baseEffect: 10,
-                effectMultiplier: 1.2
+                maxLevel: 10,
+                baseEffect: 20,
+                effectMultiplier: 1.25
             }],
             [UpgradeType.REGENERATION, {
                 type: UpgradeType.REGENERATION,
                 name: 'Регенерация',
                 description: 'Восстанавливает здоровье замка со временем',
-                cost: 20,
+                cost: 10,
                 level: 1,
-                maxLevel: 3,
-                baseEffect: 1,
+                maxLevel: 8,
+                baseEffect: 3,
                 effectMultiplier: 1.5
             }],
             [UpgradeType.DAMAGE, {
                 type: UpgradeType.DAMAGE,
                 name: 'Урон',
                 description: 'Увеличивает урон от стрел',
-                cost: 15,
+                cost: 6,
                 level: 1,
-                maxLevel: 8,
-                baseEffect: 10,
-                effectMultiplier: 1.3
+                maxLevel: 15,
+                baseEffect: 20,
+                effectMultiplier: 1.35
             }],
             [UpgradeType.COIN_REWARD, {
                 type: UpgradeType.COIN_REWARD,
                 name: 'Gold Reward Bonus',
                 description: 'Увеличивает количество монет с убитых врагов на +1 за уровень',
-                cost: 30,
+                cost: 12,
                 level: 1,
-                maxLevel: 10,
-                baseEffect: 1,
-                effectMultiplier: 1.2
+                maxLevel: 20,
+                baseEffect: 3,
+                effectMultiplier: 1.25
             }]
         ]);
     }
@@ -132,6 +132,9 @@ export class UpgradeManager {
                 break;
             case UpgradeType.DAMAGE:
                 tower.damage = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
+                if (gameScene.projectileManager) {
+                    gameScene.projectileManager.updateDamage();
+                }
                 break;
             case UpgradeType.COIN_REWARD:
                 // Update coin reward multiplier in the game scene

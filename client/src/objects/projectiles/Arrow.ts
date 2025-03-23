@@ -12,7 +12,7 @@ export class Arrow extends Projectile {
     private elapsedTime: number;
     private direction: Phaser.Math.Vector2;
     private speedMultiplier: number;
-    private damage: number = 50; // Снижаем базовый урон до 50
+    private damage: number = 0; // Initialize to 0, will be set by ProjectileManager
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -34,10 +34,12 @@ export class Arrow extends Projectile {
     }
 
     setDamage(damage: number): void {
+        console.log('Arrow setDamage called with:', damage); // Debug log
         this.damage = damage;
     }
 
     getDamage(): number {
+        console.log('Arrow getDamage called, returning:', this.damage); // Debug log
         return this.damage;
     }
 

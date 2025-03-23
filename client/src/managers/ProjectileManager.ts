@@ -37,12 +37,21 @@ class ProjectileManager {
         return this.damage;
     }
 
+    updateDamage(): void {
+        // Обновляем урон из башни
+        this.damage = this.getTowerDamage();
+    }
+
     setFireRate(rate: number): void {
         this.fireRate = rate;
     }
 
     getFireRate(): number {
         return this.fireRate;
+    }
+
+    private getTowerDamage(): number {
+        return (this.scene.tower as any).damage || 50;
     }
 
     fireProjectile(speedMultiplier: number = 1): void {
@@ -61,7 +70,10 @@ class ProjectileManager {
             
             // Создаем стрелу
             const arrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
-            arrow.setDamage(this.damage);
+            // Используем урон из башни
+            const towerDamage = this.getTowerDamage();
+            console.log('Setting arrow damage:', towerDamage); // Debug log
+            arrow.setDamage(towerDamage);
             arrow.fire(targetEnemy.x, targetEnemy.y, speedMultiplier);
             
             // Увеличиваем счетчик стрел для этого врага
@@ -117,7 +129,9 @@ class ProjectileManager {
     
     // Расчет количества стрел, необходимых для убийства врага
     calculateProjectilesNeeded(enemy: Enemy): number {
-        return Math.ceil(enemy.health / this.damage);
+        const towerDamage = this.getTowerDamage();
+        const enemyHealth = enemy.health;
+        return Math.ceil(enemyHealth / towerDamage);
     }
 
     update(time: number, delta: number): void {
