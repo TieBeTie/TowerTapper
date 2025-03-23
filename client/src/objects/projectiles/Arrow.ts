@@ -12,7 +12,7 @@ export class Arrow extends Projectile {
     private elapsedTime: number;
     private direction: Phaser.Math.Vector2;
     private speedMultiplier: number;
-    private damage: number = 1000; // Base damage
+    private damage: number = 50; // Снижаем базовый урон до 50
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);

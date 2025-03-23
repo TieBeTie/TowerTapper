@@ -79,7 +79,14 @@ class CollisionManager {
 
         // Get damage from the projectile
         const damage = (projectile as any).getDamage?.() || 50; // Fallback to 50 if getDamage is not available
+        
+        // Уведомляем ProjectileManager о попадании
+        this.scene.projectileManager.handleProjectileHit(projectile, enemy);
+        
+        // Уничтожаем стрелу
         projectile.destroy();
+        
+        // Наносим урон врагу
         enemy.takeDamage(damage);
 
         if (enemy.health <= 0) {

@@ -41,7 +41,7 @@ class MenuScene extends Phaser.Scene {
         const playButton = this.add.text(width / 2, height * 0.7, '►', {
             fontSize: '64px',
             color: '#ffffff',
-            fontFamily: 'Arial'
+            fontFamily: 'pixelFont'
         }).setOrigin(0.5);
 
         // Добавляем интерактивность кнопке

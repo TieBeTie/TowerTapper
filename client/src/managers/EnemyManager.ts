@@ -3,40 +3,126 @@ import EnemyFactory from '../factories/EnemyFactory';
 import Enemy from '../objects/enemies/Enemy';
 import CoinCollectionEffectFromEnemyManager from './CoinCollectionEffectFromEnemyManager';
 import { UIManager } from './UIManager';
+import { WaveManager } from './WaveManager';
+import Tower from '../objects/towers/Tower';
 
 // EnemyManager handles the logic for managing and spawning enemies
 class EnemyManager {
     scene: Phaser.Scene;
     enemies: Phaser.Physics.Arcade.Group;
     private coinCollectionEffectFromEnemy: CoinCollectionEffectFromEnemyManager;
+    private waveManager: WaveManager;
+    private spawnTimer: Phaser.Time.TimerEvent | null = null;
 
-    constructor(scene: Phaser.Scene, uiManager: UIManager, coinCollectionEffectFromEnemy: CoinCollectionEffectFromEnemyManager) {
+    constructor(scene: Phaser.Scene, uiManager: UIManager, coinCollectionEffectFromEnemy: CoinCollectionEffectFromEnemyManager, waveManager: WaveManager) {
         this.scene = scene;
         this.enemies = this.scene.physics.add.group({
             classType: Enemy,
             runChildUpdate: true
         });
         this.coinCollectionEffectFromEnemy = coinCollectionEffectFromEnemy;
+        this.waveManager = waveManager;
 
-        // Spawn enemies at regular intervals
-        this.scene.time.addEvent({
-            delay: 321,
-            callback: this.spawnEnemy,
+        // Подписка на события волн
+        this.waveManager.on('waveStart', (waveConfig) => {
+            this.startSpawningEnemies(waveConfig);
+        });
+
+        // Начинаем первую волну
+        this.waveManager.startNextWave();
+    }
+
+    // Геттер для получения статуса таймера спавна
+    public isSpawnTimerActive(): boolean {
+        return this.spawnTimer !== null;
+    }
+
+    startSpawningEnemies(waveConfig: any): void {
+        // Останавливаем предыдущий таймер, если он существует
+        if (this.spawnTimer) {
+            this.spawnTimer.remove();
+            this.spawnTimer = null;
+        }
+        
+        let enemiesSpawned = 0;
+        console.log(`Starting wave ${waveConfig.number} with ${waveConfig.enemyCount} enemies`);
+        
+        // Проверяем, что в волне есть враги для спавна
+        if (waveConfig.enemyCount <= 0) {
+            console.warn("Wave has no enemies to spawn, completing immediately");
+            this.waveManager.enemyDefeated(); // Вызываем один раз, чтобы завершить "пустую" волну
+            return;
+        }
+        
+        // Создаем таймер для спавна врагов
+        this.spawnTimer = this.scene.time.addEvent({
+            delay: waveConfig.spawnInterval,
+            callback: () => {
+                // Проверяем, что волна активна
+                if (!this.waveManager.isCurrentWaveActive()) {
+                    console.log("Wave is no longer active, stopping spawn timer");
+                    if (this.spawnTimer) {
+                        this.spawnTimer.remove();
+                        this.spawnTimer = null;
+                    }
+                    return;
+                }
+                
+                if (enemiesSpawned < waveConfig.enemyCount) {
+                    const success = this.spawnEnemy();
+                    if (success) {
+                        enemiesSpawned++;
+                        console.log(`Spawned enemy ${enemiesSpawned}/${waveConfig.enemyCount}`);
+                    } else {
+                        console.warn("Failed to spawn enemy, will retry");
+                    }
+                    
+                    // Если это последний враг, сразу останавливаем таймер
+                    if (enemiesSpawned >= waveConfig.enemyCount) {
+                        console.log("All enemies spawned, removing timer");
+                        if (this.spawnTimer) {
+                            this.spawnTimer.remove();
+                            this.spawnTimer = null;
+                        }
+                    }
+                } else {
+                    console.log("Extra spawn attempt stopped, removing timer");
+                    if (this.spawnTimer) {
+                        this.spawnTimer.remove();
+                        this.spawnTimer = null;
+                    }
+                }
+            },
             callbackScope: this,
             loop: true
         });
     }
 
-    spawnEnemy(): void {
+    spawnEnemy(): boolean {
         const enemyType = Phaser.Math.RND.pick(['orc', 'goblin']) as 'orc' | 'goblin';
         const xPosition = Phaser.Math.Between(50, this.scene.scale.width - 50);
         const yPosition = Phaser.Math.RND.pick([0, this.scene.scale.height - 100]) as number;
 
-        const enemy = EnemyFactory.createEnemy(enemyType, this.scene, xPosition, yPosition);
+        const enemy = EnemyFactory.createEnemy(enemyType, this.scene, xPosition, yPosition, this.waveManager);
         if (enemy) {
             this.enemies.add(enemy);
+            
+            // Подписываемся на событие когда враг достигает башни (это не то же самое, что смерть от стрелы)
+            enemy.once('reached', () => {
+                // Удаляем врага из группы
+                this.enemies.remove(enemy, true, true);
+                
+                // Уведомляем WaveManager о поражении врага только если он достиг башни
+                this.waveManager.enemyDefeated();
+                
+                console.log("Enemy reached tower");
+            });
+            
+            return true;
         } else {
             console.error(`Failed to create enemy of type: ${enemyType}`);
+            // НЕ вызываем enemyDefeated если просто не удалось создать врага
+            return false;
         }
     }
 
@@ -46,9 +132,6 @@ class EnemyManager {
 
         this.enemies.getChildren().forEach((enemy: Phaser.GameObjects.GameObject) => {
             const enemyInstance = enemy as Enemy;
-            if (enemyInstance.isUnderAttack) {
-                return; // Пропуск врагов, уже обстрелянных
-            }
             const distance = Phaser.Math.Distance.Between(x, y, enemyInstance.x, enemyInstance.y);
             if (distance < minDistance) {
                 minDistance = distance;
@@ -82,8 +165,12 @@ class EnemyManager {
             deathAnimation.destroy();
         }, this);
 
+        // Уведомляем WaveManager о поражении врага (от стрелы)
+        this.waveManager.enemyDefeated();
+        console.log("Enemy killed by arrow");
+
         // Spawn a coin above the castle (Tower)
-        const tower = this.scene.tower; // Предполагается, что 'tower' доступен из сцены
+        const tower = this.scene.children.getByName('tower') as Tower;
         if (tower) {
             this.coinCollectionEffectFromEnemy.spawnCoin(new Phaser.Math.Vector2(x, y), tower);
         } else {

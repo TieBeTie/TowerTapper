@@ -7,6 +7,9 @@ import TapManager from '../managers/TapManager';
 import CollisionManager from '../managers/CollisionManager';
 import CoinManager from '../managers/CoinCollectionEffectFromEnemyManager';
 import { UpgradeManager } from '../managers/UpgradeManager';
+import { WaveManager } from '../managers/WaveManager';
+import { WaveIndicator } from '../ui/components/WaveIndicator';
+import { WaveClearEffect } from '../ui/components/WaveClearEffect';
 
 class GameScene extends Phaser.Scene {
     // Game view constants
@@ -35,11 +38,34 @@ class GameScene extends Phaser.Scene {
     tapManager!: TapManager;
     collisionManager!: CollisionManager;
     coinManager!: CoinManager;
+    waveManager!: WaveManager;
+    waveIndicator!: WaveIndicator;
+    waveClearEffect!: WaveClearEffect;
     coins!: number;
     socket!: WebSocket;
 
     constructor() {
         super({ key: 'GameScene' });
+    }
+
+    preload(): void {
+        // Создаем текстуру частицы программно
+        this.createParticleTexture();
+    }
+
+    // Создание текстуры частицы программно
+    private createParticleTexture(): void {
+        const graphics = this.make.graphics({ x: 0, y: 0 });
+        
+        // Рисуем круглую частицу
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillCircle(4, 4, 4);
+        
+        // Создаем текстуру из графики
+        graphics.generateTexture('particle', 8, 8);
+        
+        // Очищаем графику
+        graphics.clear();
     }
 
     create(): void {
@@ -132,7 +158,17 @@ class GameScene extends Phaser.Scene {
     }
 
     private initializeManagers(): void {
-        // Initialize UpgradeManager first
+        // Initialize WaveManager
+        this.waveManager = new WaveManager();
+
+        // Подписываемся на событие завершения волны для отображения эффекта
+        this.waveManager.on('waveComplete', (waveNumber) => {
+            // Создаем и показываем эффект "Wave Clear"
+            this.waveClearEffect = new WaveClearEffect(this, this.tower);
+            this.waveClearEffect.show(waveNumber);
+        });
+
+        // Initialize UpgradeManager
         this.upgradeManager = new UpgradeManager(this);
 
         // Initialize UIManager after the tower is created
@@ -149,10 +185,13 @@ class GameScene extends Phaser.Scene {
         this.coinManager = new CoinManager(this, this.uiManager);
 
         // Initialize other managers
-        this.enemyManager = new EnemyManager(this, this.uiManager, this.coinManager);
+        this.enemyManager = new EnemyManager(this, this.uiManager, this.coinManager, this.waveManager);
         this.projectileManager = new ProjectileManager(this, this.enemyManager);
         this.tapManager = new TapManager(this, this.projectileManager, this.uiManager, this.coinManager);
         this.collisionManager = new CollisionManager(this);
+
+        // Initialize WaveIndicator
+        this.waveIndicator = new WaveIndicator(this, this.waveManager, 10, 10);
 
         // Initialize WebSocket connection
         this.initializeWebSocket();
@@ -230,6 +269,27 @@ class GameScene extends Phaser.Scene {
     update(time: number, delta: number): void {
         this.projectileManager.update(time, delta);
         this.enemyManager.update(time, delta);
+        
+        // Обновляем информацию о волне
+        if (this.waveIndicator) {
+            this.waveIndicator.updateUI();
+        }
+        
+        // Проверка на "зависшую" волну - только если нет врагов на экране и нет таймера спавна
+        if (this.waveManager.isCurrentWaveActive() && 
+            this.enemyManager.enemies.getLength() === 0 && 
+            !this.enemyManager.isSpawnTimerActive() && 
+            this.waveManager.getRemainingEnemies() > 0) {
+            
+            console.log("Detected stuck wave: no enemies, no spawn timer, but wave is active");
+            console.log(`Remaining enemies according to WaveManager: ${this.waveManager.getRemainingEnemies()}`);
+            
+            // Фиксим: завершаем все оставшиеся счетчики врагов
+            const remaining = this.waveManager.getRemainingEnemies();
+            for (let i = 0; i < remaining; i++) {
+                this.waveManager.enemyDefeated();
+            }
+        }
     }
 
     destroy(): void {

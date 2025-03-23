@@ -14,7 +14,7 @@ const config = {
     devServer: {
         static: path.resolve(__dirname, 'dist'),
         port: 80,
-        host: '0.0.0.0',
+        host: 'localhost',
         open: true,
         hot: true,
         allowedHosts: 'all'
