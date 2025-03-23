@@ -77,8 +77,10 @@ class CollisionManager {
 
         if (!projectile.active || !enemy.active) return;
 
+        // Get damage from the projectile
+        const damage = (projectile as any).getDamage?.() || 50; // Fallback to 50 if getDamage is not available
         projectile.destroy();
-        enemy.takeDamage(50);
+        enemy.takeDamage(damage);
 
         if (enemy.health <= 0) {
             this.scene.enemyManager.handleEnemyDeath(enemy);

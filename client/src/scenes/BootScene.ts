@@ -8,8 +8,9 @@ class BootScene extends Phaser.Scene {
 
     preload() {
         // Load the pixel font
-        this.load.bitmapFont('pixelFont', 'assets/fonts/pixelFont.ttf');
-
+        this.load.xml('pixelFont', 'assets/fonts/pixelFont.xml');
+        this.load.image('logo', 'assets/images/ui/logo.png');
+        
         // Обработчики событий загрузки
         this.load.on('filecomplete', (key: string) => {
             console.log(`File complete: ${key}`);
@@ -21,28 +22,25 @@ class BootScene extends Phaser.Scene {
 
         // Загрузка игровых ресурсов как спрайт-листа
         this.load.spritesheet('enemy', 'assets/images/enemies/Enemie_anim.png', {
-            frameWidth: 75, // Ширина одного кадра в пикселях
-            frameHeight: 125  // Высота одного кадра в пикселях
+            frameWidth: 75,
+            frameHeight: 125
         });
 
         this.load.spritesheet('enemy_death', 'assets/images/enemies/death_scene.png', {
-            frameWidth: 90, // Ширина одного кадра в пикселях
-            frameHeight: 135  // Высота одного кадра в пикселях
+            frameWidth: 90,
+            frameHeight: 135
         });
 
         this.load.image('tower', 'assets/images/towers/Tower-type-3.6@2x.png');
-        this.load.image('logo', 'assets/images/logo.png');
         this.load.image('projectile', 'assets/images/projectiles/arrow.png');
-
-        // Добавьте ваш файл фона
         this.load.image('background', 'assets/images/towers/Background1.png');
 
         // Загрузка ресурсов для кнопок
-        this.load.image('playButton', 'assets/images/play.png');
-        this.load.image('pauseButton', 'assets/images/pause.png');
-        this.load.image('upgradeButton', 'assets/images/upgrade.png');
-        this.load.image('coin', 'assets/images/coin.png');
+        this.load.image('playButton', 'assets/images/ui/play.png');
+        this.load.image('pauseButton', 'assets/images/ui/pause.png');
+        this.load.image('upgradeButton', 'assets/images/ui/upgrade.png');
 
+        // Загрузка монет
         this.load.spritesheet('coin', 'assets/images/towers/Coin-sheet.png', {
             frameWidth: 65,
             frameHeight: 90

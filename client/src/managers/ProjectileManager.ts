@@ -11,6 +11,7 @@ class ProjectileManager {
     projectiles: Phaser.Physics.Arcade.Group;
     projectileFactory: ProjectileFactory;
     enemyManager: EnemyManager;
+    private damage: number = 100; // Base damage
 
     constructor(scene: Phaser.Scene, enemyManager: EnemyManager) {
         this.scene = scene;
@@ -22,10 +23,19 @@ class ProjectileManager {
         this.projectileFactory = new ProjectileFactory(this.scene);
     }
 
+    setDamage(damage: number): void {
+        this.damage = damage;
+    }
+
+    getDamage(): number {
+        return this.damage;
+    }
+
     fireProjectile(speedMultiplier: number = 1): void {
         const targetEnemy = this.enemyManager.findNearestAvailableEnemy(this.scene.tower.x, this.scene.tower.y);
         if (targetEnemy) {
             const arrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
+            arrow.setDamage(this.damage); // Set damage to the projectile
             arrow.fire(targetEnemy.x, targetEnemy.y, speedMultiplier);
             this.projectiles.add(arrow);
             targetEnemy.isUnderAttack = true;

@@ -10,7 +10,8 @@ export class UpgradeManager {
         this.state = {
             [UpgradeType.HEALTH]: 1,
             [UpgradeType.DEFENSE]: 1,
-            [UpgradeType.REGENERATION]: 1
+            [UpgradeType.REGENERATION]: 1,
+            [UpgradeType.DAMAGE]: 1
         };
 
         this.upgrades = new Map([
@@ -18,7 +19,7 @@ export class UpgradeManager {
                 type: UpgradeType.HEALTH,
                 name: 'Прочность замка',
                 description: 'Увеличивает максимальное здоровье замка',
-                cost: 100,
+                cost: 25,
                 level: 1,
                 maxLevel: 10,
                 baseEffect: 100,
@@ -28,7 +29,7 @@ export class UpgradeManager {
                 type: UpgradeType.DEFENSE,
                 name: 'Защита замка',
                 description: 'Уменьшает получаемый урон',
-                cost: 150,
+                cost: 35,
                 level: 1,
                 maxLevel: 5,
                 baseEffect: 10,
@@ -38,11 +39,21 @@ export class UpgradeManager {
                 type: UpgradeType.REGENERATION,
                 name: 'Регенерация',
                 description: 'Восстанавливает здоровье замка со временем',
-                cost: 200,
+                cost: 50,
                 level: 1,
                 maxLevel: 3,
                 baseEffect: 1,
                 effectMultiplier: 2
+            }],
+            [UpgradeType.DAMAGE, {
+                type: UpgradeType.DAMAGE,
+                name: 'Урон',
+                description: 'Увеличивает урон от стрел',
+                cost: 60,
+                level: 1,
+                maxLevel: 8,
+                baseEffect: 10,
+                effectMultiplier: 1.4
             }]
         ]);
     }
@@ -107,6 +118,9 @@ export class UpgradeManager {
                 break;
             case UpgradeType.REGENERATION:
                 tower.regeneration = effect;
+                break;
+            case UpgradeType.DAMAGE:
+                (gameScene as any).projectileManager.setDamage(effect);
                 break;
         }
 

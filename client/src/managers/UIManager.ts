@@ -114,10 +114,22 @@ export class UIManager {
             width: fontSize * 8,
             height: fontSize * 3
         })
+        const damageButton = new UpgradeButton({
+            scene: this.scene,
+            upgradeType: UpgradeType.DAMAGE,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Damage',
+            x: 0,
+            y: 0,
+            width: fontSize * 8,
+            height: fontSize * 3
+        })
 
         this.buttonPanel.addElement(regenButton);
         this.buttonPanel.addElement(healthButton);
         this.buttonPanel.addElement(defenseButton);
+        this.buttonPanel.addElement(damageButton);
         this.updatePositions();
     }
 

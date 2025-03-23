@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const webpack = require('webpack');
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -38,7 +39,14 @@ const config = {
                 test: /\.(png|svg|jpg|jpeg|gif)$/i, // Handling images
                 type: 'asset/resource',
                 generator: {
-                    filename: 'assets/images/enemies/[name][ext]', // Copies images to assets/images/enemies/
+                    filename: 'assets/images/[path][name][ext]',
+                },
+            },
+            {
+                test: /\.(ttf|woff|woff2|xml)$/i,
+                type: 'asset/resource',
+                generator: {
+                    filename: 'assets/fonts/[name][ext]',
                 },
             },
         ],
@@ -53,10 +61,16 @@ const config = {
         new CopyWebpackPlugin({
             patterns: [
                 {
-                    from: 'assets/images', // Source folder with images
-                    to: 'assets/images',   // Folder in output directory
+                    from: 'assets',
+                    to: 'assets',
                 },
             ],
+        }),
+        new webpack.DefinePlugin({
+            'process.env': {
+                SERVER_PORT: JSON.stringify(process.env.SERVER_PORT || '8080'),
+                NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+            }
         }),
     ],
     mode: 'development', // Development mode

@@ -12,6 +12,7 @@ export class Arrow extends Projectile {
     private elapsedTime: number;
     private direction: Phaser.Math.Vector2;
     private speedMultiplier: number;
+    private damage: number = 1000; // Base damage
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -30,6 +31,14 @@ export class Arrow extends Projectile {
         this.elapsedTime = 0;
         this.direction = new Phaser.Math.Vector2(0, 0);
         this.speedMultiplier = 1;
+    }
+
+    setDamage(damage: number): void {
+        this.damage = damage;
+    }
+
+    getDamage(): number {
+        return this.damage;
     }
 
     fire(targetX: number, targetY: number, speedMultiplier: number = 1): void {

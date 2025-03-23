@@ -179,9 +179,12 @@ class GameScene extends Phaser.Scene {
 
         const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
         const host = window.location.hostname;
-        const wsPort = process.env.SERVER_PORT || '8080';
+        const port = window.location.port;
+        // Если порт не указан в URL, используем порт из конфига или 8080
+        const wsPort = port || (process.env.SERVER_PORT || '8080');
+        const wsUrl = port ? `${protocol}://${host}:${wsPort}/ws` : `${protocol}://${host}/ws`;
 
-        this.socket = new WebSocket(`${protocol}://${host}:${wsPort}/ws?telegram_id=${telegramId}`);
+        this.socket = new WebSocket(`${wsUrl}?telegram_id=${telegramId}`);
 
         this.socket.onopen = () => {
             console.log('Connected to game server');
