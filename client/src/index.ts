@@ -8,14 +8,12 @@ import UpgradeScene from './scenes/UpgradeScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
-    width: 720,
-    height: 1280,
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
         parent: 'game-container',
-        width: 720,
-        height: 1280
+        width: '100%',
+        height: '100%'
     },
     physics: {
         default: 'arcade',
