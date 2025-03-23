@@ -38,8 +38,9 @@ class AudioManager {
             this.sounds.set('arrow', this.scene.sound.add('arrow', { volume: 0.3 }));
             this.sounds.set('enemyDie', this.scene.sound.add('enemyDie', { volume: 0.07 }));
             this.sounds.set('towerDie', this.scene.sound.add('towerDie', { volume: 0.3 }));
-            this.sounds.set('waveCompleted', this.scene.sound.add('waveCompleted', { volume: 0.1 }));
+            this.sounds.set('waveCompleted', this.scene.sound.add('waveCompleted', { volume: 0.07 }));
             this.sounds.set('upgradeButton', this.scene.sound.add('upgradeButton', { volume: 0.3 }));
+            this.sounds.set('towerDamage', this.scene.sound.add('towerDamage', { volume: 0.2 }));
         }
     }
 

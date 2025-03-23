@@ -56,6 +56,11 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.health = Math.max(0, this.health - reducedAmount);
         this.updateHealthBar();
 
+        // Play tower damage sound
+        if ('audioManager' in this.scene) {
+            (this.scene as any).audioManager?.playSound('towerDamage');
+        }
+
         // Добавляем эффект тряски при получении урона
         this.scene.tweens.add({
             targets: this,
