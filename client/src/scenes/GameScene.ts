@@ -50,23 +50,12 @@ export default class GameScene extends Phaser.Scene {
     }
 
     preload(): void {
-        // Создаем текстуру частицы программно
-        this.createParticleTexture();
-    }
-
-    // Создание текстуры частицы программно
-    private createParticleTexture(): void {
-        const graphics = this.make.graphics({ x: 0, y: 0 });
-        
-        // Рисуем круглую частицу
+        // Создаем текстуру частицы
+        const graphics = this.add.graphics();
         graphics.fillStyle(0xffffff, 1);
         graphics.fillCircle(4, 4, 4);
-        
-        // Создаем текстуру из графики
         graphics.generateTexture('particle', 8, 8);
-        
-        // Очищаем графику
-        graphics.clear();
+        graphics.destroy();
     }
 
     create(): void {
@@ -135,9 +124,39 @@ export default class GameScene extends Phaser.Scene {
         );
         this.tower.setName('tower');
         this.tower.setScale(this.gameScale);
+        this.tower.setAlpha(0); // Start invisible
 
-        // Initialize managers
-        this.initializeManagers();
+        // Animate tower spawn
+        this.tweens.add({
+            targets: this.tower,
+            alpha: 1,
+            duration: 800,
+            ease: 'Power2.out',
+            onStart: () => {
+                let amplitude = 8; // Начальная амплитуда
+                let direction = 1; // 1 = вправо, -1 = влево
+                const centerX = this.gameViewWidth / 2; // Запоминаем центральную позицию
+                
+                // Создаем таймер для движения влево-вправо
+                const moveTimer = this.time.addEvent({
+                    delay: 50,
+                    callback: () => {
+                        if (amplitude > 0.5) {
+                            // Устанавливаем позицию относительно центра
+                            this.tower.x = centerX + (direction * amplitude);
+                            direction *= -1; // Меняем направление
+                            amplitude *= 0.8; // Уменьшаем амплитуду
+                        } else {
+                            moveTimer.destroy();
+                            this.tower.x = centerX; // Возвращаем точно в центр
+                            // Initialize managers immediately after tower animation
+                            this.initializeManagers();
+                        }
+                    },
+                    repeat: 15
+                });
+            }
+        });
     }
 
     private calculateGameScale(): void {
@@ -271,16 +290,17 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update(time: number, delta: number): void {
-        // Обновляем менеджеры
-        if (this.enemyManager) {
-            this.enemyManager.update(time, delta);
+        // Проверяем, инициализированы ли все необходимые менеджеры
+        if (!this.waveManager || !this.enemyManager) {
+            return;
         }
+
+        // Обновляем менеджеры
+        this.enemyManager.update(time, delta);
         
         if (this.projectileManager) {
             this.projectileManager.update(time, delta);
         }
-        
-        // CollisionManager doesn't have an update method, we rely on Phaser's physics system
         
         // Обновляем информацию о волне
         if (this.waveIndicator) {

@@ -60,6 +60,13 @@ class BootScene extends Phaser.Scene {
     }
 
     create() {
+        // Создаем текстуру частицы
+        const graphics = this.add.graphics();
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillCircle(4, 4, 4);
+        graphics.generateTexture('particle', 8, 8);
+        graphics.destroy();
+
         // @ts-ignore
         WebFont.load({
             custom: {
