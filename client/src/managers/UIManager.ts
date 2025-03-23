@@ -12,10 +12,8 @@ export class UIManager {
     private header!: Header;
     private buttonPanel!: ButtonPanel;
     private coinCount: number = 0;
-    private tapCoefficient: number = 1;
     private coinIcon!: Phaser.GameObjects.Image;
     private coinNumberText!: Phaser.GameObjects.Text;
-    private tapText!: Phaser.GameObjects.Text;
     private upgradeManager: UpgradeManager;
 
     // Responsive design constants
@@ -53,13 +51,6 @@ export class UIManager {
              fontFamily: 'pixelFont'
          }).setOrigin(0, 0.5);
  
-         // Create tap text
-         this.tapText = this.scene.add.text(0, 0, `X ${this.tapCoefficient.toFixed(1)}`, {
-             fontSize: `${fontSize}px`,
-             color: '#ffffff',
-             fontFamily: 'pixelFont'
-         }).setOrigin(0.5, 0.5);
- 
          // Add elements to header
          // Create a container for coin display
          const coinContainer = this.scene.add.container(0, 0);
@@ -71,7 +62,6 @@ export class UIManager {
          
          // Add the container as a single element
          this.header.addElement(coinContainer);
-         this.header.addElement(this.tapText);
     }
 
     private initilizeButtonPanel(): void {
@@ -175,12 +165,13 @@ export class UIManager {
 
     updateCoinCount(count: number): void {
         this.coinCount = count;
-        this.coinNumberText.setText(`${Math.floor(count)}`);
+        if (this.coinNumberText) {
+            this.coinNumberText.setText(count.toString());
+        }
     }
 
-    updateTapCoefficient(coefficient: number): void {
-        this.tapCoefficient = coefficient;
-        this.tapText.setText(`X ${coefficient.toFixed(1)}`);
+    getCoinCount(): number {
+        return this.coinCount;
     }
 
     destroy(): void {

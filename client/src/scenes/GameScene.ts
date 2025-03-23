@@ -3,15 +3,15 @@ import Tower from '../objects/towers/Tower';
 import { UIManager } from '../managers/UIManager';
 import EnemyManager from '../managers/EnemyManager';
 import ProjectileManager from '../managers/ProjectileManager';
-import TapManager from '../managers/TapManager';
 import CollisionManager from '../managers/CollisionManager';
 import CoinManager from '../managers/CoinCollectionEffectFromEnemyManager';
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { WaveManager } from '../managers/WaveManager';
 import { WaveIndicator } from '../ui/components/WaveIndicator';
 import { WaveClearEffect } from '../ui/components/WaveClearEffect';
+import AudioManager from '../managers/AudioManager';
 
-class GameScene extends Phaser.Scene {
+export default class GameScene extends Phaser.Scene {
     // Game view constants
     private readonly GAME_VIEW_HEIGHT_RATIO = 1; // 70% of screen height for game view
     private readonly GAME_VIEW_TOP_MARGIN = 0.0; // 15% from top for game view
@@ -35,7 +35,6 @@ class GameScene extends Phaser.Scene {
     public upgradeManager!: UpgradeManager;
     enemyManager!: EnemyManager;
     projectileManager!: ProjectileManager;
-    tapManager!: TapManager;
     collisionManager!: CollisionManager;
     coinManager!: CoinManager;
     waveManager!: WaveManager;
@@ -43,6 +42,7 @@ class GameScene extends Phaser.Scene {
     waveClearEffect!: WaveClearEffect;
     coins!: number;
     socket!: WebSocket;
+    audioManager!: AudioManager;
 
     constructor() {
         super({ key: 'GameScene' });
@@ -90,6 +90,10 @@ class GameScene extends Phaser.Scene {
         
         // Initial setup
         this.setupGameView();
+        
+        // Initialize AudioManager
+        this.audioManager = AudioManager.getInstance(this);
+        this.audioManager.playMusic();
     }
 
     private setupGameView(): void {
@@ -159,10 +163,10 @@ class GameScene extends Phaser.Scene {
 
     private initializeManagers(): void {
         // Initialize WaveManager
-        this.waveManager = new WaveManager();
+        this.waveManager = new WaveManager(this);
 
         // Подписываемся на событие завершения волны для отображения эффекта
-        this.waveManager.on('waveComplete', (waveNumber) => {
+        this.waveManager.on('waveComplete', (waveNumber: number) => {
             // Создаем и показываем эффект "Wave Clear"
             this.waveClearEffect = new WaveClearEffect(this, this.tower);
             this.waveClearEffect.show(waveNumber);
@@ -187,7 +191,6 @@ class GameScene extends Phaser.Scene {
         // Initialize other managers
         this.enemyManager = new EnemyManager(this, this.uiManager, this.coinManager, this.waveManager);
         this.projectileManager = new ProjectileManager(this, this.enemyManager);
-        this.tapManager = new TapManager(this, this.projectileManager, this.uiManager, this.coinManager);
         this.collisionManager = new CollisionManager(this);
 
         // Initialize WaveIndicator
@@ -267,8 +270,16 @@ class GameScene extends Phaser.Scene {
     }
 
     update(time: number, delta: number): void {
-        this.projectileManager.update(time, delta);
-        this.enemyManager.update(time, delta);
+        // Обновляем менеджеры
+        if (this.enemyManager) {
+            this.enemyManager.update(time, delta);
+        }
+        
+        if (this.projectileManager) {
+            this.projectileManager.update(time, delta);
+        }
+        
+        // CollisionManager doesn't have an update method, we rely on Phaser's physics system
         
         // Обновляем информацию о волне
         if (this.waveIndicator) {
@@ -293,9 +304,21 @@ class GameScene extends Phaser.Scene {
     }
 
     destroy(): void {
-        // Clean up resize listener
-        this.scale.removeListener('resize', this.handleResize, this);
+        // Clean up all manager resources
+        if (this.socket) {
+            this.socket.close();
+        }
+        
+        // Unsubscribe from events
+        this.scale.off('resize', this.handleResize, this);
+        
+        // Destroy all managers properly
+        if (this.waveManager) {
+            this.waveManager.removeAllListeners('waveComplete');
+        }
+        
+        if (this.audioManager) {
+            this.audioManager.destroy();
+        }
     }
 }
-
-export default GameScene;

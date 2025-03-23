@@ -11,6 +11,14 @@ class BootScene extends Phaser.Scene {
         this.load.xml('pixelFont', 'assets/fonts/pixelFont.xml');
         this.load.image('logo', 'assets/images/ui/logo.png');
         
+        // Load audio assets
+        this.load.audio('gameMusic', 'assets/music/GameMusic.ogg');
+        this.load.audio('arrow', 'assets/sounds/arrow.wav');
+        this.load.audio('enemyDie', 'assets/sounds/enemy_die.wav');
+        this.load.audio('towerDie', 'assets/sounds/tower_die.wav');
+        this.load.audio('waveCompleted', 'assets/sounds/wave_completed.wav');
+        this.load.audio('upgradeButton', 'assets/sounds/upgrade_button.wav');
+        
         // Обработчики событий загрузки
         this.load.on('filecomplete', (key: string) => {
             console.log(`File complete: ${key}`);

@@ -1,4 +1,6 @@
 import { EventEmitter } from 'events';
+import Phaser from 'phaser';
+import GameScene from '../scenes/GameScene';
 
 interface WaveConfig {
     number: number;
@@ -7,18 +9,24 @@ interface WaveConfig {
     spawnInterval: number;
 }
 
-export class WaveManager extends EventEmitter {
+export class WaveManager extends Phaser.Events.EventEmitter {
     private currentWave: number = 0;
     private waveConfigs: WaveConfig[] = [];
     private isWaveActive: boolean = false;
     private enemiesRemaining: number = 0;
     private baseEnemyHealth: number = 100; // Базовое здоровье врага
     private autoStartNextWave: boolean = true; // Автоматически запускать следующую волну
-    private waveDelay: number = 3000; // Задержка между волнами в мс
+    private waveDelay: number = 5000; // 5 seconds between waves
+    private enemies: Phaser.GameObjects.Group;
+    private scene: GameScene;
+    private isWaveInProgress: boolean = false;
 
-    constructor() {
+    constructor(scene: GameScene) {
         super();
+        this.scene = scene;
+        this.enemies = scene.add.group();
         this.initializeWaveConfigs();
+        this.setupEventListeners();
     }
 
     private initializeWaveConfigs(): void {
@@ -101,6 +109,12 @@ export class WaveManager extends EventEmitter {
                 this.startNextWave();
             }, this.waveDelay);
         }
+
+        // Play wave completion sound
+        const gameScene = this.scene as GameScene;
+        if (gameScene.audioManager) {
+            gameScene.audioManager.playSound('waveCompleted');
+        }
     }
 
     public getCurrentWaveConfig(): WaveConfig {
@@ -137,5 +151,9 @@ export class WaveManager extends EventEmitter {
     // Установить задержку между волнами
     public setWaveDelay(milliseconds: number): void {
         this.waveDelay = milliseconds;
+    }
+
+    private setupEventListeners(): void {
+        // Implementation of setupEventListeners method
     }
 } 

@@ -3,6 +3,8 @@ import { Projectile } from '../objects/projectiles/Projectile';
 import { ProjectileFactory } from '../factories/ProjectileFactory';
 import { Enemy } from '../objects/enemies/Enemy';
 import EnemyManager from './EnemyManager';
+import GameScene from '../scenes/GameScene';
+import Tower from '../objects/towers/Tower';
 
 
 // ProjectileManager handles the logic for managing and firing projectiles at enemies
@@ -14,6 +16,8 @@ class ProjectileManager {
     private damage: number = 50; // Базовый урон
     private projectilesInFlight: Map<Enemy, number> = new Map(); // Количество выпущенных стрел к врагу
     private projectileMaxLifetime: number = 5000; // Максимальное время жизни стрелы в мс
+    private fireRate: number = 500; // Fire rate in milliseconds
+    private lastFireTime: number = 0; // Last time a projectile was fired
 
     constructor(scene: Phaser.Scene, enemyManager: EnemyManager) {
         this.scene = scene;
@@ -31,6 +35,14 @@ class ProjectileManager {
 
     getDamage(): number {
         return this.damage;
+    }
+
+    setFireRate(rate: number): void {
+        this.fireRate = rate;
+    }
+
+    getFireRate(): number {
+        return this.fireRate;
     }
 
     fireProjectile(speedMultiplier: number = 1): void {
@@ -67,6 +79,13 @@ class ProjectileManager {
             });
             
             this.projectiles.add(arrow);
+            this.lastFireTime = this.scene.time.now;
+            
+            // Play arrow sound
+            const gameScene = this.scene as GameScene;
+            if (gameScene.audioManager) {
+                gameScene.audioManager.playSound('arrow');
+            }
         }
     }
     
@@ -102,6 +121,11 @@ class ProjectileManager {
     }
 
     update(time: number, delta: number): void {
+        // Check if it's time to fire a new projectile automatically
+        if (time - this.lastFireTime >= this.fireRate) {
+            this.fireProjectile(1); // Fire with base speed multiplier
+        }
+        
         // Обновляем все стрелы
         this.projectiles.children.iterate(projectile => {
             if (projectile instanceof Projectile) {

@@ -4,8 +4,6 @@ import { CoinAnimation } from '../ui/components/CoinAnimation';
 
 class CoinManager {
     private coins: CoinAnimation[] = [];
-    private tapCoefficient: number = 1.0;
-    private lastTapTime: number = Date.now();
     private uiManager: UIManager;
     private scene: Phaser.Scene;
     private coins_count: number = 0;
@@ -21,20 +19,12 @@ class CoinManager {
             position,
             new Phaser.Math.Vector2(target.x, target.y),
             () => {
-                this.coins_count += this.tapCoefficient;
+                this.coins_count += 1;
                 this.updateCoins(Math.floor(this.coins_count));
                 this.removeCoin(coin);
             }
         );
         this.coins.push(coin);
-    }
-
-    getLastTapTime(): number {
-        return this.lastTapTime;
-    }
-
-    setLastTapTime(time: number): void {
-        this.lastTapTime = time;
     }
 
     getUIManager(): UIManager {
@@ -47,10 +37,6 @@ class CoinManager {
             this.coins.splice(index, 1);
             coin.destroy();
         }
-    }
-
-    setTapCoefficient(coef: number): void {
-        this.tapCoefficient = coef;
     }
 
     getCoinsCount(): number {

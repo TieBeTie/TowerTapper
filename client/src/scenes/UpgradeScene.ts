@@ -2,11 +2,13 @@ import Phaser from 'phaser';
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { UpgradeHeader } from '../ui/UpgradeHeader';
 import { UpgradeShop } from '../ui/UpgradeShop';
+import AudioManager from '../managers/AudioManager';
 
 export class UpgradeScene extends Phaser.Scene {
     private upgradeManager!: UpgradeManager;
     private header!: UpgradeHeader;
     private shop!: UpgradeShop;
+    private audioManager!: AudioManager;
 
     constructor() {
         super({ key: 'UpgradeScene' });
@@ -14,6 +16,10 @@ export class UpgradeScene extends Phaser.Scene {
 
     create(): void {
         const { width, height } = this.scale;
+
+        // Initialize AudioManager
+        this.audioManager = AudioManager.getInstance(this);
+        this.audioManager.playMusic();
 
         // Semi-transparent dark background
         this.add.rectangle(0, 0, width, height, 0x000000, 0.7)

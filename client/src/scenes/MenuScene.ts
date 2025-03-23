@@ -1,11 +1,18 @@
 import Phaser from 'phaser';
+import AudioManager from '../managers/AudioManager';
 
 class MenuScene extends Phaser.Scene {
+    private audioManager!: AudioManager;
+
     constructor() {
         super({ key: 'MenuScene' });
     }
 
     create(): void {
+        // Initialize AudioManager
+        this.audioManager = AudioManager.getInstance(this);
+        this.audioManager.playMusic();
+
         const { width, height } = this.scale;
 
         // Создаем фон

@@ -5,6 +5,7 @@ import CoinCollectionEffectFromEnemyManager from './CoinCollectionEffectFromEnem
 import { UIManager } from './UIManager';
 import { WaveManager } from './WaveManager';
 import Tower from '../objects/towers/Tower';
+import GameScene from '../scenes/GameScene';
 
 // EnemyManager handles the logic for managing and spawning enemies
 class EnemyManager {
@@ -24,7 +25,7 @@ class EnemyManager {
         this.waveManager = waveManager;
 
         // Подписка на события волн
-        this.waveManager.on('waveStart', (waveConfig) => {
+        this.waveManager.on('waveStart', (waveConfig: { number: number; enemyHealthMultiplier: number; enemyCount: number; spawnInterval: number }) => {
             this.startSpawningEnemies(waveConfig);
         });
 
@@ -175,6 +176,12 @@ class EnemyManager {
             this.coinCollectionEffectFromEnemy.spawnCoin(new Phaser.Math.Vector2(x, y), tower);
         } else {
             console.error('Башня не найдена в сцене.');
+        }
+
+        // Play enemy death sound
+        const gameScene = this.scene as GameScene;
+        if (gameScene.audioManager) {
+            gameScene.audioManager.playSound('enemyDie');
         }
     }
 }

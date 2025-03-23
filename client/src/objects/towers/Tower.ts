@@ -84,6 +84,11 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.stopRegeneration();
         this.healthBar.destroy();
 
+        // Play tower death sound
+        if ('audioManager' in this.scene) {
+            (this.scene as any).audioManager?.playSound('towerDie');
+        }
+
         // Добавляем розовый цвет при разрушении
         this.setTint(Tower.COLOR_RED);
 
