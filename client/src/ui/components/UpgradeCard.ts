@@ -39,30 +39,34 @@ export class UpgradeCard extends UIComponent {
 
         // Create title
         this.titleText = this.scene.add.text(0, 0, this.title, {
-            fontSize: this.getFontSize() * 1.2,
+            fontSize: '32px',
             color: '#ffffff',
-            fontFamily: 'Arial'
-        });
-        this.titleText.setOrigin(0.5, 0);
+            fontFamily: 'pixelFont',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
         this.add(this.titleText);
 
         // Create description
         this.descriptionText = this.scene.add.text(0, 0, this.description, {
-            fontSize: this.getFontSize(),
+            fontSize: '24px',
             color: '#cccccc',
-            fontFamily: 'Arial',
-            wordWrap: { width: this.width - this.getPadding() * 2 }
-        });
-        this.descriptionText.setOrigin(0.5, 0);
+            fontFamily: 'pixelFont',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center',
+            wordWrap: { width: 300 }
+        }).setOrigin(0.5);
         this.add(this.descriptionText);
 
         // Create cost text
-        this.costText = this.scene.add.text(0, 0, `${this.cost} coins`, {
-            fontSize: this.getFontSize(),
-            color: '#ffd700',
-            fontFamily: 'Arial'
-        });
-        this.costText.setOrigin(0.5, 0);
+        this.costText = this.scene.add.text(0, 0, `Cost: ${this.cost}`, {
+            fontSize: '28px',
+            color: '#ffff00',
+            fontFamily: 'pixelFont',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
         this.add(this.costText);
 
         // Create purchase button

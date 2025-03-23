@@ -14,27 +14,27 @@ export class WaveIndicator {
         
         // Создаем UI элементы
         this.waveText = this.scene.add.text(x, y, 'Wave: 1', { 
-            fontSize: '24px', 
+            fontSize: '48px', 
             color: '#ffffff',
-            fontFamily: 'Arial',
+            fontFamily: 'pixelFont',
+            stroke: '#000000',
+            strokeThickness: 4
+        });
+        
+        this.enemiesText = this.scene.add.text(x, y + 40, 'Enemies: 0', { 
+            fontSize: '36px', 
+            color: '#ffffff',
+            fontFamily: 'pixelFont',
             stroke: '#000000',
             strokeThickness: 3
         });
         
-        this.enemiesText = this.scene.add.text(x, y + 30, 'Enemies: 0', { 
-            fontSize: '18px', 
-            color: '#ffffff',
-            fontFamily: 'Arial',
-            stroke: '#000000',
-            strokeThickness: 2
-        });
-        
-        this.statusText = this.scene.add.text(x, y + 60, '', { 
-            fontSize: '16px', 
+        this.statusText = this.scene.add.text(x, y + 80, '', { 
+            fontSize: '32px', 
             color: '#ffcc00',
-            fontFamily: 'Arial',
+            fontFamily: 'pixelFont',
             stroke: '#000000',
-            strokeThickness: 2
+            strokeThickness: 3
         });
         
         // Подписываемся на события

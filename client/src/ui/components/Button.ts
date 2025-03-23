@@ -32,11 +32,12 @@ export class Button extends UIComponent {
 
         // Create text
         this.label = this.scene.add.text(0, 0, this.text, {
-            fontSize: this.getFontSize(),
+            fontSize: '24px',
             color: `#${this.textColor.toString(16).padStart(6, '0')}`,
-            fontFamily: 'Arial'
-        });
-        this.label.setOrigin(0.5);
+            fontFamily: 'pixelFont',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
         this.add(this.label);
 
         // Make interactive

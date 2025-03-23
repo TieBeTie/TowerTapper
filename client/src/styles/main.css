@@ -1,10 +1,3 @@
-@font-face {
-    font-family: 'PixelFont';
-    src: url('../assets/fonts/pixelFont.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}
-
 *{
     margin: 0;
     padding: 0;
@@ -12,5 +5,5 @@
     height: 100%;
     overflow: hidden;
     background: #fffefe;
-    font-family: 'PixelFont', sans-serif;
+    font-family: 'pixelFont', sans-serif;
 }

@@ -129,7 +129,7 @@ export default class GameScene extends Phaser.Scene {
         this.tower = new Tower(
             this,
             this.gameViewWidth / 2,
-            this.gameViewY + this.gameViewHeight / 3,
+            this.gameViewY + this.gameViewHeight / 2,
             'tower'
         );
         this.tower.setName('tower');

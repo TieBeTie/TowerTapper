@@ -7,8 +7,10 @@ class BootScene extends Phaser.Scene {
     }
 
     preload() {
+        // Load WebFont loader
+        this.load.script('webfont', 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js');
+
         // Load the pixel font
-        this.load.xml('pixelFont', 'assets/fonts/pixelFont.xml');
         this.load.image('logo', 'assets/images/ui/logo.png');
         
         // Load audio assets
@@ -57,6 +59,19 @@ class BootScene extends Phaser.Scene {
     }
 
     create() {
+        // @ts-ignore
+        WebFont.load({
+            custom: {
+                families: ['pixelFont'],
+                urls: ['assets/fonts/pixelFont.css']
+            },
+            active: () => {
+                console.log('Font loaded successfully');
+            },
+            inactive: () => {
+                console.error('Font failed to load');
+            }
+        });
         this.createAnimations();
         this.scene.start('MenuScene');
     }

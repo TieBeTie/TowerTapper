@@ -17,12 +17,11 @@ export class WaveClearEffect {
             this.tower.y - this.tower.height / 2 - 50,
             `Wave ${waveNumber} Clear!`,
             {
-                fontSize: '32px',
-                color: '#FFD700', // Золотой цвет
-                fontFamily: 'Arial',
+                fontSize: '56px',
+                color: '#ffff00',
+                fontFamily: 'pixelFont',
                 stroke: '#000000',
-                strokeThickness: 5,
-                fontStyle: 'bold'
+                strokeThickness: 5
             }
         ).setOrigin(0.5);
         
