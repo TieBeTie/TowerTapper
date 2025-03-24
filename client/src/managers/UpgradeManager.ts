@@ -1,19 +1,15 @@
-import { UpgradeType, Upgrade, UpgradeState } from '../types/UpgradeType';
+import { UpgradeType, Upgrade } from '../types/UpgradeType';
+import { UpgradeStateService } from '../services/UpgradeStateService';
 
 export class UpgradeManager {
     private scene: Phaser.Scene;
     private upgrades: Map<UpgradeType, Upgrade>;
-    private state: UpgradeState;
+    private stateService: UpgradeStateService;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
-        this.state = {
-            [UpgradeType.HEALTH]: 1,
-            [UpgradeType.DEFENSE]: 1,
-            [UpgradeType.REGENERATION]: 1,
-            [UpgradeType.DAMAGE]: 1,
-            [UpgradeType.COIN_REWARD]: 1
-        };
+        this.stateService = UpgradeStateService.getInstance();
+        this.stateService.initialize();
 
         this.upgrades = new Map([
             [UpgradeType.HEALTH, {
@@ -76,13 +72,14 @@ export class UpgradeManager {
     getUpgradeCost(type: UpgradeType): number {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return 0;
-        return Math.floor(upgrade.cost * Math.pow(upgrade.effectMultiplier, this.state[type] - 1));
+        const currentLevel = this.stateService.getState(type);
+        return Math.floor(upgrade.cost * Math.pow(upgrade.effectMultiplier, currentLevel - 1));
     }
 
     getUpgradeEffect(type: UpgradeType): number {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return 0;
-        return upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
+        return upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.stateService.getState(type) - 1);
     }
 
     purchaseUpgrade(type: UpgradeType): boolean {
@@ -93,17 +90,18 @@ export class UpgradeManager {
         const gameScene = this.scene.scene.get('GameScene');
         const coins = (gameScene as any).coinManager?.coins_count || 0;
 
-        if (coins >= cost && this.state[type] < upgrade.maxLevel) {
-            // Deduct coins
+        if (coins >= cost) {
+            // Списываем монеты
             (gameScene as any).coinManager.coins_count -= cost;
 
-            // Update level
-            this.state[type]++;
+            // Получаем текущий уровень и увеличиваем его
+            const currentLevel = this.stateService.getState(type);
+            this.stateService.saveState(type, currentLevel + 1);
 
-            // Apply upgrade effects
+            // Применяем эффекты улучшения
             this.applyUpgradeEffects(type);
 
-            // Emit event for UI update
+            // Обновляем UI
             gameScene.events.emit('updateCoins', (gameScene as any).coinManager.coins_count);
 
             return true;
@@ -118,28 +116,28 @@ export class UpgradeManager {
 
         const gameScene = this.scene.scene.get('GameScene');
         const tower = (gameScene as any).tower;
+        const currentLevel = this.stateService.getState(type);
 
         switch (type) {
             case UpgradeType.HEALTH:
-                tower.maxHealth = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
+                tower.maxHealth = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, currentLevel - 1);
                 tower.health = tower.maxHealth;
                 break;
             case UpgradeType.DEFENSE:
-                tower.defense = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
+                tower.defense = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, currentLevel - 1);
                 break;
             case UpgradeType.REGENERATION:
-                tower.regeneration = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
+                tower.regeneration = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, currentLevel - 1);
                 break;
             case UpgradeType.DAMAGE:
-                tower.damage = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
+                tower.damage = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, currentLevel - 1);
                 if (gameScene.projectileManager) {
                     gameScene.projectileManager.updateDamage();
                 }
                 break;
             case UpgradeType.COIN_REWARD:
-                // Update coin reward multiplier in the game scene
                 if (gameScene) {
-                    (gameScene as any).coinRewardMultiplier = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, this.state[type] - 1);
+                    (gameScene as any).coinRewardMultiplier = upgrade.baseEffect * Math.pow(upgrade.effectMultiplier, currentLevel - 1);
                 }
                 break;
         }
@@ -148,7 +146,7 @@ export class UpgradeManager {
     }
 
     getState(type: UpgradeType): number {
-        return this.state[type];
+        return this.stateService.getState(type);
     }
 }
 
