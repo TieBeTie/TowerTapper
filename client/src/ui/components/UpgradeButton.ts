@@ -229,10 +229,10 @@ export class UpgradeButton extends UIComponent {
     }
 
     private updateUI(): void {
-        const currentLevel = this.upgradeManagerValue.getState(this.upgradeTypeValue);
+        const currentValue = this.upgradeManagerValue.getState(this.upgradeTypeValue);
         const newCost = this.upgradeManagerValue.getUpgradeCost(this.upgradeTypeValue);
         
-        this.levelText.setText(`Level ${currentLevel}`);
+        this.levelText.setText(currentValue.toString());
         this.costText.setText(newCost.toString());
         this.updateButtonColor();
     }

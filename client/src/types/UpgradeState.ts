@@ -2,6 +2,6 @@ import { UpgradeType } from './UpgradeType';
 
 export interface IUpgradeState {
     type: UpgradeType;
-    level: number;
+    value: number;
     lastUpdated: Date;
 } 

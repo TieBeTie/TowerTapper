@@ -25,10 +25,10 @@ export class UpgradeStateService {
     }
     
     // Сохранение состояния
-    public saveState(type: UpgradeType, level: number): void {
+    public saveState(type: UpgradeType, value: number): void {
         this.state.set(type, {
             type,
-            level,
+            value,
             lastUpdated: new Date()
         });
         
@@ -38,7 +38,7 @@ export class UpgradeStateService {
     
     // Получение состояния
     public getState(type: UpgradeType): number {
-        return this.state.get(type)?.level || 1;
+        return this.state.get(type)?.value || 0;
     }
     
     // Получение всех состояний

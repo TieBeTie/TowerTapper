@@ -11,10 +11,10 @@ export interface Upgrade {
     name: string;
     description: string;
     cost: number;
-    level: number;
-    maxLevel: number;
-    baseEffect: number;
-    effectMultiplier: number;
+    currentValue: number;
+    maxValue: number;
+    calculateNextValue: (currentValue: number) => number;
+    calculateCost: (currentValue: number) => number;
 }
 
 export interface UpgradeState {
