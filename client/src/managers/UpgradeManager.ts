@@ -1,15 +1,20 @@
 import { SkillType, Upgrade } from '../types/SkillType';
 import { SkillStateManager } from './SkillStateManager';
+import { SkillSetStorage } from '../storage/SkillSetStorage';
 
 export class UpgradeManager {
     private scene: Phaser.Scene;
     private upgrades: Map<SkillType, Upgrade>;
     private stateService: SkillStateManager;
+    private skillStorage: SkillSetStorage;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
         this.stateService = SkillStateManager.getInstance();
+        this.skillStorage = new SkillSetStorage();
         this.stateService.initialize();
+
+        const skills = this.skillStorage.load();
 
         this.upgrades = new Map([
             [SkillType.HEALTH, {
@@ -17,50 +22,50 @@ export class UpgradeManager {
                 name: 'Прочность замка',
                 description: 'Увеличивает максимальное здоровье замка',
                 cost: 4,
-                currentValue: 200,
+                currentValue: skills.get(SkillType.HEALTH)?.value || 200,
                 maxValue: 10000,
-                calculateNextValue: (current) => Math.floor(current * 1.35),
-                calculateCost: (current) => Math.floor(4 * Math.pow(1.35, Math.log(current/200) / Math.log(1.35)))
+                calculateNextValue: (current: number) => Math.floor(current * 1.35),
+                calculateCost: (current: number) => Math.floor(4 * Math.pow(1.35, Math.log(current/200) / Math.log(1.35)))
             }],
             [SkillType.DEFENSE, {
                 type: SkillType.DEFENSE,
                 name: 'Защита замка',
                 description: 'Уменьшает получаемый урон',
                 cost: 6,
-                currentValue: 20,
+                currentValue: skills.get(SkillType.DEFENSE)?.value || 20,
                 maxValue: 200,
-                calculateNextValue: (current) => Math.floor(current * 1.25),
-                calculateCost: (current) => Math.floor(6 * Math.pow(1.25, Math.log(current/20) / Math.log(1.25)))
+                calculateNextValue: (current: number) => Math.floor(current * 1.25),
+                calculateCost: (current: number) => Math.floor(6 * Math.pow(1.25, Math.log(current/20) / Math.log(1.25)))
             }],
-            [SkillType.REGENERATION, {
-                type: SkillType.REGENERATION,
-                name: 'Регенерация',
+            [SkillType.HEALTH_REGEN, {
+                type: SkillType.HEALTH_REGEN,
+                name: 'Регенерация здоровья',
                 description: 'Восстанавливает здоровье замка со временем',
                 cost: 10,
-                currentValue: 3,
+                currentValue: skills.get(SkillType.HEALTH_REGEN)?.value || 3,
                 maxValue: 50,
-                calculateNextValue: (current) => Math.floor(current * 1.5),
-                calculateCost: (current) => Math.floor(10 * Math.pow(1.5, Math.log(current/3) / Math.log(1.5)))
+                calculateNextValue: (current: number) => Math.floor(current * 1.5),
+                calculateCost: (current: number) => Math.floor(10 * Math.pow(1.5, Math.log(current/3) / Math.log(1.5)))
             }],
             [SkillType.DAMAGE, {
                 type: SkillType.DAMAGE,
                 name: 'Урон',
                 description: 'Увеличивает урон от стрел',
                 cost: 6,
-                currentValue: 20,
+                currentValue: skills.get(SkillType.DAMAGE)?.value || 20,
                 maxValue: 300,
-                calculateNextValue: (current) => Math.floor(current * 1.35),
-                calculateCost: (current) => Math.floor(6 * Math.pow(1.35, Math.log(current/20) / Math.log(1.35)))
+                calculateNextValue: (current: number) => Math.floor(current * 1.35),
+                calculateCost: (current: number) => Math.floor(6 * Math.pow(1.35, Math.log(current/20) / Math.log(1.35)))
             }],
             [SkillType.COIN_REWARD, {
                 type: SkillType.COIN_REWARD,
                 name: 'Gold Reward Bonus',
                 description: 'Увеличивает количество монет с убитых врагов',
                 cost: 12,
-                currentValue: 3,
+                currentValue: skills.get(SkillType.COIN_REWARD)?.value || 3,
                 maxValue: 50,
-                calculateNextValue: (current) => Math.floor(current * 1.25),
-                calculateCost: (current) => Math.floor(12 * Math.pow(1.25, Math.log(current/3) / Math.log(1.25)))
+                calculateNextValue: (current: number) => Math.floor(current * 1.25),
+                calculateCost: (current: number) => Math.floor(12 * Math.pow(1.25, Math.log(current/3) / Math.log(1.25)))
             }]
         ]);
     }
@@ -124,7 +129,7 @@ export class UpgradeManager {
             case SkillType.DEFENSE:
                 tower.defense = upgrade.currentValue;
                 break;
-            case SkillType.REGENERATION:
+            case SkillType.HEALTH_REGEN:
                 tower.regeneration = upgrade.currentValue;
                 break;
             case SkillType.DAMAGE:

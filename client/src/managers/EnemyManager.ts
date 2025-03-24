@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import EnemyFactory from '../factories/EnemyFactory';
 import Enemy from '../objects/enemies/Enemy';
-import CoinCollectionEffectFromEnemyManager from './CoinCollectionEffectFromEnemyManager';
+import CoinCollectionEffectFromEnemyManager from './CoinManager';
 import { UIManager } from './UIManager';
 import { WaveManager } from './WaveManager';
 import Tower from '../objects/towers/Tower';

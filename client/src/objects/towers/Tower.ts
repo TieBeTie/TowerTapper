@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { SkillType } from '../../types/SkillType';
+import { SkillSetStorage } from '../../storage/SkillSetStorage';
 
 class Tower extends Phaser.Physics.Arcade.Sprite {
     // Цветовые константы
@@ -12,21 +14,24 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     regeneration: number;
     private regenerationTimer: Phaser.Time.TimerEvent | null;
     healthBar: Phaser.GameObjects.Graphics;
-    private readonly INITIAL_HEALTH = 500;
-    private readonly HEALTH_UPGRADE = 100;
     private readonly HEALTH_BAR_WIDTH = 100;
     private readonly HEALTH_BAR_HEIGHT = 10;
     private isDying: boolean = false;
+    private skillStorage: SkillSetStorage;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.health = this.INITIAL_HEALTH;
-        this.maxHealth = this.INITIAL_HEALTH;
-        this.defense = 0;
-        this.regeneration = 0;
+        this.skillStorage = new SkillSetStorage();
+        const skills = this.skillStorage.load();
+
+        // Initialize values from storage or use defaults if not found
+        this.health = skills.get(SkillType.HEALTH)?.value || 500;
+        this.maxHealth = this.health;
+        this.defense = skills.get(SkillType.DEFENSE)?.value || 0;
+        this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || 0;
         this.regenerationTimer = null;
         this.isDying = false;
 
@@ -41,12 +46,24 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
 
         this.healthBar = scene.add.graphics();
         this.updateHealthBar();
+
+        if (this.regeneration > 0) {
+            this.startRegeneration();
+        }
     }
 
     upgrade(): void {
-        this.maxHealth += this.HEALTH_UPGRADE;
-        this.health += this.HEALTH_UPGRADE;
+        const skills = this.skillStorage.load();
+        this.maxHealth = skills.get(SkillType.HEALTH)?.value || this.maxHealth;
+        this.defense = skills.get(SkillType.DEFENSE)?.value || this.defense;
+        this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || this.regeneration;
+        
+        this.health = this.maxHealth;
         this.updateHealthBar();
+
+        if (this.regeneration > 0) {
+            this.startRegeneration();
+        }
     }
 
     takeDamage(amount: number): void {

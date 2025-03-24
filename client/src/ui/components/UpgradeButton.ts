@@ -1,4 +1,4 @@
-import { UIComponent } from './UIComponent';
+import { UIComponent } from '../UIComponent';
 import { SkillType } from '../../types/SkillType';
 import { UpgradeManager } from '../../managers/UpgradeManager';
 
@@ -48,27 +48,26 @@ export class UpgradeButton extends UIComponent {
     private readonly upgradeManagerValue: UpgradeManager;
 
     constructor(config: UpgradeButtonConfig) {
-        const componentConfig = {
+        super({
             scene: config.scene,
             x: config.x,
             y: config.y,
             width: config.width,
-            height: config.height
-        };
-        super(config.scene, componentConfig);
-        
+            height: config.height,
+            fontSize: config.fontSize
+        });
         this.buttonTextValue = config.buttonText;
         this.fontSizeValue = config.fontSize;
         this.skillTypeValue = config.skillType;
         this.upgradeManagerValue = config.upgradeManager;
+        this.init();
+    }
 
+    init(): void {
         this.createButtonBackground();
         this.createButton();
         this.setupInteractivity();
-
-        // Подписываемся на обновление монет
-        const gameScene = this.scene.scene.get('GameScene');
-        gameScene.events.on('updateCoins', this.updateButtonColor, this);
+        this.updateUI();
     }
 
     destroy(fromScene?: boolean): void {
@@ -222,10 +221,6 @@ export class UpgradeButton extends UIComponent {
             // Update button UI
             this.updateUI();
         }
-    }
-
-    protected init(): void {
-        // Пустой метод, так как вся инициализация происходит в конструкторе
     }
 
     private updateUI(): void {

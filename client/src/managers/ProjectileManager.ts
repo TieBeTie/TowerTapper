@@ -5,6 +5,8 @@ import { Enemy } from '../objects/enemies/Enemy';
 import EnemyManager from './EnemyManager';
 import GameScene from '../scenes/GameScene';
 import Tower from '../objects/towers/Tower';
+import { SkillSetStorage } from '../storage/SkillSetStorage';
+import { SkillType } from '../types/SkillType';
 
 
 // ProjectileManager handles the logic for managing and firing projectiles at enemies
@@ -13,15 +15,16 @@ class ProjectileManager {
     projectiles: Phaser.Physics.Arcade.Group;
     projectileFactory: ProjectileFactory;
     enemyManager: EnemyManager;
-    private damage: number = 50; // Базовый урон
     private projectilesInFlight: Map<Enemy, number> = new Map(); // Количество выпущенных стрел к врагу
     private projectileMaxLifetime: number = 5000; // Максимальное время жизни стрелы в мс
     private fireRate: number = 500; // Fire rate in milliseconds
     private lastFireTime: number = 0; // Last time a projectile was fired
+    private skillStorage: SkillSetStorage;
 
     constructor(scene: Phaser.Scene, enemyManager: EnemyManager) {
         this.scene = scene;
         this.enemyManager = enemyManager;
+        this.skillStorage = new SkillSetStorage();
         this.projectiles = this.scene.physics.add.group({
             classType: Projectile,
             runChildUpdate: true
@@ -30,16 +33,16 @@ class ProjectileManager {
     }
 
     setDamage(damage: number): void {
-        this.damage = damage;
+        // This method is no longer used as damage is now fetched from skill storage
     }
 
     getDamage(): number {
-        return this.damage;
+        // This method is no longer used as damage is now fetched from skill storage
+        return 0; // Placeholder return, actual implementation needed
     }
 
     updateDamage(): void {
-        // Обновляем урон из башни
-        this.damage = this.getTowerDamage();
+        // This method is no longer used as damage is now fetched from skill storage
     }
 
     setFireRate(rate: number): void {
@@ -51,7 +54,8 @@ class ProjectileManager {
     }
 
     private getTowerDamage(): number {
-        return (this.scene.tower as any).damage || 50;
+        const skills = this.skillStorage.load();
+        return skills.get(SkillType.DAMAGE)?.value || 20;
     }
 
     fireProjectile(speedMultiplier: number = 1): void {

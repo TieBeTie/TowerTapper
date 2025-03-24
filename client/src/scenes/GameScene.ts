@@ -4,7 +4,7 @@ import { UIManager } from '../managers/UIManager';
 import EnemyManager from '../managers/EnemyManager';
 import ProjectileManager from '../managers/ProjectileManager';
 import CollisionManager from '../managers/CollisionManager';
-import CoinManager from '../managers/CoinCollectionEffectFromEnemyManager';
+import CoinManager from '../managers/CoinManager';
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { WaveManager } from '../managers/WaveManager';
 import { WaveIndicator } from '../ui/components/WaveIndicator';

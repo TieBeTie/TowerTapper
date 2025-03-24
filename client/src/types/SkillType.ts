@@ -1,7 +1,7 @@
 export enum SkillType {
     HEALTH = 'HEALTH',
     DEFENSE = 'DEFENSE',
-    REGENERATION = 'REGENERATION',
+    HEALTH_REGEN = 'HEALTH_REGEN',
     DAMAGE = 'DAMAGE',
     COIN_REWARD = 'COIN_REWARD'
 }
@@ -20,7 +20,7 @@ export interface Upgrade {
 export interface UpgradeState {
     [SkillType.HEALTH]: number;
     [SkillType.DEFENSE]: number;
-    [SkillType.REGENERATION]: number;
+    [SkillType.HEALTH_REGEN]: number;
     [SkillType.DAMAGE]: number;
     [SkillType.COIN_REWARD]: number;
 } 

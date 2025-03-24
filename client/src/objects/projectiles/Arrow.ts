@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { Projectile } from './Projectile';
+import { SkillSetStorage } from '../../storage/SkillSetStorage';
+import { SkillType } from '../../types/SkillType';
 
 export class Arrow extends Projectile {
     targetX: number;
@@ -12,12 +14,17 @@ export class Arrow extends Projectile {
     private elapsedTime: number;
     private direction: Phaser.Math.Vector2;
     private speedMultiplier: number;
-    private damage: number = 0; // Initialize to 0, will be set by ProjectileManager
+    private damage: number = 0;
+    private skillStorage: SkillSetStorage;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
         this.targetX = -10000;
         this.targetY = -10000;
+
+        this.skillStorage = new SkillSetStorage();
+        const skills = this.skillStorage.load();
+        this.damage = skills.get(SkillType.DAMAGE)?.value || 20;
 
         // Set arrow size (increased from 0.5)
         this.setScale(0.7);

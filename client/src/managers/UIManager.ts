@@ -74,10 +74,10 @@ export class UIManager {
         // Create interactive text for regen
         const regenButton = new UpgradeButton({
             scene: this.scene,
-            skillType: SkillType.REGENERATION,
+            skillType: SkillType.HEALTH_REGEN,
             upgradeManager: this.upgradeManager,
             fontSize: fontSize,
-            buttonText: 'Regen\nHealth',
+            buttonText: 'Health\nRegen',
             x: 0,
             y: 0,
             width: fontSize * 8,
