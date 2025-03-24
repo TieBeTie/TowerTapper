@@ -36,7 +36,7 @@ export class WaveManager extends Phaser.Events.EventEmitter {
                 number: i,
                 enemyHealthMultiplier: 1 + (i - 1) * 0.2, // Увеличиваем здоровье на 20% с каждой волной
                 enemyCount: 5 + i * 2, // Увеличиваем количество врагов в волне
-                spawnInterval: 1500 // Интервал спавна в мс (постоянный)
+                spawnInterval: 500 // Интервал спавна в мс (постоянный)
             });
         }
     }
