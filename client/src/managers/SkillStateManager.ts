@@ -1,14 +1,14 @@
 import { SkillType } from '../types/SkillType';
 import { ISkillState } from '../types/ISkillState';
-import { UpgradeStorage } from '../services/UpgradeStorage';
+import { SkillSetStorage } from '../storage/SkillSetStorage';
 
 export class SkillStateManager {
     private static instance: SkillStateManager;
     private state: Map<SkillType, ISkillState>;
-    private storage: UpgradeStorage;
+    private storage: SkillSetStorage;
     
     private constructor() {
-        this.storage = new UpgradeStorage();
+        this.storage = new SkillSetStorage();
         this.state = new Map();
     }
     

@@ -1,7 +1,7 @@
 import { SkillType } from '../types/SkillType';
 import { ISkillState } from '../types/ISkillState';
 
-export class UpgradeStorage {
+export class SkillSetStorage {
     private readonly STORAGE_KEY = 'upgrade_states';
     
     save(states: Map<SkillType, ISkillState>): void {
