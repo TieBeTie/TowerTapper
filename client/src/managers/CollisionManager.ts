@@ -5,17 +5,18 @@ import Enemy from '../objects/enemies/Enemy';
 import { DamageNumber } from '../ui/components/DamageNumber';
 import { SkillSetStorage } from '../storage/SkillSetStorage';
 import { SkillType } from '../types/SkillType';
+import { IGameScene } from '../types/GameScene';
 
 // CollisionManager handles the logic for managing collisions between projectiles and enemies, as well as between the tower and enemies
 class CollisionManager {
-    private scene: Phaser.Scene;
+    private scene: IGameScene;
     private projectileEnemyCollider: Phaser.Physics.Arcade.Collider | null = null;
     private towerEnemyCollider: Phaser.Physics.Arcade.Collider | null = null;
     private readonly PROJECTILE_CHECK_DISTANCE = 150;
     private readonly TOWER_CHECK_DISTANCE = 100;
     private skillStorage: SkillSetStorage;
 
-    constructor(scene: Phaser.Scene) {
+    constructor(scene: IGameScene) {
         this.scene = scene;
         this.skillStorage = SkillSetStorage.getInstance();
         this.setupColliders();

@@ -7,11 +7,12 @@ import GameScene from '../scenes/GameScene';
 import Tower from '../objects/towers/Tower';
 import { SkillSetStorage } from '../storage/SkillSetStorage';
 import { SkillType } from '../types/SkillType';
+import { IGameScene } from '../types/GameScene';
 
 
 // ProjectileManager handles the logic for managing and firing projectiles at enemies
 class ProjectileManager {
-    scene: Phaser.Scene;
+    scene: IGameScene;
     projectiles: Phaser.Physics.Arcade.Group;
     projectileFactory: ProjectileFactory;
     enemyManager: EnemyManager;
@@ -21,7 +22,7 @@ class ProjectileManager {
     private lastFireTime: number = 0; // Last time a projectile was fired
     private skillStorage: SkillSetStorage;
 
-    constructor(scene: Phaser.Scene, enemyManager: EnemyManager) {
+    constructor(scene: IGameScene, enemyManager: EnemyManager) {
         this.scene = scene;
         this.enemyManager = enemyManager;
         this.skillStorage = SkillSetStorage.getInstance();

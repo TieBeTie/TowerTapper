@@ -1,14 +1,15 @@
 import { SkillType, Upgrade } from '../types/SkillType';
 import { SkillStateManager } from './SkillStateManager';
 import { SkillSetStorage } from '../storage/SkillSetStorage';
+import { IGameScene } from '../types/GameScene';
 
 export class UpgradeManager {
-    private scene: Phaser.Scene;
+    private scene: IGameScene;
     private upgrades: Map<SkillType, Upgrade>;
     private stateService: SkillStateManager;
     private skillStorage: SkillSetStorage;
 
-    constructor(scene: Phaser.Scene) {
+    constructor(scene: IGameScene) {
         this.scene = scene;
         this.stateService = SkillStateManager.getInstance();
         this.skillStorage = SkillSetStorage.getInstance();
@@ -118,8 +119,8 @@ export class UpgradeManager {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return;
 
-        const gameScene = this.scene.scene.get('GameScene');
-        const tower = (gameScene as any).tower;
+        const gameScene = this.scene as IGameScene;
+        const tower = gameScene.tower;
 
         switch (type) {
             case SkillType.MAX_HEALTH:
@@ -133,10 +134,7 @@ export class UpgradeManager {
                 tower.regeneration = upgrade.currentValue;
                 break;
             case SkillType.DAMAGE:
-                tower.damage = upgrade.currentValue;
-                if (gameScene.projectileManager) {
-                    gameScene.projectileManager.updateDamage();
-                }
+                // Урон теперь берется из SkillSetStorage, поэтому здесь ничего не делаем
                 break;
             case SkillType.COIN_REWARD:
                 if (gameScene) {

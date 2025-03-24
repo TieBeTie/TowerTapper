@@ -10,8 +10,9 @@ import { WaveManager } from '../managers/WaveManager';
 import { WaveIndicator } from '../ui/components/WaveIndicator';
 import { WaveClearEffect } from '../ui/components/WaveClearEffect';
 import AudioManager from '../managers/AudioManager';
+import { IGameScene } from '../types/GameScene';
 
-export default class GameScene extends Phaser.Scene {
+export default class GameScene extends Phaser.Scene implements IGameScene {
     // Game view constants
     private readonly GAME_VIEW_HEIGHT_RATIO = 1; // 70% of screen height for game view
     private readonly GAME_VIEW_TOP_MARGIN = 0.0; // 15% from top for game view
