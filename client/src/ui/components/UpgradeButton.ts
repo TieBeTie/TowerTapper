@@ -1,5 +1,5 @@
 import { UIComponent } from './UIComponent';
-import { UpgradeType } from '../../types/UpgradeType';
+import { SkillType } from '../../types/SkillType';
 import { UpgradeManager } from '../../managers/UpgradeManager';
 
 // Константы для прозрачности
@@ -17,7 +17,7 @@ const BUTTON_COLOR_AFFORD_PRESSED = 0x3d8b40;
 
 export interface UpgradeButtonConfig {
     scene: Phaser.Scene;
-    upgradeType: UpgradeType;
+    skillType: SkillType;
     upgradeManager: UpgradeManager;
     fontSize: number;
     buttonText: string;
@@ -44,7 +44,7 @@ export class UpgradeButton extends UIComponent {
     // Сохраняем необходимые параметры в отдельных полях
     private readonly buttonTextValue: string;
     private readonly fontSizeValue: number;
-    private readonly upgradeTypeValue: UpgradeType;
+    private readonly skillTypeValue: SkillType;
     private readonly upgradeManagerValue: UpgradeManager;
 
     constructor(config: UpgradeButtonConfig) {
@@ -59,7 +59,7 @@ export class UpgradeButton extends UIComponent {
         
         this.buttonTextValue = config.buttonText;
         this.fontSizeValue = config.fontSize;
-        this.upgradeTypeValue = config.upgradeType;
+        this.skillTypeValue = config.skillType;
         this.upgradeManagerValue = config.upgradeManager;
 
         this.createButtonBackground();
@@ -187,7 +187,7 @@ export class UpgradeButton extends UIComponent {
     }
 
     private canAffordUpgrade(): boolean {
-        const cost = this.upgradeManagerValue.getUpgradeCost(this.upgradeTypeValue);
+        const cost = this.upgradeManagerValue.getUpgradeCost(this.skillTypeValue);
         const gameScene = this.scene.scene.get('GameScene');
         const coins = (gameScene as any).coinManager?.coins_count || 0;
         return coins >= cost;
@@ -199,7 +199,7 @@ export class UpgradeButton extends UIComponent {
     }
 
     protected handleClick(): void {
-        const success = this.upgradeManagerValue.purchaseUpgrade(this.upgradeTypeValue);
+        const success = this.upgradeManagerValue.purchaseUpgrade(this.skillTypeValue);
         if (success) {
             const gameScene = this.scene.scene.get('GameScene');
             
@@ -229,8 +229,8 @@ export class UpgradeButton extends UIComponent {
     }
 
     private updateUI(): void {
-        const currentValue = this.upgradeManagerValue.getState(this.upgradeTypeValue);
-        const newCost = this.upgradeManagerValue.getUpgradeCost(this.upgradeTypeValue);
+        const currentValue = this.upgradeManagerValue.getState(this.skillTypeValue);
+        const newCost = this.upgradeManagerValue.getUpgradeCost(this.skillTypeValue);
         
         this.levelText.setText(currentValue.toString());
         this.costText.setText(newCost.toString());

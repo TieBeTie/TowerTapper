@@ -1,9 +1,9 @@
-import { UpgradeType, Upgrade } from '../types/UpgradeType';
+import { SkillType, Upgrade } from '../types/SkillType';
 import { UpgradeStateService } from '../services/UpgradeStateService';
 
 export class UpgradeManager {
     private scene: Phaser.Scene;
-    private upgrades: Map<UpgradeType, Upgrade>;
+    private upgrades: Map<SkillType, Upgrade>;
     private stateService: UpgradeStateService;
 
     constructor(scene: Phaser.Scene) {
@@ -12,8 +12,8 @@ export class UpgradeManager {
         this.stateService.initialize();
 
         this.upgrades = new Map([
-            [UpgradeType.HEALTH, {
-                type: UpgradeType.HEALTH,
+            [SkillType.HEALTH, {
+                type: SkillType.HEALTH,
                 name: 'Прочность замка',
                 description: 'Увеличивает максимальное здоровье замка',
                 cost: 4,
@@ -22,8 +22,8 @@ export class UpgradeManager {
                 calculateNextValue: (current) => Math.floor(current * 1.35),
                 calculateCost: (current) => Math.floor(4 * Math.pow(1.35, Math.log(current/200) / Math.log(1.35)))
             }],
-            [UpgradeType.DEFENSE, {
-                type: UpgradeType.DEFENSE,
+            [SkillType.DEFENSE, {
+                type: SkillType.DEFENSE,
                 name: 'Защита замка',
                 description: 'Уменьшает получаемый урон',
                 cost: 6,
@@ -32,8 +32,8 @@ export class UpgradeManager {
                 calculateNextValue: (current) => Math.floor(current * 1.25),
                 calculateCost: (current) => Math.floor(6 * Math.pow(1.25, Math.log(current/20) / Math.log(1.25)))
             }],
-            [UpgradeType.REGENERATION, {
-                type: UpgradeType.REGENERATION,
+            [SkillType.REGENERATION, {
+                type: SkillType.REGENERATION,
                 name: 'Регенерация',
                 description: 'Восстанавливает здоровье замка со временем',
                 cost: 10,
@@ -42,8 +42,8 @@ export class UpgradeManager {
                 calculateNextValue: (current) => Math.floor(current * 1.5),
                 calculateCost: (current) => Math.floor(10 * Math.pow(1.5, Math.log(current/3) / Math.log(1.5)))
             }],
-            [UpgradeType.DAMAGE, {
-                type: UpgradeType.DAMAGE,
+            [SkillType.DAMAGE, {
+                type: SkillType.DAMAGE,
                 name: 'Урон',
                 description: 'Увеличивает урон от стрел',
                 cost: 6,
@@ -52,8 +52,8 @@ export class UpgradeManager {
                 calculateNextValue: (current) => Math.floor(current * 1.35),
                 calculateCost: (current) => Math.floor(6 * Math.pow(1.35, Math.log(current/20) / Math.log(1.35)))
             }],
-            [UpgradeType.COIN_REWARD, {
-                type: UpgradeType.COIN_REWARD,
+            [SkillType.COIN_REWARD, {
+                type: SkillType.COIN_REWARD,
                 name: 'Gold Reward Bonus',
                 description: 'Увеличивает количество монет с убитых врагов',
                 cost: 12,
@@ -69,19 +69,19 @@ export class UpgradeManager {
         return Array.from(this.upgrades.values());
     }
 
-    getUpgradeCost(type: UpgradeType): number {
+    getUpgradeCost(type: SkillType): number {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return 0;
         return upgrade.calculateCost(upgrade.currentValue);
     }
 
-    getUpgradeEffect(type: UpgradeType): number {
+    getUpgradeEffect(type: SkillType): number {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return 0;
         return upgrade.currentValue;
     }
 
-    purchaseUpgrade(type: UpgradeType): boolean {
+    purchaseUpgrade(type: SkillType): boolean {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return false;
 
@@ -109,7 +109,7 @@ export class UpgradeManager {
         return false;
     }
 
-    private applyUpgradeEffects(type: UpgradeType): void {
+    private applyUpgradeEffects(type: SkillType): void {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return;
 
@@ -117,23 +117,23 @@ export class UpgradeManager {
         const tower = (gameScene as any).tower;
 
         switch (type) {
-            case UpgradeType.HEALTH:
+            case SkillType.HEALTH:
                 tower.maxHealth = upgrade.currentValue;
                 tower.health = tower.maxHealth;
                 break;
-            case UpgradeType.DEFENSE:
+            case SkillType.DEFENSE:
                 tower.defense = upgrade.currentValue;
                 break;
-            case UpgradeType.REGENERATION:
+            case SkillType.REGENERATION:
                 tower.regeneration = upgrade.currentValue;
                 break;
-            case UpgradeType.DAMAGE:
+            case SkillType.DAMAGE:
                 tower.damage = upgrade.currentValue;
                 if (gameScene.projectileManager) {
                     gameScene.projectileManager.updateDamage();
                 }
                 break;
-            case UpgradeType.COIN_REWARD:
+            case SkillType.COIN_REWARD:
                 if (gameScene) {
                     (gameScene as any).coinRewardMultiplier = upgrade.currentValue;
                 }
@@ -143,7 +143,7 @@ export class UpgradeManager {
         tower.updateHealthBar();
     }
 
-    getState(type: UpgradeType): number {
+    getState(type: SkillType): number {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return 0;
         return upgrade.currentValue;

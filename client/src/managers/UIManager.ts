@@ -5,8 +5,9 @@ import { ButtonPanel } from '../ui/components/ButtonPanel';
 import Button from '../ui/Button';
 import Tower from '../objects/towers/Tower';
 import { UpgradeButton } from '../ui/components/UpgradeButton';
-import { UpgradeType } from '../types/UpgradeType';
-import { UpgradeManager } from '../managers/UpgradeManager';
+import { SkillType } from '../types/SkillType';
+import { UpgradeManager } from './UpgradeManager';
+
 
 export class UIManager {
     private header!: Header;
@@ -73,7 +74,7 @@ export class UIManager {
         // Create interactive text for regen
         const regenButton = new UpgradeButton({
             scene: this.scene,
-            upgradeType: UpgradeType.REGENERATION,
+            skillType: SkillType.REGENERATION,
             upgradeManager: this.upgradeManager,
             fontSize: fontSize,
             buttonText: 'Regen\nHealth',
@@ -84,7 +85,7 @@ export class UIManager {
         });
         const healthButton = new UpgradeButton({
             scene: this.scene,
-            upgradeType: UpgradeType.HEALTH,
+            skillType: SkillType.HEALTH,
             upgradeManager: this.upgradeManager,
             fontSize: fontSize,
             buttonText: 'Health',
@@ -95,7 +96,7 @@ export class UIManager {
         })
         const defenseButton = new UpgradeButton({
             scene: this.scene,
-            upgradeType: UpgradeType.DEFENSE,
+            skillType: SkillType.DEFENSE,
             upgradeManager: this.upgradeManager,
             fontSize: fontSize,
             buttonText: 'Defense',
@@ -106,7 +107,7 @@ export class UIManager {
         })
         const damageButton = new UpgradeButton({
             scene: this.scene,
-            upgradeType: UpgradeType.DAMAGE,
+            skillType: SkillType.DAMAGE,
             upgradeManager: this.upgradeManager,
             fontSize: fontSize,
             buttonText: 'Damage',
@@ -117,7 +118,7 @@ export class UIManager {
         })
         const goldRewardButton = new UpgradeButton({
             scene: this.scene,
-            upgradeType: UpgradeType.COIN_REWARD,
+            skillType: SkillType.COIN_REWARD,
             upgradeManager: this.upgradeManager,
             fontSize: fontSize,
             buttonText: 'Gold\nBonus',

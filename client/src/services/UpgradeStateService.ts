@@ -1,10 +1,10 @@
-import { UpgradeType } from '../types/UpgradeType';
-import { IUpgradeState } from '../types/UpgradeState';
+import { SkillType } from '../types/SkillType';
+import { ISkillState } from '../types/ISkillState';
 import { UpgradeStorage } from './UpgradeStorage';
 
 export class UpgradeStateService {
     private static instance: UpgradeStateService;
-    private state: Map<UpgradeType, IUpgradeState>;
+    private state: Map<SkillType, ISkillState>;
     private storage: UpgradeStorage;
     
     private constructor() {
@@ -25,7 +25,7 @@ export class UpgradeStateService {
     }
     
     // Сохранение состояния
-    public saveState(type: UpgradeType, value: number): void {
+    public saveState(type: SkillType, value: number): void {
         this.state.set(type, {
             type,
             value,
@@ -37,12 +37,12 @@ export class UpgradeStateService {
     }
     
     // Получение состояния
-    public getState(type: UpgradeType): number {
+    public getState(type: SkillType): number {
         return this.state.get(type)?.value || 0;
     }
     
     // Получение всех состояний
-    public getAllStates(): Map<UpgradeType, IUpgradeState> {
+    public getAllStates(): Map<SkillType, ISkillState> {
         return new Map(this.state);
     }
 } 

@@ -1,15 +1,15 @@
-import { UpgradeType } from '../types/UpgradeType';
-import { IUpgradeState } from '../types/UpgradeState';
+import { SkillType } from '../types/SkillType';
+import { ISkillState } from '../types/ISkillState';
 
 export class UpgradeStorage {
     private readonly STORAGE_KEY = 'upgrade_states';
     
-    save(states: Map<UpgradeType, IUpgradeState>): void {
+    save(states: Map<SkillType, ISkillState>): void {
         const data = Array.from(states.entries());
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
     }
     
-    load(): Map<UpgradeType, IUpgradeState> {
+    load(): Map<SkillType, ISkillState> {
         const data = localStorage.getItem(this.STORAGE_KEY);
         if (!data) return new Map();
         
