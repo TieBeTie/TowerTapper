@@ -1,9 +1,9 @@
 import { SkillType } from '../types/SkillType';
 import { ISkillState } from '../types/ISkillState';
-import { UpgradeStorage } from './UpgradeStorage';
+import { UpgradeStorage } from '../services/UpgradeStorage';
 
-export class UpgradeStateService {
-    private static instance: UpgradeStateService;
+export class SkillStateManager {
+    private static instance: SkillStateManager;
     private state: Map<SkillType, ISkillState>;
     private storage: UpgradeStorage;
     
@@ -12,11 +12,11 @@ export class UpgradeStateService {
         this.state = new Map();
     }
     
-    public static getInstance(): UpgradeStateService {
-        if (!UpgradeStateService.instance) {
-            UpgradeStateService.instance = new UpgradeStateService();
+    public static getInstance(): SkillStateManager {
+        if (!SkillStateManager.instance) {
+            SkillStateManager.instance = new SkillStateManager();
         }
-        return UpgradeStateService.instance;
+        return SkillStateManager.instance;
     }
     
     // Инициализация при старте игры

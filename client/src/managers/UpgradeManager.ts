@@ -1,14 +1,14 @@
 import { SkillType, Upgrade } from '../types/SkillType';
-import { UpgradeStateService } from '../services/UpgradeStateService';
+import { SkillStateManager } from './SkillStateManager';
 
 export class UpgradeManager {
     private scene: Phaser.Scene;
     private upgrades: Map<SkillType, Upgrade>;
-    private stateService: UpgradeStateService;
+    private stateService: SkillStateManager;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
-        this.stateService = UpgradeStateService.getInstance();
+        this.stateService = SkillStateManager.getInstance();
         this.stateService.initialize();
 
         this.upgrades = new Map([
