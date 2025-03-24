@@ -199,7 +199,7 @@ export default class GameScene extends Phaser.Scene {
         this.uiManager = new UIManager(
             this,
             () => this.scene.pause(),
-            () => this.scene.launch('UpgradeScene'),
+            () => console.log('Upgrade clicked'),
             () => console.log('Settings clicked'),
             () => console.log('Shop clicked'),
             this.upgradeManager

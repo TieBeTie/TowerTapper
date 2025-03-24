@@ -4,7 +4,6 @@ import GameScene from './scenes/GameScene';
 import MenuScene from './scenes/MenuScene';
 import PauseScene from './scenes/PauseScene';
 import DeathScene from './scenes/DeathScene';
-import UpgradeScene from './scenes/UpgradeScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -21,7 +20,7 @@ const config: Phaser.Types.Core.GameConfig = {
             gravity: { x: 0, y: 0 }
         }
     },
-    scene: [BootScene, MenuScene, GameScene, PauseScene, DeathScene, UpgradeScene]
+    scene: [BootScene, MenuScene, GameScene, PauseScene, DeathScene]
 };
 
 const game = new Phaser.Game(config);
