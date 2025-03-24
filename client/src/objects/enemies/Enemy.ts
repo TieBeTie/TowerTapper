@@ -1,8 +1,5 @@
 import Phaser from 'phaser';
 import { ProjectileFactory } from '../../factories/ProjectileFactory';
-import CoinManager from '../../managers/CoinManager';
-import { SkillSetStorage } from '../../storage/SkillSetStorage';
-import { SkillType } from '../../types/SkillType';
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
     speed: number;
@@ -13,21 +10,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     projectileFactory: ProjectileFactory;
     isDying: boolean;
     isUnderAttack: boolean = false;
-    private skillStorage: SkillSetStorage;
-    private readonly BASE_HEALTH = 100; // Базовое здоровье всех врагов
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string, cost: number) {
         super(scene, x, y, texture);
         scene.add.existing(this);
         scene.physics.add.existing(this);
         
-        this.skillStorage = new SkillSetStorage();
-        const skills = this.skillStorage.load();
-        const baseHealth = skills.get(SkillType.HEALTH)?.value || 100;
-        
         this.speed = 100;
-        this.health = this.BASE_HEALTH;
-        this.maxHealth = this.health;
+        this.health = 0;
+        this.maxHealth = 0;
         this.cost = Number(cost);
 
         this.setScale(0.7);

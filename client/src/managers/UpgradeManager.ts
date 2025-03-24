@@ -17,12 +17,12 @@ export class UpgradeManager {
         const skills = this.skillStorage.load();
 
         this.upgrades = new Map([
-            [SkillType.HEALTH, {
-                type: SkillType.HEALTH,
+            [SkillType.MAX_HEALTH, {
+                type: SkillType.MAX_HEALTH,
                 name: 'Прочность замка',
                 description: 'Увеличивает максимальное здоровье замка',
                 cost: 4,
-                currentValue: skills.get(SkillType.HEALTH)?.value || 200,
+                currentValue: skills.get(SkillType.MAX_HEALTH)?.value || 200,
                 maxValue: 10000,
                 calculateNextValue: (current: number) => Math.floor(current * 1.35),
                 calculateCost: (current: number) => Math.floor(4 * Math.pow(1.35, Math.log(current/200) / Math.log(1.35)))
@@ -122,7 +122,7 @@ export class UpgradeManager {
         const tower = (gameScene as any).tower;
 
         switch (type) {
-            case SkillType.HEALTH:
+            case SkillType.MAX_HEALTH:
                 tower.maxHealth = upgrade.currentValue;
                 tower.health = tower.maxHealth;
                 break;

@@ -85,7 +85,7 @@ export class UIManager {
         });
         const healthButton = new UpgradeButton({
             scene: this.scene,
-            skillType: SkillType.HEALTH,
+            skillType: SkillType.MAX_HEALTH,
             upgradeManager: this.upgradeManager,
             fontSize: fontSize,
             buttonText: 'Health',

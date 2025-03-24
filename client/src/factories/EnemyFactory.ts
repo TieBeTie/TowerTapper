@@ -11,8 +11,8 @@ class EnemyFactory {
         let enemy: Enemy | null = null;
         
         // Базовая стоимость врагов
-        const goblinCost = 100;
-        const orcCost = 200;
+        const goblinCost = 10;
+        const orcCost = 20;
         
         switch (type) {
             case 'goblin':

@@ -14,7 +14,7 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     private waveConfigs: WaveConfig[] = [];
     private isWaveActive: boolean = false;
     private enemiesRemaining: number = 0;
-    private baseEnemyHealth: number = 100; // Базовое здоровье врага
+    private baseEnemyHealth: number = 10; // Базовое здоровье врага
     private autoStartNextWave: boolean = true; // Автоматически запускать следующую волну
     private waveDelay: number = 3000; // 3 seconds between waves
     private enemies: Phaser.GameObjects.Group;

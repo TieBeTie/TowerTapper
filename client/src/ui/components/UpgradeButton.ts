@@ -60,6 +60,9 @@ export class UpgradeButton extends UIComponent {
         this.fontSizeValue = config.fontSize;
         this.skillTypeValue = config.skillType;
         this.upgradeManagerValue = config.upgradeManager;
+
+        // Подписываемся на событие обновления монет
+        this.scene.events.on('updateCoins', this.updateUI, this);
         this.init();
     }
 

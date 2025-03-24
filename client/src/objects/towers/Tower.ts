@@ -28,7 +28,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         const skills = this.skillStorage.load();
 
         // Initialize values from storage or use defaults if not found
-        this.health = skills.get(SkillType.HEALTH)?.value || 500;
+        this.health = skills.get(SkillType.MAX_HEALTH)?.value || 500;
         this.maxHealth = this.health;
         this.defense = skills.get(SkillType.DEFENSE)?.value || 0;
         this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || 0;
@@ -54,7 +54,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
 
     upgrade(): void {
         const skills = this.skillStorage.load();
-        this.maxHealth = skills.get(SkillType.HEALTH)?.value || this.maxHealth;
+        this.maxHealth = skills.get(SkillType.MAX_HEALTH)?.value || this.maxHealth;
         this.defense = skills.get(SkillType.DEFENSE)?.value || this.defense;
         this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || this.regeneration;
         
