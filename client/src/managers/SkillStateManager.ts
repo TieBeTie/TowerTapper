@@ -8,7 +8,7 @@ export class SkillStateManager {
     private storage: SkillSetStorage;
     
     private constructor() {
-        this.storage = new SkillSetStorage();
+        this.storage = SkillSetStorage.getInstance();
         this.state = new Map();
     }
     

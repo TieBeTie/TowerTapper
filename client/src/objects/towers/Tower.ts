@@ -24,7 +24,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.skillStorage = new SkillSetStorage();
+        this.skillStorage = SkillSetStorage.getInstance();
         const skills = this.skillStorage.load();
 
         // Initialize values from storage or use defaults if not found

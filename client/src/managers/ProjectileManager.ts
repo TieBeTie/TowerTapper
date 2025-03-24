@@ -24,7 +24,7 @@ class ProjectileManager {
     constructor(scene: Phaser.Scene, enemyManager: EnemyManager) {
         this.scene = scene;
         this.enemyManager = enemyManager;
-        this.skillStorage = new SkillSetStorage();
+        this.skillStorage = SkillSetStorage.getInstance();
         this.projectiles = this.scene.physics.add.group({
             classType: Projectile,
             runChildUpdate: true

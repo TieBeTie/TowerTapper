@@ -22,7 +22,7 @@ export class Arrow extends Projectile {
         this.targetX = -10000;
         this.targetY = -10000;
 
-        this.skillStorage = new SkillSetStorage();
+        this.skillStorage = SkillSetStorage.getInstance();
         const skills = this.skillStorage.load();
         this.damage = skills.get(SkillType.DAMAGE)?.value || 20;
 

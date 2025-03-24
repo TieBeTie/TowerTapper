@@ -11,7 +11,7 @@ export class UpgradeManager {
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
         this.stateService = SkillStateManager.getInstance();
-        this.skillStorage = new SkillSetStorage();
+        this.skillStorage = SkillSetStorage.getInstance();
         this.stateService.initialize();
 
         const skills = this.skillStorage.load();

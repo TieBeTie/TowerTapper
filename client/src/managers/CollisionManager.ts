@@ -17,7 +17,7 @@ class CollisionManager {
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
-        this.skillStorage = new SkillSetStorage();
+        this.skillStorage = SkillSetStorage.getInstance();
         this.setupColliders();
         this.scene.events.on('shutdown', this.cleanup);
     }
