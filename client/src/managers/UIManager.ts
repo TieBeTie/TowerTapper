@@ -127,12 +127,24 @@ export class UIManager {
             width: fontSize * 8,
             height: fontSize * 3
         })
+        const attackSpeedButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.ATTACK_SPEED,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Attack\nSpeed',
+            x: 0,
+            y: 0,
+            width: fontSize * 8,
+            height: fontSize * 3
+        })
 
         this.buttonPanel.addElement(regenButton);
         this.buttonPanel.addElement(healthButton);
         this.buttonPanel.addElement(defenseButton);
         this.buttonPanel.addElement(damageButton);
         this.buttonPanel.addElement(goldRewardButton);
+        this.buttonPanel.addElement(attackSpeedButton);
         this.updatePositions();
     }
 

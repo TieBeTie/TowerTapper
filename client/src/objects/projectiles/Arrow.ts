@@ -24,16 +24,16 @@ export class Arrow extends Projectile {
 
         this.skillStorage = SkillSetStorage.getInstance();
         const skills = this.skillStorage.load();
-        this.damage = skills.get(SkillType.DAMAGE)?.value || 20;
+        this.damage = skills.get(SkillType.DAMAGE)?.value || 0;
 
-        // Set arrow size (increased from 0.5)
+        // Set arrow size
         this.setScale(0.7);
 
         // Initialize movement properties
         this.speed = 0;
-        this.maxSpeed = 800; // Base max speed
-        this.acceleration = 5000;
-        this.deceleration = 3000;
+        this.maxSpeed = 800; // Base speed
+        this.acceleration = 5000; // Base acceleration
+        this.deceleration = 3000; // Base deceleration
         this.initialDelay = 0;
         this.elapsedTime = 0;
         this.direction = new Phaser.Math.Vector2(0, 0);

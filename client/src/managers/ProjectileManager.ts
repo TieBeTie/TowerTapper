@@ -18,7 +18,6 @@ class ProjectileManager {
     enemyManager: EnemyManager;
     private projectilesInFlight: Map<Enemy, number> = new Map(); // Количество выпущенных стрел к врагу
     private projectileMaxLifetime: number = 5000; // Максимальное время жизни стрелы в мс
-    private fireRate: number = 500; // Fire rate in milliseconds
     private lastFireTime: number = 0; // Last time a projectile was fired
     private skillStorage: SkillSetStorage;
 
@@ -38,8 +37,8 @@ class ProjectileManager {
     }
 
     getDamage(): number {
-        // This method is no longer used as damage is now fetched from skill storage
-        return 0; // Placeholder return, actual implementation needed
+        const skills = this.skillStorage.load();
+        return skills.get(SkillType.DAMAGE)?.value || 0;
     }
 
     updateDamage(): void {
@@ -47,19 +46,22 @@ class ProjectileManager {
     }
 
     setFireRate(rate: number): void {
-        this.fireRate = rate;
+        // This method is no longer used as rate is now fetched from skill storage
     }
 
-    getFireRate(): number {
-        return this.fireRate;
+    private getFireRate(): number {
+        const skills = this.skillStorage.load();
+        const attackSpeed = skills.get(SkillType.ATTACK_SPEED)?.value || 1;
+        return 500 / attackSpeed; // Base fire rate (500ms) divided by attack speed multiplier
     }
 
     private getTowerDamage(): number {
         const skills = this.skillStorage.load();
-        return skills.get(SkillType.DAMAGE)?.value || 20;
+        return skills.get(SkillType.DAMAGE)?.value || 20; // Return base damage of 20 if not found
     }
 
     fireProjectile(speedMultiplier: number = 1): void {
+        // Находим ближайшего врага, в которого еще не выпущено максимальное количество стрел
         const targetEnemy = this.enemyManager.findNearestAvailableEnemy(this.scene.tower.x, this.scene.tower.y);
         if (targetEnemy) {
             // Рассчитываем, сколько стрел нужно выпустить для убийства врага
@@ -68,8 +70,17 @@ class ProjectileManager {
             // Получаем текущее количество стрел в полете к этому врагу
             const currentProjectiles = this.projectilesInFlight.get(targetEnemy) || 0;
             
-            // Если стрел уже достаточно, не стреляем больше
+            // Если стрел уже достаточно, ищем другого врага
             if (currentProjectiles >= projectilesNeeded) {
+                // Помечаем врага как "достаточно обстрелянного"
+                targetEnemy.isUnderAttack = true;
+                // Пробуем найти другого врага
+                const nextEnemy = this.enemyManager.findNearestAvailableEnemy(this.scene.tower.x, this.scene.tower.y);
+                if (nextEnemy && nextEnemy !== targetEnemy) {
+                    // Рекурсивно вызываем метод с новым врагом
+                    this.fireProjectile(speedMultiplier);
+                    return;
+                }
                 return;
             }
             
@@ -141,7 +152,8 @@ class ProjectileManager {
 
     update(time: number, delta: number): void {
         // Check if it's time to fire a new projectile automatically
-        if (time - this.lastFireTime >= this.fireRate) {
+        const currentFireRate = this.getFireRate();
+        if (time - this.lastFireTime >= currentFireRate) {
             this.fireProjectile(1); // Fire with base speed multiplier
         }
         

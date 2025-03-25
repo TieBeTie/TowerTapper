@@ -67,6 +67,16 @@ export class UpgradeManager {
                 maxValue: 50,
                 calculateNextValue: (current: number) => Math.floor(current * 1.25),
                 calculateCost: (current: number) => Math.floor(12 * Math.pow(1.25, Math.log(current/3) / Math.log(1.25)))
+            }],
+            [SkillType.ATTACK_SPEED, {
+                type: SkillType.ATTACK_SPEED,
+                name: 'Скорость атаки',
+                description: 'Увеличивает частоту выстрелов башни',
+                cost: 10,
+                currentValue: skills.get(SkillType.ATTACK_SPEED)?.value || 1,
+                maxValue: 3,
+                calculateNextValue: (current: number) => Math.floor((current + 0.2) * 100) / 100,
+                calculateCost: (current: number) => Math.floor(10 * Math.pow(1.3, Math.log(current/1) / Math.log(1.3)))
             }]
         ]);
     }
@@ -139,6 +149,11 @@ export class UpgradeManager {
             case SkillType.COIN_REWARD:
                 if (gameScene) {
                     (gameScene as any).coinRewardMultiplier = upgrade.currentValue;
+                }
+                break;
+            case SkillType.ATTACK_SPEED:
+                if (gameScene) {
+                    (gameScene as any).attackSpeedMultiplier = upgrade.currentValue;
                 }
                 break;
         }
