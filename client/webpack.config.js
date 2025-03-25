@@ -24,7 +24,18 @@ const config = {
             {
                 test: /\.(ts|tsx)$/, // Added TypeScript handling
                 exclude: /node_modules/,
-                use: 'ts-loader',
+                use: [
+                    {
+                        loader: 'ts-loader',
+                        options: {
+                            transpileOnly: true,
+                            compilerOptions: {
+                                declaration: true,
+                                declarationDir: './dist/types'
+                            }
+                        }
+                    }
+                ],
             },
             {
                 test: /\.(js|jsx)$/, // Handling JS and JSX files
@@ -52,7 +63,7 @@ const config = {
         ],
     },
     resolve: {
-        extensions: ['.ts', '.tsx', '.js', '.jsx'], // Added .ts and .tsx
+        extensions: ['.ts', '.tsx', '.js', '.jsx', '.d.ts'], // Added .ts and .tsx
     },
     plugins: [
         new HtmlWebpackPlugin({
