@@ -1,6 +1,7 @@
 export class TelegramService {
     private static instance: TelegramService;
     private webApp: TelegramWebApp | null = null;
+    private viewportChangeCallbacks: (() => void)[] = [];
 
     private constructor() {
         // Проверяем, доступен ли Telegram Web App
@@ -28,6 +29,11 @@ export class TelegramService {
         // Устанавливаем основной цвет темы
         this.webApp.setHeaderColor('#ffffff');
         this.webApp.setBackgroundColor('#ffffff');
+
+        // Подписываемся на изменения viewport
+        this.webApp.onEvent('viewportChanged', () => {
+            this.viewportChangeCallbacks.forEach(callback => callback());
+        });
     }
 
     // Получить данные пользователя
@@ -52,5 +58,23 @@ export class TelegramService {
 
     public getViewportWidth(): number {
         return this.webApp?.viewportWidth || window.innerWidth;
+    }
+
+    // Проверить, развернуто ли приложение на весь экран
+    public isExpanded(): boolean {
+        return this.webApp?.isExpanded || false;
+    }
+
+    // Добавить обработчик изменения viewport
+    public onViewportChange(callback: () => void): void {
+        this.viewportChangeCallbacks.push(callback);
+    }
+
+    // Удалить обработчик изменения viewport
+    public offViewportChange(callback: () => void): void {
+        const index = this.viewportChangeCallbacks.indexOf(callback);
+        if (index > -1) {
+            this.viewportChangeCallbacks.splice(index, 1);
+        }
     }
 } 

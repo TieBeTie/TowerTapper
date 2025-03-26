@@ -10,30 +10,15 @@ import { WaveManager } from '../managers/WaveManager';
 import { WaveIndicator } from '../ui/components/WaveIndicator';
 import { WaveClearEffect } from '../ui/components/WaveClearEffect';
 import AudioManager from '../managers/AudioManager';
-import { IGameScene } from '../types/GameScene';
+import { IGameScene } from '../types/IGameScene';
+import { ScreenManager } from '../managers/ScreenManager';
 
 export default class GameScene extends Phaser.Scene implements IGameScene {
-    // Game view constants
-    private readonly GAME_VIEW_HEIGHT_RATIO = 1; // 70% of screen height for game view
-    private readonly GAME_VIEW_TOP_MARGIN = 0.0; // 15% from top for game view
-    private readonly GAME_VIEW_BOTTOM_MARGIN = 0.0; // 15% from bottom for game view
-    
-    // Minimum and maximum dimensions for game view
-    private readonly MIN_GAME_WIDTH = 320;
-    private readonly MIN_GAME_HEIGHT = 480;
-    private readonly MAX_GAME_WIDTH = 16000;
-    private readonly MAX_GAME_HEIGHT = 9000;
-
-    // Game view properties
-    private gameViewHeight!: number;
-    private gameViewWidth!: number;
-    private gameViewY!: number;
-    private gameScale!: number;
-
     // Game objects
     public tower!: Tower;
     public uiManager!: UIManager;
     public upgradeManager!: UpgradeManager;
+    public screenManager!: ScreenManager;
     enemyManager!: EnemyManager;
     projectileManager!: ProjectileManager;
     collisionManager!: CollisionManager;
@@ -75,9 +60,9 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 fadeRect.destroy();
             }
         });
-
-        // Set up resize handler
-        this.scale.on('resize', this.handleResize, this);
+        
+        // Initialize ScreenManager
+        this.screenManager = new ScreenManager(this);
         
         // Initial setup
         this.setupGameView();
@@ -88,69 +73,39 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     }
 
     private setupGameView(): void {
-        const { width, height } = this.scale;
-        
-        // Calculate game view dimensions with constraints
-        this.gameViewHeight = Math.min(
-            Math.max(height * this.GAME_VIEW_HEIGHT_RATIO, this.MIN_GAME_HEIGHT),
-            this.MAX_GAME_HEIGHT
-        );
-        this.gameViewWidth = Math.min(
-            Math.max(width, this.MIN_GAME_WIDTH),
-            this.MAX_GAME_WIDTH
-        );
-        
-        // Calculate vertical position with margins
-        this.gameViewY = height * this.GAME_VIEW_TOP_MARGIN;
+        // Создаем фон через ScreenManager
+        this.screenManager.setupBackground();
 
-        // Calculate game scale based on orientation
-        this.calculateGameScale();
+        // Получаем центр экрана и масштаб
+        const center = this.screenManager.getScreenCenter();
+        const gameScale = this.screenManager.getGameScale();
 
-        // Create the background for game view
-        const background = this.add.image(
-            this.gameViewWidth / 2,
-            this.gameViewY + this.gameViewHeight / 2,
-            'background'
-        );
-        background.setOrigin(0.5, 0.5);
-        background.displayWidth = this.gameViewWidth;
-        background.displayHeight = this.gameViewHeight;
-
-        // Initialize the tower with scaled dimensions
-        this.tower = new Tower(
-            this,
-            this.gameViewWidth / 2,
-            this.gameViewY + this.gameViewHeight / 2,
-            'tower'
-        );
+        // Создаем башню
+        this.tower = new Tower(this, center.x, center.y, 'tower');
         this.tower.setName('tower');
-        this.tower.setScale(this.gameScale);
-        this.tower.setAlpha(0); // Start invisible
+        this.tower.setScale(gameScale);
+        this.tower.setAlpha(0);
 
-        // Animate tower spawn
+        // Анимация появления башни
         this.tweens.add({
             targets: this.tower,
             alpha: 1,
             duration: 800,
             ease: 'Power2.out',
             onStart: () => {
-                let amplitude = 8; // Начальная амплитуда
-                let direction = 1; // 1 = вправо, -1 = влево
-                const centerX = this.gameViewWidth / 2; // Запоминаем центральную позицию
+                let amplitude = 8;
+                let direction = 1;
                 
-                // Создаем таймер для движения влево-вправо
                 const moveTimer = this.time.addEvent({
                     delay: 50,
                     callback: () => {
                         if (amplitude > 0.5) {
-                            // Устанавливаем позицию относительно центра
-                            this.tower.x = centerX + (direction * amplitude);
-                            direction *= -1; // Меняем направление
-                            amplitude *= 0.8; // Уменьшаем амплитуду
+                            this.tower.x = center.x + (direction * amplitude);
+                            direction *= -1;
+                            amplitude *= 0.8;
                         } else {
                             moveTimer.destroy();
-                            this.tower.x = centerX; // Возвращаем точно в центр
-                            // Initialize managers immediately after tower animation
+                            this.tower.x = center.x;
                             this.initializeManagers();
                         }
                     },
@@ -158,28 +113,6 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 });
             }
         });
-    }
-
-    private calculateGameScale(): void {
-        const { width, height } = this.scale;
-        const baseWidth = this.scale.baseSize.width;
-        const baseHeight = this.scale.baseSize.height;
-        
-        // Calculate scale based on orientation
-        const isPortrait = height > width;
-        if (isPortrait) {
-            this.gameScale = Math.min(
-                this.gameViewWidth / baseWidth,
-                this.gameViewHeight / baseHeight
-            ) * 0.7; // Reduce overall scale by 30%
-        } else {
-            // For landscape, maintain aspect ratio while fitting within bounds
-            const aspectRatio = baseWidth / baseHeight;
-            this.gameScale = Math.min(
-                this.gameViewWidth / baseWidth,
-                this.gameViewHeight / (baseWidth / aspectRatio)
-            ) * 0.7; // Reduce overall scale by 30%
-        }
     }
 
     private initializeManagers(): void {
@@ -221,16 +154,6 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         this.initializeWebSocket();
     }
 
-    private handleResize(gameSize: Phaser.Structs.Size): void {
-        // Recalculate game view dimensions
-        this.setupGameView();
-        
-        // Update all game objects with new scale
-        if (this.tower) {
-            this.tower.setScale(this.gameScale);
-        }
-    }
-
     private initializeWebSocket(): void {
         const urlParams = new URLSearchParams(window.location.search);
         const telegramId = urlParams.get('telegram_id');
@@ -265,19 +188,6 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         this.socket.onerror = (error) => {
             console.error('WebSocket error:', error);
         };
-    }
-
-    // Getters for game view dimensions
-    getGameViewHeight(): number {
-        return this.gameViewHeight;
-    }
-
-    getGameViewWidth(): number {
-        return this.gameViewWidth;
-    }
-
-    getGameViewY(): number {
-        return this.gameViewY;
     }
 
     handleServerMessage(message: any): void {
@@ -331,9 +241,6 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             this.socket.close();
         }
         
-        // Unsubscribe from events
-        this.scale.off('resize', this.handleResize, this);
-        
         // Destroy all managers properly
         if (this.waveManager) {
             this.waveManager.removeAllListeners('waveComplete');
@@ -341,6 +248,10 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         
         if (this.audioManager) {
             this.audioManager.destroy();
+        }
+
+        if (this.screenManager) {
+            this.screenManager.destroy();
         }
     }
 

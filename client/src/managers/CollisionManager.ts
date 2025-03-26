@@ -5,7 +5,7 @@ import Enemy from '../objects/enemies/Enemy';
 import { DamageNumber } from '../ui/components/DamageNumber';
 import { SkillSetStorage } from '../storage/SkillSetStorage';
 import { SkillType } from '../types/SkillType';
-import { IGameScene } from '../types/GameScene';
+import { IGameScene } from '../types/IGameScene';
 
 // CollisionManager handles the logic for managing collisions between projectiles and enemies, as well as between the tower and enemies
 class CollisionManager {

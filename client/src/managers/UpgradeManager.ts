@@ -1,15 +1,15 @@
 import { SkillType, Upgrade } from '../types/SkillType';
 import { SkillStateManager } from './SkillStateManager';
 import { SkillSetStorage } from '../storage/SkillSetStorage';
-import { IGameScene } from '../types/GameScene';
+import { IScene } from '../types/IScene';
 
 export class UpgradeManager {
-    private scene: IGameScene;
+    private scene: IScene;
     private upgrades: Map<SkillType, Upgrade>;
     private stateService: SkillStateManager;
     private skillStorage: SkillSetStorage;
 
-    constructor(scene: IGameScene) {
+    constructor(scene: IScene) {
         this.scene = scene;
         this.stateService = SkillStateManager.getInstance();
         this.skillStorage = SkillSetStorage.getInstance();
@@ -129,7 +129,7 @@ export class UpgradeManager {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return;
 
-        const gameScene = this.scene as IGameScene;
+        const gameScene = this.scene as IScene;
         const tower = gameScene.tower;
 
         switch (type) {

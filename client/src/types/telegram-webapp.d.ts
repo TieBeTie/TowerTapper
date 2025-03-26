@@ -1,8 +1,12 @@
 declare global {
+    type TelegramEventType = 'viewportChanged' | 'themeChanged' | 'mainButtonClicked';
+
     interface TelegramWebApp {
         ready: () => void;
         setHeaderColor: (color: string) => void;
         setBackgroundColor: (color: string) => void;
+        onEvent: (eventType: TelegramEventType, callback: () => void) => void;
+        offEvent: (eventType: TelegramEventType, callback: () => void) => void;
         initDataUnsafe: {
             user?: {
                 id: number;
@@ -16,6 +20,7 @@ declare global {
         colorScheme: string;
         viewportHeight: number;
         viewportWidth: number;
+        isExpanded: boolean;
     }
 
     interface Window {

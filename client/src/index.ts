@@ -1,39 +1,40 @@
 import Phaser from 'phaser';
 import BootScene from './scenes/BootScene';
-import GameScene from './scenes/GameScene';
 import MenuScene from './scenes/MenuScene';
-import PauseScene from './scenes/PauseScene';
-import DeathScene from './scenes/DeathScene';
+import GameScene from './scenes/GameScene';
 import { TelegramService } from './services/TelegramService';
 
 // Инициализируем Telegram сервис
 const telegramService = TelegramService.getInstance();
 
-// Получаем размеры viewport
+// Базовое соотношение сторон игры (9:16)
+const ASPECT_RATIO = 9/16;
+
+// Определяем размеры игры на основе Telegram Web App viewport
 const viewportWidth = telegramService.getViewportWidth();
 const viewportHeight = telegramService.getViewportHeight();
 
-// Рассчитываем размеры игры с учетом соотношения сторон
-const gameWidth = 900;
-const gameHeight = 1600;
-const scale = Math.min(viewportWidth / gameWidth, viewportHeight / gameHeight);
+// Определяем размеры игры
+let gameWidth, gameHeight;
+
+if (viewportWidth / viewportHeight > ASPECT_RATIO) {
+    // Широкий экран - подгоняем по высоте
+    gameHeight = viewportHeight;
+    gameWidth = viewportHeight * ASPECT_RATIO;
+} else {
+    // Узкий экран - подгоняем по ширине
+    gameWidth = viewportWidth;
+    gameHeight = viewportWidth / ASPECT_RATIO;
+}
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,  // Используем RESIZE вместо FIT для Telegram Web App
         autoCenter: Phaser.Scale.CENTER_BOTH,
         parent: 'game-container',
         width: gameWidth,
-        height: gameHeight,
-        min: {
-            width: gameWidth * 0.5,
-            height: gameHeight * 0.5
-        },
-        max: {
-            width: gameWidth,
-            height: gameHeight
-        }
+        height: gameHeight
     },
     physics: {
         default: 'arcade',
@@ -41,8 +42,27 @@ const config: Phaser.Types.Core.GameConfig = {
             gravity: { x: 0, y: 0 }
         }
     },
-    scene: [BootScene, MenuScene, GameScene, PauseScene, DeathScene],
+    scene: [BootScene, MenuScene, GameScene],
     backgroundColor: '#ffffff'
 };
 
 const game = new Phaser.Game(config);
+
+// Добавляем обработчик изменения размера viewport в Telegram
+telegramService.onViewportChange(() => {
+    const newWidth = telegramService.getViewportWidth();
+    const newHeight = telegramService.getViewportHeight();
+    
+    // Обновляем размеры игры с сохранением соотношения сторон
+    let newGameWidth, newGameHeight;
+    
+    if (newWidth / newHeight > ASPECT_RATIO) {
+        newGameHeight = newHeight;
+        newGameWidth = newHeight * ASPECT_RATIO;
+    } else {
+        newGameWidth = newWidth;
+        newGameHeight = newWidth / ASPECT_RATIO;
+    }
+    
+    game.scale.resize(newGameWidth, newGameHeight);
+});

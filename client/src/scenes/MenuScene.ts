@@ -1,24 +1,35 @@
 import Phaser from 'phaser';
 import AudioManager from '../managers/AudioManager';
+import { IScene } from '../types/IScene';
+import { ScreenManager } from '../managers/ScreenManager';
+import { UIManager } from '../managers/UIManager';
 
-class MenuScene extends Phaser.Scene {
+export default class MenuScene extends Phaser.Scene implements IScene {
     private audioManager!: AudioManager;
+    public screenManager!: ScreenManager;
+    public uiManager!: UIManager;
 
     constructor() {
         super({ key: 'MenuScene' });
     }
 
+    preload(): void {
+        // Загрузка ресурсов если нужно
+    }
+
     create(): void {
+        // Initialize ScreenManager
+        this.screenManager = new ScreenManager(this);
+        
         // Initialize AudioManager
         this.audioManager = AudioManager.getInstance(this);
         this.audioManager.playMusic();
 
-        const { width, height } = this.scale;
+        // Создаем фон через ScreenManager
+        this.screenManager.setupBackground();
 
-        // Создаем фон
-        this.add.image(0, 0, 'background')
-            .setOrigin(0, 0)
-            .setDisplaySize(width, height);
+        // Получаем размеры экрана через ScreenManager
+        const { width, height } = this.screenManager.getScreenSize();
 
         // Создаем монстра в центре экрана, но с маленьким размером
         const monster = this.add.sprite(width / 2, height / 2, 'enemy');
@@ -66,11 +77,13 @@ class MenuScene extends Phaser.Scene {
             });
     }
 
+    update(time: number, delta: number): void {
+        // Обновление логики если нужно
+    }
+
     private startGame(): void {
-        // Создаем черный прямоугольник на весь экран
-        const { width, height } = this.scale;
-        const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 0);
-        fadeRect.setOrigin(0);
+        // Создаем затемнение через ScreenManager
+        const fadeRect = this.screenManager.createFadeOverlay();
 
         // Анимируем затемнение и масштабирование кнопки
         this.tweens.add({
@@ -116,6 +129,10 @@ class MenuScene extends Phaser.Scene {
             });
         }
     }
-}
 
-export default MenuScene;
+    destroy(): void {
+        if (this.screenManager) {
+            this.screenManager.destroy();
+        }
+    }
+}
