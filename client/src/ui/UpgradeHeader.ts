@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
+import { ScreenManager } from '../managers/ScreenManager';
 
 export interface UpgradeHeaderConfig {
     width: number;
     height: number;
     scene: Phaser.Scene;
     onClose: () => void;
+    screenManager?: ScreenManager;
 }
 
 export class UpgradeHeader extends Phaser.GameObjects.Container {
@@ -13,9 +15,21 @@ export class UpgradeHeader extends Phaser.GameObjects.Container {
     private closeButton: Phaser.GameObjects.Text;
     private coinIcon: Phaser.GameObjects.Image;
     private coinText: Phaser.GameObjects.Text;
+    private screenManager: ScreenManager;
 
     constructor(config: UpgradeHeaderConfig) {
         super(config.scene, 0, 0);
+        
+        // Initialize ScreenManager
+        this.screenManager = config.screenManager || new ScreenManager(config.scene);
+        
+        // Get responsive sizing
+        const gameScale = this.screenManager.getGameScale();
+        const titleFontSize = this.screenManager.getResponsiveFontSize(32);
+        const buttonFontSize = this.screenManager.getResponsiveFontSize(24);
+        const coinFontSize = this.screenManager.getResponsiveFontSize(28);
+        const padding = this.screenManager.getResponsivePadding(40);
+        const iconScale = 0.6 * gameScale;
 
         // Create background
         this.background = new Phaser.GameObjects.Rectangle(
@@ -36,22 +50,22 @@ export class UpgradeHeader extends Phaser.GameObjects.Container {
             'Улучшения замка',
             {
                 fontFamily: 'pixelFont',
-                fontSize: '32px',
+                fontSize: `${titleFontSize}px`,
                 color: '#ffffff',
                 stroke: '#000000',
-                strokeThickness: 4
+                strokeThickness: Math.max(2, Math.round(4 * gameScale))
             }
         ).setOrigin(0.5);
 
         // Create close button
         this.closeButton = new Phaser.GameObjects.Text(
             this.scene,
-            config.width - 40,
+            config.width - padding,
             config.height / 2,
             'X',
             {
                 fontFamily: 'pixelFont',
-                fontSize: '24px',
+                fontSize: `${buttonFontSize}px`,
                 color: '#ffffff'
             }
         )
@@ -64,24 +78,24 @@ export class UpgradeHeader extends Phaser.GameObjects.Container {
         // Create coin display
         this.coinIcon = new Phaser.GameObjects.Image(
             this.scene,
-            20,
+            this.screenManager.getResponsivePadding(20),
             config.height / 2,
             'coin'
         )
-            .setScale(0.6)
+            .setScale(iconScale)
             .setOrigin(0, 0.5);
 
         this.coinText = new Phaser.GameObjects.Text(
             this.scene,
-            70,
+            this.screenManager.getResponsivePadding(70),
             config.height / 2,
             '0',
             {
                 fontFamily: 'pixelFont',
-                fontSize: '28px',
+                fontSize: `${coinFontSize}px`,
                 color: '#ffdd00',
                 stroke: '#000000',
-                strokeThickness: 4
+                strokeThickness: Math.max(2, Math.round(4 * gameScale))
             }
         ).setOrigin(0, 0.5);
 
@@ -94,11 +108,49 @@ export class UpgradeHeader extends Phaser.GameObjects.Container {
             this.coinText
         ]);
 
+        // Subscribe to screen resize events
+        this.scene.events.on('screenResize', this.handleScreenResize, this);
+
         // Add container to scene
         this.scene.add.existing(this);
+    }
+    
+    private handleScreenResize(gameScale: number): void {
+        // Update font sizes
+        const titleFontSize = this.screenManager.getResponsiveFontSize(32);
+        const buttonFontSize = this.screenManager.getResponsiveFontSize(24);
+        const coinFontSize = this.screenManager.getResponsiveFontSize(28);
+        const padding = this.screenManager.getResponsivePadding(40);
+        const iconScale = 0.6 * gameScale;
+        
+        // Update text styles
+        this.titleText.setFontSize(titleFontSize);
+        this.closeButton.setFontSize(buttonFontSize);
+        this.coinText.setFontSize(coinFontSize);
+        
+        // Update positions
+        this.closeButton.setPosition(
+            this.background.width - padding,
+            this.background.height / 2
+        );
+        
+        this.coinIcon
+            .setPosition(this.screenManager.getResponsivePadding(20), this.background.height / 2)
+            .setScale(iconScale);
+            
+        this.coinText.setPosition(
+            this.screenManager.getResponsivePadding(70),
+            this.background.height / 2
+        );
     }
 
     updateCoins(amount: number): void {
         this.coinText.setText(Math.floor(amount).toString());
+    }
+    
+    destroy(fromScene?: boolean): void {
+        // Clean up event listeners
+        this.scene.events.off('screenResize', this.handleScreenResize, this);
+        super.destroy(fromScene);
     }
 } 

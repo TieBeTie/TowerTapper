@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ScreenManager } from '../managers/ScreenManager';
 
 export interface UIComponentConfig {
     scene: Phaser.Scene;
@@ -11,6 +12,7 @@ export interface UIComponentConfig {
     padding?: number;
     fontSize?: number;
     responsive?: boolean;
+    screenManager?: ScreenManager;
 }
 
 export abstract class UIComponent extends Phaser.GameObjects.Container {
@@ -21,6 +23,7 @@ export abstract class UIComponent extends Phaser.GameObjects.Container {
     protected padding: number;
     protected fontSize: number;
     protected responsive: boolean;
+    protected screenManager: ScreenManager;
 
     constructor(config: UIComponentConfig) {
         super(config.scene, config.x || 0, config.y || 0);
@@ -31,11 +34,14 @@ export abstract class UIComponent extends Phaser.GameObjects.Container {
         this.padding = config.padding || 10;
         this.fontSize = config.fontSize || 16;
         this.responsive = config.responsive || false;
+        this.screenManager = config.screenManager || new ScreenManager(config.scene);
+        
         this.setScale(this.scale);
         this.setAlpha(this.alpha);
 
         if (this.responsive) {
-            this.scene.scale.on('resize', this.handleResize, this);
+            // Use ScreenManager's screen resize event
+            this.scene.events.on('screenResize', this.handleScreenResize, this);
         }
     }
 
@@ -58,27 +64,18 @@ export abstract class UIComponent extends Phaser.GameObjects.Container {
     }
 
     protected getResponsiveScale(): number {
-        const { width, height } = this.scene.scale;
-        const baseWidth = this.scene.scale.baseSize.width;
-        const baseHeight = this.scene.scale.baseSize.height;
-        const scaleX = width / baseWidth;
-        const scaleY = height / baseHeight;
-        return Math.min(scaleX, scaleY) * this.scale;
+        return this.screenManager.getGameScale() * this.scale;
     }
 
     protected getResponsivePadding(): number {
-        const { width } = this.scene.scale;
-        const baseWidth = this.scene.scale.baseSize.width;
-        return (width / baseWidth) * this.padding;
+        return this.screenManager.getResponsivePadding(this.padding);
     }
 
     protected getResponsiveFontSize(): number {
-        const { width } = this.scene.scale;
-        const baseWidth = this.scene.scale.baseSize.width;
-        return (width / baseWidth) * this.fontSize;
+        return this.screenManager.getResponsiveFontSize(this.fontSize);
     }
 
-    protected handleResize(gameSize: Phaser.Structs.Size): void {
+    protected handleScreenResize(gameScale: number): void {
         if (this.responsive) {
             this.setScale(this.getResponsiveScale());
         }
@@ -91,7 +88,7 @@ export abstract class UIComponent extends Phaser.GameObjects.Container {
 
     destroy(fromScene?: boolean): void {
         if (this.responsive) {
-            this.scene.scale.removeListener('resize', this.handleResize, this);
+            this.scene.events.off('screenResize', this.handleScreenResize, this);
         }
         super.destroy(fromScene);
     }

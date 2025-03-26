@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ScreenManager } from '../../managers/ScreenManager';
 
 interface CoinAnimationConfig {
     scene: Phaser.Scene;
@@ -6,6 +7,7 @@ interface CoinAnimationConfig {
     endPosition: Phaser.Math.Vector2;
     duration?: number;
     onComplete?: () => void;
+    screenManager?: ScreenManager;
 }
 
 export class CoinAnimation extends Phaser.GameObjects.Container {
@@ -14,6 +16,7 @@ export class CoinAnimation extends Phaser.GameObjects.Container {
     private endPosition: Phaser.Math.Vector2;
     private duration: number;
     private onComplete?: () => void;
+    private screenManager: ScreenManager;
 
     constructor(config: CoinAnimationConfig) {
         super(config.scene, config.startPosition.x, config.startPosition.y);
@@ -21,13 +24,19 @@ export class CoinAnimation extends Phaser.GameObjects.Container {
         this.endPosition = config.endPosition;
         this.duration = config.duration || 1000;
         this.onComplete = config.onComplete;
+        this.screenManager = config.screenManager || new ScreenManager(config.scene);
         this.init();
     }
 
     private init(): void {
-        // Create coin sprite
+        // Get responsive scale
+        const gameScale = this.screenManager.getGameScale();
+        const baseScale = 0.6;
+        const finalScale = 0.3;
+        
+        // Create coin sprite with responsive scaling
         this.sprite = this.scene.add.sprite(0, 0, 'coin');
-        this.sprite.setScale(0.6);
+        this.sprite.setScale(baseScale * gameScale);
         this.add(this.sprite);
 
         // Play spin animation if it exists
@@ -53,7 +62,7 @@ export class CoinAnimation extends Phaser.GameObjects.Container {
         // Add scale animation
         this.scene.tweens.add({
             targets: this.sprite,
-            scale: 0.3,
+            scale: finalScale * gameScale,
             duration: 800,
             ease: 'Power1'
         });
@@ -71,28 +80,37 @@ export class CoinAnimation extends Phaser.GameObjects.Container {
         scene: Phaser.Scene,
         startPosition: Phaser.Math.Vector2,
         endPosition: Phaser.Math.Vector2,
-        onComplete?: () => void
+        onComplete?: () => void,
+        screenManager?: ScreenManager
     ): CoinAnimation {
         return new CoinAnimation({
             scene,
             startPosition,
             endPosition,
             duration: 1000,
-            onComplete
+            onComplete,
+            screenManager
         });
     }
 
     static createSpawnAnimation(
         scene: Phaser.Scene,
         position: Phaser.Math.Vector2,
-        onComplete?: () => void
+        onComplete?: () => void,
+        screenManager?: ScreenManager
     ): CoinAnimation {
+        // Get offset based on responsive padding if screenManager is provided
+        const verticalOffset = screenManager ? 
+            screenManager.getResponsivePadding(50) : 
+            50;
+            
         return new CoinAnimation({
             scene,
-            startPosition: position.clone().add(new Phaser.Math.Vector2(0, 50)),
+            startPosition: position.clone().add(new Phaser.Math.Vector2(0, verticalOffset)),
             endPosition: position,
             duration: 500,
-            onComplete
+            onComplete,
+            screenManager
         });
     }
 } 

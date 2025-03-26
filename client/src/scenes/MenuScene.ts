@@ -30,23 +30,25 @@ export default class MenuScene extends Phaser.Scene implements IScene {
 
         // Получаем размеры экрана через ScreenManager
         const { width, height } = this.screenManager.getScreenSize();
+        const gameScale = this.screenManager.getGameScale();
+        const center = this.screenManager.getScreenCenter();
 
         // Создаем монстра в центре экрана, но с маленьким размером
-        const monster = this.add.sprite(width / 2, height / 2, 'enemy');
-        monster.setScale(0.1);
+        const monster = this.add.sprite(center.x, center.y, 'enemy');
+        monster.setScale(0.1 * gameScale); // Учитываем масштаб игры
         monster.play('enemy_walk');
 
         // Анимация появления монстра
         this.tweens.add({
             targets: monster,
-            scale: 1.5,
+            scale: 1.5 * gameScale, // Учитываем масштаб игры для финального размера
             duration: 800,
             ease: 'Bounce.out',
             onComplete: () => {
                 // После появления начинаем покачивание
                 this.tweens.add({
                     targets: monster,
-                    y: height / 2 + 10,
+                    y: center.y + 10, // Используем центр экрана
                     duration: 1000,
                     yoyo: true,
                     repeat: -1,
@@ -55,9 +57,10 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             }
         });
 
-        // Создаем кнопку "Играть"
-        const playButton = this.add.text(width / 2, height * 0.7, '►', {
-            fontSize: '64px',
+        // Создаем кнопку "Играть" с использованием адаптивного шрифта
+        const fontSize = this.screenManager.getResponsiveFontSize(64);
+        const playButton = this.add.text(center.x, height * 0.7, '►', {
+            fontSize: `${fontSize}px`,
             color: '#ffffff',
             fontFamily: 'pixelFont'
         }).setOrigin(0.5);
@@ -75,6 +78,36 @@ export default class MenuScene extends Phaser.Scene implements IScene {
                 this.audioManager.playSound('playButton');
                 this.startGame();
             });
+            
+        // Подписываемся на изменение размера экрана
+        this.events.on('screenResize', this.handleScreenResize, this);
+    }
+    
+    private handleScreenResize(gameScale: number): void {
+        // Находим и обновляем размер монстра
+        const monster = this.children.list.find(child => 
+            child instanceof Phaser.GameObjects.Sprite && 
+            (child as Phaser.GameObjects.Sprite).texture.key === 'enemy'
+        ) as Phaser.GameObjects.Sprite;
+        
+        if (monster) {
+            monster.setScale(1.5 * gameScale);
+        }
+        
+        // Находим и обновляем размер кнопки
+        const playButton = this.children.list.find(child => 
+            child instanceof Phaser.GameObjects.Text && 
+            (child as Phaser.GameObjects.Text).text === '►'
+        ) as Phaser.GameObjects.Text;
+        
+        if (playButton) {
+            const fontSize = this.screenManager.getResponsiveFontSize(64);
+            playButton.setFontSize(fontSize);
+            playButton.setPosition(
+                this.screenManager.getScreenCenter().x,
+                this.screenManager.getScreenSize().height * 0.7
+            );
+        }
     }
 
     update(time: number, delta: number): void {
@@ -102,7 +135,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         if (monster) {
             this.tweens.add({
                 targets: monster,
-                scale: 0.5,
+                scale: 0.5 * this.screenManager.getGameScale(), // Учитываем масштаб игры
                 alpha: 0,
                 duration: 500,
                 ease: 'Power2'
@@ -131,6 +164,9 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     }
 
     destroy(): void {
+        // Отписываемся от событий
+        this.events.off('screenResize', this.handleScreenResize, this);
+        
         if (this.screenManager) {
             this.screenManager.destroy();
         }

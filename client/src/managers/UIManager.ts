@@ -7,6 +7,7 @@ import Tower from '../objects/towers/Tower';
 import { UpgradeButton } from '../ui/components/UpgradeButton';
 import { SkillType } from '../types/SkillType';
 import { UpgradeManager } from './UpgradeManager';
+import { ScreenManager } from './ScreenManager';
 
 
 export class UIManager {
@@ -16,15 +17,16 @@ export class UIManager {
     private coinIcon!: Phaser.GameObjects.Image;
     private coinNumberText!: Phaser.GameObjects.Text;
     private upgradeManager: UpgradeManager;
+    private screenManager: ScreenManager;
 
     // Responsive design constants
-    private readonly HEADER_HEIGHT_RATIO = 0.03; // 10% of screen height
-    private readonly BUTTON_PANEL_HEIGHT_RATIO = 0.21; // 20% of screen height
-    private readonly BUTTON_SIZE_RATIO = 0.02; // 4% of screen width
-    private readonly BUTTON_SPACING_RATIO = 0.04; // Increased from 0.02 to 0.04 (4% of screen width)
-    private readonly GAME_VIEW_HEIGHT_RATIO = 0.70;
-    private readonly ICON_SIZE_RATIO = 0.04; // 5% of screen width
-    private readonly FONT_SIZE_RATIO = 0.04; // 3% of screen width
+    private readonly HEADER_HEIGHT_RATIO = 0.03; // 3% of screen height
+    private readonly BUTTON_PANEL_HEIGHT_RATIO = 0.21; // 21% of screen height
+    private readonly BUTTON_SIZE_RATIO = 0.02; // 2% of screen width
+    private readonly BUTTON_SPACING_RATIO = 0.04; // 4% of screen width
+    private readonly GAME_VIEW_HEIGHT_RATIO = 0.70; // 70% of screen height
+    private readonly ICON_SIZE_RATIO = 0.04; // 4% of screen width
+    private readonly FONT_SIZE_RATIO = 0.04; // 4% of screen width
 
     constructor(
         private scene: Phaser.Scene,
@@ -32,26 +34,34 @@ export class UIManager {
         private onUpgradeClick: () => void,
         private onSettingsClick: () => void,
         private onShopClick: () => void,
-        upgradeManager: UpgradeManager
+        upgradeManager: UpgradeManager,
+        screenManager: ScreenManager
     ) {
         this.upgradeManager = upgradeManager;
+        this.screenManager = screenManager;
         this.initialize();
-        this.scene.scale.on('resize', this.handleResize, this);
+        
+        // Subscribe to screen resize events from ScreenManager
+        this.scene.events.on('screenResize', this.handleScreenResize, this);
     }
 
     private initilizeHeader(iconSize: number, fontSize: number): void {
-        // Create header
-        this.header = new Header(this.scene);
-         // Create coin elements
+        // Create header with screenManager
+        this.header = new Header(this.scene, this.screenManager);
+        
+         // Create coin elements - уменьшаем размер иконки монеты
          this.coinIcon = this.scene.add.image(0, 0, 'coin');
-         this.coinIcon.setDisplaySize(iconSize, iconSize);
- 
+         
+         // Уменьшаем размер иконки монеты до 60% от оригинального размера
+         const reducedIconSize = iconSize * 0.6;
+         this.coinIcon.setDisplaySize(reducedIconSize, reducedIconSize);
+
          this.coinNumberText = this.scene.add.text(0, 0, '0', {
              fontSize: `${fontSize}px`,
              color: '#ffffff',
              fontFamily: 'pixelFont'
          }).setOrigin(0, 0.5);
- 
+
          // Add elements to header
          // Create a container for coin display
          const coinContainer = this.scene.add.container(0, 0);
@@ -66,10 +76,10 @@ export class UIManager {
     }
 
     private initilizeButtonPanel(): void {
-        this.buttonPanel = new ButtonPanel(this.scene, 2, 3);
+        this.buttonPanel = new ButtonPanel(this.scene, 2, 3, this.screenManager);
         
-        const { width } = this.scene.scale;
-        const fontSize = width * this.FONT_SIZE_RATIO;
+        // Get responsive font size from ScreenManager
+        const fontSize = this.screenManager.getResponsiveFontSize(16);
 
         // Create interactive text for regen
         const regenButton = new UpgradeButton({
@@ -149,28 +159,25 @@ export class UIManager {
     }
 
     private initialize(): void {
-        const { width } = this.scene.scale;
+        // Use ScreenManager to get screen dimensions
+        const { width } = this.screenManager.getScreenSize();
         const iconSize = width * this.ICON_SIZE_RATIO;
-        const fontSize = width * this.FONT_SIZE_RATIO;
+        const fontSize = this.screenManager.getResponsiveFontSize(16);
+        
         this.initilizeHeader(iconSize, fontSize);
         this.initilizeButtonPanel();
     }
 
-    private handleResize(gameSize: Phaser.Structs.Size): void {
-        const { width, height } = gameSize;
+    private handleScreenResize(gameScale: number): void {
+        // Use ScreenManager to get updated dimensions
+        const { width, height } = this.screenManager.getScreenSize();
         
-        // Update header
-        this.header.handleResize(width);
-        
-        // Update button panel
-        this.buttonPanel.handleResize(width);
-        
-        // Update positions
+        // Update positions based on new dimensions
         this.updatePositions();
     }
 
     private updatePositions(): void {
-        const { width, height } = this.scene.scale;
+        const { width, height } = this.screenManager.getScreenSize();
 
         // Calculate dimensions
         const headerHeight = height * this.HEADER_HEIGHT_RATIO;
@@ -179,7 +186,7 @@ export class UIManager {
         const buttonSpacing = width * this.BUTTON_SPACING_RATIO;
 
         // Position and size header
-        const gameViewHeight = height * this.GAME_VIEW_HEIGHT_RATIO; // 60% of screen for game view
+        const gameViewHeight = height * this.GAME_VIEW_HEIGHT_RATIO; // 70% of screen for game view
         this.header.setPosition(0, gameViewHeight);
         this.header.setSize(width, headerHeight);
 
@@ -200,7 +207,7 @@ export class UIManager {
     }
 
     destroy(): void {
-        this.scene.scale.removeListener('resize', this.handleResize, this);
+        this.scene.events.off('screenResize', this.handleScreenResize, this);
         this.header.destroy();
         this.buttonPanel.destroy();
     }

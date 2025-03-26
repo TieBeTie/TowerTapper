@@ -75,6 +75,19 @@ class BootScene extends Phaser.Scene {
             },
             active: () => {
                 console.log('Font loaded successfully');
+                
+                // Добавляем тестовый элемент для прогрузки шрифта
+                const testText = document.createElement('div');
+                testText.style.fontFamily = 'pixelFont';
+                testText.style.fontSize = '0px';
+                testText.style.visibility = 'hidden';
+                testText.innerHTML = 'Font preload';
+                document.body.appendChild(testText);
+                
+                // Удаляем элемент после короткой задержки
+                setTimeout(() => {
+                    document.body.removeChild(testText);
+                }, 100);
             },
             inactive: () => {
                 console.error('Font failed to load');

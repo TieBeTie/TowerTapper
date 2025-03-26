@@ -83,7 +83,6 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         // Создаем башню
         this.tower = new Tower(this, center.x, center.y, 'tower');
         this.tower.setName('tower');
-        this.tower.setScale(gameScale);
         this.tower.setAlpha(0);
 
         // Анимация появления башни
@@ -136,7 +135,8 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             () => console.log('Upgrade clicked'),
             () => console.log('Settings clicked'),
             () => console.log('Shop clicked'),
-            this.upgradeManager
+            this.upgradeManager,
+            this.screenManager
         );
 
         // Initialize CoinManager
