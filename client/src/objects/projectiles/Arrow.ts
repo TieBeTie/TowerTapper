@@ -4,12 +4,8 @@ import { SkillSetStorage } from '../../storage/SkillSetStorage';
 import { SkillType } from '../../types/SkillType';
 
 export class Arrow extends Projectile {
-    targetX: number;
-    targetY: number;
     private speed: number;
     private maxSpeed: number;
-    private acceleration: number;
-    private deceleration: number;
     private initialDelay: number;
     private elapsedTime: number;
     private direction: Phaser.Math.Vector2;
@@ -20,8 +16,6 @@ export class Arrow extends Projectile {
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
-        this.targetX = -10000;
-        this.targetY = -10000;
 
         this.skillStorage = SkillSetStorage.getInstance();
         const skills = this.skillStorage.load();
@@ -33,8 +27,6 @@ export class Arrow extends Projectile {
         // Initialize movement properties
         this.speed = 0;
         this.maxSpeed = 300; // Base speed
-        this.acceleration = 5000; // Base acceleration
-        this.deceleration = 3000; // Base deceleration
         this.initialDelay = 0;
         this.elapsedTime = 0;
         this.direction = new Phaser.Math.Vector2(0, 0);
@@ -52,12 +44,13 @@ export class Arrow extends Projectile {
     }
 
     fire(targetX: number, targetY: number, speedMultiplier: number = 1): void {
-        this.targetX = targetX;
-        this.targetY = targetY;
-        this.speed = 0;
-        this.elapsedTime = 0;
         this.speedMultiplier = speedMultiplier;
+        // Set the direction vector toward the target
         this.direction = new Phaser.Math.Vector2(targetX - this.x, targetY - this.y).normalize();
+        // Set rotation to face the target
+        this.rotation = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
+        // Immediately set to max speed
+        this.speed = this.maxSpeed * this.speedMultiplier;
     }
 
     update(time: number, delta: number) {
@@ -67,27 +60,12 @@ export class Arrow extends Projectile {
             return;
         }
 
-        const distanceToTarget = Phaser.Math.Distance.Between(this.x, this.y, this.targetX, this.targetY);
-        const decelerationDistance = 100;
-
-        if (distanceToTarget <= decelerationDistance) {
-            this.speed -= this.deceleration * (delta / 1000);
-            if (this.speed < 0) this.speed = 0;
-        } else {
-            this.speed += this.acceleration * (delta / 1000);
-            const currentMaxSpeed = this.maxSpeed * this.speedMultiplier;
-            if (this.speed > currentMaxSpeed) this.speed = currentMaxSpeed;
-        }
-
+        // Apply velocity in the direction
         if (this.body && 'setVelocity' in this.body) {
             (this.body as Phaser.Physics.Arcade.Body).setVelocity(
                 this.direction.x * this.speed,
                 this.direction.y * this.speed
             );
-        }
-        
-        if (this.speed > 0) {
-            this.rotation = Phaser.Math.Angle.Between(this.x, this.y, this.targetX, this.targetY);
         }
     }
 }

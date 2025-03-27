@@ -9,14 +9,12 @@ import { SkillSetStorage } from '../storage/SkillSetStorage';
 import { SkillType } from '../types/SkillType';
 import { IGameScene } from '../types/IGameScene';
 
-
 // ProjectileManager handles the logic for managing and firing projectiles at enemies
 class ProjectileManager {
     scene: IGameScene;
     projectiles: Phaser.Physics.Arcade.Group;
     projectileFactory: ProjectileFactory;
     enemyManager: EnemyManager;
-    private projectilesInFlight: Map<Enemy, number> = new Map(); // Количество выпущенных стрел к врагу
     private projectileMaxLifetime: number = 5000; // Максимальное время жизни стрелы в мс
     private lastFireTime: number = 0; // Last time a projectile was fired
     private skillStorage: SkillSetStorage;
@@ -32,23 +30,6 @@ class ProjectileManager {
         this.projectileFactory = new ProjectileFactory(this.scene);
     }
 
-    setDamage(damage: number): void {
-        // This method is no longer used as damage is now fetched from skill storage
-    }
-
-    getDamage(): number {
-        const skills = this.skillStorage.load();
-        return skills.get(SkillType.DAMAGE)?.value || 0;
-    }
-
-    updateDamage(): void {
-        // This method is no longer used as damage is now fetched from skill storage
-    }
-
-    setFireRate(rate: number): void {
-        // This method is no longer used as rate is now fetched from skill storage
-    }
-
     private getFireRate(): number {
         const skills = this.skillStorage.load();
         const attackSpeed = skills.get(SkillType.ATTACK_SPEED)?.value || 1;
@@ -61,55 +42,33 @@ class ProjectileManager {
     }
 
     fireProjectile(speedMultiplier: number = 1): void {
-        // Находим ближайшего врага, в которого еще не выпущено максимальное количество стрел
+        // Находим ближайшего врага
         const targetEnemy = this.enemyManager.findNearestAvailableEnemy(this.scene.tower.x, this.scene.tower.y);
         if (targetEnemy) {
-            // Рассчитываем, сколько стрел нужно выпустить для убийства врага
-            const projectilesNeeded = this.calculateProjectilesNeeded(targetEnemy);
-            
-            // Получаем текущее количество стрел в полете к этому врагу
-            const currentProjectiles = this.projectilesInFlight.get(targetEnemy) || 0;
-            
-            // Если стрел уже достаточно, ищем другого врага
-            if (currentProjectiles >= projectilesNeeded) {
-                // Помечаем врага как "достаточно обстрелянного"
-                targetEnemy.isUnderAttack = true;
-                // Пробуем найти другого врага
-                const nextEnemy = this.enemyManager.findNearestAvailableEnemy(this.scene.tower.x, this.scene.tower.y);
-                if (nextEnemy && nextEnemy !== targetEnemy) {
-                    // Рекурсивно вызываем метод с новым врагом
-                    this.fireProjectile(speedMultiplier);
-                    return;
-                }
-                return;
-            }
-            
             // Создаем стрелу
             const arrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
-            // Используем урон из башни
+            
+
             const towerDamage = this.getTowerDamage();
-            console.log('Setting arrow damage:', towerDamage); // Debug log
+            console.log('Setting arrow damage:', towerDamage);
             arrow.setDamage(towerDamage);
+            
+            // Запускаем стрелу в направлении врага
             arrow.fire(targetEnemy.x, targetEnemy.y, speedMultiplier);
-            
-            // Увеличиваем счетчик стрел для этого врага
-            this.projectilesInFlight.set(targetEnemy, currentProjectiles + 1);
-            
-            // Добавляем данные о цели к стреле
-            (arrow as any).targetEnemy = targetEnemy;
             
             // Устанавливаем таймер автоматического удаления стрелы
             this.scene.time.delayedCall(this.projectileMaxLifetime, () => {
                 if (arrow.active) {
-                    // Если стрела все еще активна, значит она не попала - удаляем её
-                    this.handleMissedProjectile(arrow);
+                    // Если стрела все еще активна, удаляем её
+                    arrow.destroy();
                 }
             });
             
+            // Добавляем стрелу в группу
             this.projectiles.add(arrow);
             this.lastFireTime = this.scene.time.now;
             
-            // Play arrow sound
+            // Проигрываем звук
             const gameScene = this.scene as GameScene;
             if (gameScene.audioManager) {
                 gameScene.audioManager.playSound('arrow');
@@ -117,41 +76,14 @@ class ProjectileManager {
         }
     }
     
-    // Обработка промаха стрелы
-    handleMissedProjectile(projectile: Projectile): void {
-        const targetEnemy = (projectile as any).targetEnemy as Enemy;
-        
-        // Если враг все еще существует, корректируем счетчик стрел
-        if (targetEnemy && targetEnemy.active) {
-            const currentProjectiles = this.projectilesInFlight.get(targetEnemy) || 0;
-            if (currentProjectiles > 0) {
-                this.projectilesInFlight.set(targetEnemy, currentProjectiles - 1);
-            }
-        }
-        
-        // Уничтожаем стрелу
-        projectile.destroy();
-    }
-    
-    // Обработка попадания стрелы
+    // Обработка попадания стрелы (используется в CollisionManager)
     handleProjectileHit(projectile: Projectile, enemy: Enemy): void {
-        // Используется в CollisionManager
-        // Удаляем стрелу из счетчика стрел в полете к этому врагу
-        const currentProjectiles = this.projectilesInFlight.get(enemy) || 0;
-        if (currentProjectiles > 0) {
-            this.projectilesInFlight.set(enemy, currentProjectiles - 1);
-        }
-    }
-    
-    // Расчет количества стрел, необходимых для убийства врага
-    calculateProjectilesNeeded(enemy: Enemy): number {
-        const towerDamage = this.getTowerDamage();
-        const enemyHealth = enemy.health;
-        return Math.ceil(enemyHealth / towerDamage);
+        // Проверяем, что стрела и враг активны
+        if (!projectile.active || !enemy.active) return;
     }
 
     update(time: number, delta: number): void {
-        // Check if it's time to fire a new projectile automatically
+        // Автоматический выстрел стрелы по таймеру
         const currentFireRate = this.getFireRate();
         if (time - this.lastFireTime >= currentFireRate) {
             this.fireProjectile(1); // Fire with base speed multiplier
@@ -164,14 +96,11 @@ class ProjectileManager {
                 
                 // Проверяем, не покинула ли стрела игровое поле
                 if (projectile.active && this.isProjectileOutOfBounds(projectile)) {
-                    this.handleMissedProjectile(projectile);
+                    projectile.destroy();
                 }
             }
             return false;
         });
-        
-        // Очищаем счетчики для неактивных врагов
-        this.cleanupInactiveEnemies();
     }
     
     // Проверка, не вышла ли стрела за пределы игрового поля
@@ -185,15 +114,6 @@ class ProjectileManager {
             projectile.y < bounds.y - padding ||
             projectile.y > bounds.y + bounds.height + padding
         );
-    }
-    
-    // Очистка счетчиков для неактивных врагов
-    cleanupInactiveEnemies(): void {
-        for (const [enemy, count] of this.projectilesInFlight.entries()) {
-            if (!enemy.active) {
-                this.projectilesInFlight.delete(enemy);
-            }
-        }
     }
 }
 

@@ -82,11 +82,30 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
+    // Method required by UpgradeManager
+    updateHealthBar(): void {
+        // Safety check for scene existence
+        if (!this.scene) return;
+        
+        // This method is called after upgrades are applied
+        // It might have been intended to update a health bar UI element
+        // For now we just make sure it exists to prevent the error
+        // If there's a health bar UI in the game scene, we would update it here
+        
+        // If a GameScene health bar needs to be updated
+        if ('updateHealthBar' in this.scene) {
+            (this.scene as any).updateHealthBar(this.health, this.maxHealth);
+        }
+    }
+
     takeDamage(amount: number): void {
         if (!this.active || this.isDying) return;
 
         const reducedAmount = amount * (1 - (this.defense / 100));
         this.health = Math.max(0, this.health - reducedAmount);
+
+        // Safety check for scene existence before accessing it
+        if (!this.scene) return;
 
         // Play tower damage sound
         if ('audioManager' in this.scene) {
@@ -106,7 +125,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         // Добавляем эффект красного свечения
         this.setTint(Tower.COLOR_RED);
         this.scene.time.delayedCall(100, () => {
-            if (!this.isDying) {
+            if (!this.isDying && this.scene) {
                 this.clearTint();
             }
         });
@@ -114,15 +133,23 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         if (this.health <= 0) {
             this.die();
         }
+        
+        // Update health bar if needed
+        this.updateHealthBar();
     }
 
     private die(): void {
         this.isDying = true;
         this.stopRegeneration();
 
-        // Play tower death sound
-        if ('audioManager' in this.scene) {
+        // Play tower death sound if audioManager exists
+        if (this.scene && 'audioManager' in this.scene) {
             (this.scene as any).audioManager?.playSound('towerDie');
+        }
+
+        // Safety check for scene existence before adding tweens
+        if (!this.scene) {
+            return;
         }
 
         // Добавляем розовый цвет при разрушении
@@ -166,7 +193,15 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
 
     private stopRegeneration(): void {
         if (this.regenerationTimer) {
-            this.regenerationTimer.destroy();
+            // Only destroy the timer if it's valid
+            if (this.regenerationTimer.destroy) {
+                try {
+                    this.regenerationTimer.destroy();
+                } catch (e) {
+                    // Ignore errors if the timer can't be destroyed
+                    console.warn('Failed to destroy regeneration timer:', e);
+                }
+            }
             this.regenerationTimer = null;
         }
     }
@@ -178,7 +213,10 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     }
 
     destroy(fromScene?: boolean): void {
-        this.scene.events.off('screenResize', this.handleScreenResize, this);
+        // Check if scene still exists before trying to access it
+        if (this.scene && this.scene.events) {
+            this.scene.events.off('screenResize', this.handleScreenResize, this);
+        }
         this.stopRegeneration();
         super.destroy(fromScene);
     }

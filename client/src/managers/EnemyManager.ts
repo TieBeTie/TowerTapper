@@ -154,8 +154,8 @@ class EnemyManager {
         const x = (enemy as Phaser.Physics.Arcade.Sprite).x;
         const y = (enemy as Phaser.Physics.Arcade.Sprite).y;
 
-        // Создаем спрайт анимации смерти на позиции врага
         const deathAnimation = this.scene.add.sprite(x, y, 'enemy_die');
+        deathAnimation.setScale(Enemy.ENEMY_SCALE);
         deathAnimation.play('enemy_die');
 
         // Удаляем врага из группы и сцены
