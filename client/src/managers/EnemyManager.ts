@@ -131,57 +131,105 @@ class EnemyManager {
         let nearestEnemy: Enemy | null = null;
         let minDistance = Infinity;
 
-        this.enemies.getChildren().forEach((enemy: Phaser.GameObjects.GameObject) => {
-            const enemyInstance = enemy as Enemy;
-            const distance = Phaser.Math.Distance.Between(x, y, enemyInstance.x, enemyInstance.y);
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearestEnemy = enemyInstance;
+        // Check if enemies group is valid before accessing it
+        if (!this.enemies || !this.enemies.getChildren) {
+            return null;
+        }
+        
+        try {
+            const children = this.enemies.getChildren();
+            if (Array.isArray(children)) {
+                children.forEach((enemy: Phaser.GameObjects.GameObject) => {
+                    if (enemy && enemy.active) {
+                        const enemyInstance = enemy as Enemy;
+                        const distance = Phaser.Math.Distance.Between(x, y, enemyInstance.x, enemyInstance.y);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            nearestEnemy = enemyInstance;
+                        }
+                    }
+                });
             }
-        });
+        } catch (error) {
+            console.warn('Error in findNearestAvailableEnemy:', error);
+        }
 
         return nearestEnemy;
     }
 
     update(time: number, delta: number): void {
-        this.enemies.getChildren().forEach((enemy: Phaser.GameObjects.GameObject) => {
-            (enemy as Enemy).update(time, delta);
-        });
+        // Check if enemies group is valid before accessing it
+        if (!this.enemies || !this.enemies.getChildren) {
+            return;
+        }
+        
+        try {
+            const children = this.enemies.getChildren();
+            if (Array.isArray(children)) {
+                children.forEach((enemy: Phaser.GameObjects.GameObject) => {
+                    if (enemy && enemy.active) {
+                        (enemy as Enemy).update(time, delta);
+                    }
+                });
+            }
+        } catch (error) {
+            console.warn('Error in EnemyManager update:', error);
+        }
     }
 
     handleEnemyDeath(enemy: Phaser.GameObjects.GameObject): void {
-        // Получаем позицию врага
-        const x = (enemy as Phaser.Physics.Arcade.Sprite).x;
-        const y = (enemy as Phaser.Physics.Arcade.Sprite).y;
-
-        const deathAnimation = this.scene.add.sprite(x, y, 'enemy_die');
-        deathAnimation.setScale(Enemy.ENEMY_SCALE);
-        deathAnimation.play('enemy_die');
-
-        // Удаляем врага из группы и сцены
-        this.enemies.remove(enemy, true, true);
-
-        // Удаляем анимацию после завершения
-        deathAnimation.on('animationcomplete', () => {
-            deathAnimation.destroy();
-        }, this);
-
-        // Уведомляем WaveManager о поражении врага (от стрелы)
-        this.waveManager.enemyDefeated();
-        console.log("Enemy killed by arrow");
-
-        // Spawn a coin above the castle (Tower)
-        const tower = this.scene.children.getByName('tower') as Tower;
-        if (tower) {
-            this.coinCollectionEffectFromEnemy.spawnCoin(new Phaser.Math.Vector2(x, y), tower);
-        } else {
-            console.error('Башня не найдена в сцене.');
+        // Safety check
+        if (!enemy || !this.enemies) {
+            return;
         }
 
-        // Play enemy death sound
-        const gameScene = this.scene as GameScene;
-        if (gameScene.audioManager) {
-            gameScene.audioManager.playSound('enemyDie');
+        try {
+            // Получаем позицию врага
+            const x = (enemy as Phaser.Physics.Arcade.Sprite).x;
+            const y = (enemy as Phaser.Physics.Arcade.Sprite).y;
+
+            // Make sure scene is valid before creating animations
+            if (!this.scene || !this.scene.add) {
+                return;
+            }
+
+            const deathAnimation = this.scene.add.sprite(x, y, 'enemy_die');
+            deathAnimation.setScale(Enemy.ENEMY_SCALE);
+            deathAnimation.play('enemy_die');
+
+            // Удаляем врага из группы и сцены
+            if (this.enemies.remove) {
+                this.enemies.remove(enemy, true, true);
+            }
+
+            // Удаляем анимацию после завершения
+            deathAnimation.on('animationcomplete', () => {
+                deathAnimation.destroy();
+            }, this);
+
+            // Уведомляем WaveManager о поражении врага (от стрелы)
+            if (this.waveManager) {
+                this.waveManager.enemyDefeated();
+            }
+            console.log("Enemy killed by arrow");
+
+            // Spawn a coin above the castle (Tower)
+            if (this.scene && this.scene.children && this.scene.children.getByName) {
+                const tower = this.scene.children.getByName('tower') as Tower;
+                if (tower && this.coinCollectionEffectFromEnemy) {
+                    this.coinCollectionEffectFromEnemy.spawnCoin(new Phaser.Math.Vector2(x, y), tower);
+                } else {
+                    console.warn('Башня не найдена в сцене.');
+                }
+            }
+
+            // Play enemy death sound
+            const gameScene = this.scene as GameScene;
+            if (gameScene && gameScene.audioManager) {
+                gameScene.audioManager.playSound('enemyDie');
+            }
+        } catch (error) {
+            console.warn('Error in handleEnemyDeath:', error);
         }
     }
 }

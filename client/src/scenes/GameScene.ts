@@ -209,37 +209,43 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     }
 
     update(time: number, delta: number): void {
-        // Проверяем, инициализированы ли все необходимые менеджеры
-        if (!this.waveManager || !this.enemyManager) {
-            return;
-        }
-
-        // Обновляем менеджеры
-        this.enemyManager.update(time, delta);
-        
-        if (this.projectileManager) {
-            this.projectileManager.update(time, delta);
-        }
-        
-        // Обновляем информацию о волне
-        if (this.waveIndicator) {
-            this.waveIndicator.updateUI();
-        }
-        
-        // Проверка на "зависшую" волну - только если нет врагов на экране и нет таймера спавна
-        if (this.waveManager.isCurrentWaveActive() && 
-            this.enemyManager.enemies.getLength() === 0 && 
-            !this.enemyManager.isSpawnTimerActive() && 
-            this.waveManager.getRemainingEnemies() > 0) {
-            
-            console.log("Detected stuck wave: no enemies, no spawn timer, but wave is active");
-            console.log(`Remaining enemies according to WaveManager: ${this.waveManager.getRemainingEnemies()}`);
-            
-            // Фиксим: завершаем все оставшиеся счетчики врагов
-            const remaining = this.waveManager.getRemainingEnemies();
-            for (let i = 0; i < remaining; i++) {
-                this.waveManager.enemyDefeated();
+        try {
+            // Проверяем, инициализированы ли все необходимые менеджеры
+            if (!this.waveManager || !this.enemyManager) {
+                return;
             }
+
+            // Обновляем менеджеры
+            this.enemyManager.update(time, delta);
+            
+            if (this.projectileManager) {
+                this.projectileManager.update(time, delta);
+            }
+            
+            // Обновляем информацию о волне
+            if (this.waveIndicator) {
+                this.waveIndicator.updateUI();
+            }
+            
+            // Проверка на "зависшую" волну - только если нет врагов на экране и нет таймера спавна
+            if (this.waveManager.isCurrentWaveActive() && 
+                this.enemyManager.enemies && 
+                typeof this.enemyManager.enemies.getLength === 'function' &&
+                this.enemyManager.enemies.getLength() === 0 && 
+                !this.enemyManager.isSpawnTimerActive() && 
+                this.waveManager.getRemainingEnemies() > 0) {
+                
+                console.log("Detected stuck wave: no enemies, no spawn timer, but wave is active");
+                console.log(`Remaining enemies according to WaveManager: ${this.waveManager.getRemainingEnemies()}`);
+                
+                // Фиксим: завершаем все оставшиеся счетчики врагов
+                const remaining = this.waveManager.getRemainingEnemies();
+                for (let i = 0; i < remaining; i++) {
+                    this.waveManager.enemyDefeated();
+                }
+            }
+        } catch (error) {
+            console.warn('Error in GameScene update:', error);
         }
     }
 

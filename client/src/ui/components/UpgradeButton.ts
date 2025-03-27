@@ -74,10 +74,24 @@ export class UpgradeButton extends UIComponent {
     }
 
     destroy(fromScene?: boolean): void {
-        // Отписываемся от события при уничтожении кнопки
-        const gameScene = this.scene.scene.get('GameScene');
-        gameScene.events.off('updateCoins', this.updateButtonColor, this);
-        super.destroy(fromScene);
+        try {
+            // Remove all event listeners
+            if (this.scene && this.input) {
+                this.removeInteractive();
+                this.off('pointerover');
+                this.off('pointerout');
+                this.off('pointerdown');
+                this.off('pointerup');
+            }
+            
+            // Mark component as inactive
+            this.active = false;
+            
+            // Call parent destroy method
+            super.destroy(fromScene);
+        } catch (error) {
+            console.warn('Error in destroy:', error);
+        }
     }
 
     private createButtonBackground(): void {
@@ -162,76 +176,144 @@ export class UpgradeButton extends UIComponent {
     }
 
     private setupInteractivity(): void {
-        // Делаем интерактивным весь контейнер
-        this.setInteractive(this.background, Phaser.Geom.Rectangle.Contains)
-            .on('pointerover', () => {
-                const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
-                this.background.setFillStyle(baseColor + 0x222222, BUTTON_HOVER_ALPHA);
-            })
-            .on('pointerout', () => {
-                this.background.setFillStyle(
-                    this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT,
-                    BUTTON_BACKGROUND_ALPHA
-                );
-            })
-            .on('pointerdown', () => {
-                const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
-                this.background.setFillStyle(baseColor - 0x222222, BUTTON_PRESSED_ALPHA);
-                this.handleClick();
-            })  
-            .on('pointerup', () => {
-                const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
-                this.background.setFillStyle(baseColor + 0x222222, BUTTON_HOVER_ALPHA);
-            });
+        try {
+            // Skip if the button or background is invalid
+            if (!this.scene || !this.background || !this.active) {
+                return;
+            }
+            
+            // Делаем интерактивным весь контейнер
+            this.setInteractive(this.background, Phaser.Geom.Rectangle.Contains)
+                .on('pointerover', () => {
+                    if (!this.scene || !this.background) return;
+                    const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
+                    this.background.setFillStyle(baseColor + 0x222222, BUTTON_HOVER_ALPHA);
+                })
+                .on('pointerout', () => {
+                    if (!this.scene || !this.background) return;
+                    this.background.setFillStyle(
+                        this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT,
+                        BUTTON_BACKGROUND_ALPHA
+                    );
+                })
+                .on('pointerdown', () => {
+                    if (!this.scene || !this.background) return;
+                    const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
+                    this.background.setFillStyle(baseColor - 0x222222, BUTTON_PRESSED_ALPHA);
+                    this.handleClick();
+                })  
+                .on('pointerup', () => {
+                    if (!this.scene || !this.background) return;
+                    const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
+                    this.background.setFillStyle(baseColor + 0x222222, BUTTON_HOVER_ALPHA);
+                });
 
-        // Устанавливаем начальный цвет кнопки
-        this.updateButtonColor();
+            // Устанавливаем начальный цвет кнопки
+            this.updateButtonColor();
+        } catch (error) {
+            console.warn('Error in setupInteractivity:', error);
+        }
     }
 
     private canAffordUpgrade(): boolean {
-        const cost = this.upgradeManagerValue.getUpgradeCost(this.skillTypeValue);
-        const gameScene = this.scene.scene.get('GameScene');
-        const coins = (gameScene as any).coinManager?.coins_count || 0;
-        return coins >= cost;
+        try {
+            // Safety check for scene existence
+            if (!this.scene) {
+                return false;
+            }
+            
+            const cost = this.upgradeManagerValue.getUpgradeCost(this.skillTypeValue);
+            
+            // Check if the scene has a scene property and it's properly initialized
+            if (!this.scene.scene || typeof this.scene.scene.get !== 'function') {
+                return false;
+            }
+            
+            const gameScene = this.scene.scene.get('GameScene');
+            if (!gameScene) {
+                return false;
+            }
+            
+            const coins = (gameScene as any).coinManager?.coins_count || 0;
+            return coins >= cost;
+        } catch (error) {
+            console.warn('Error in canAffordUpgrade:', error);
+            return false;
+        }
     }
 
     private updateButtonColor(): void {
-        const color = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
-        this.background.setFillStyle(color, BUTTON_BACKGROUND_ALPHA);
+        try {
+            // Skip color update if the scene is invalid
+            if (!this.scene || !this.background) {
+                return;
+            }
+            
+            const color = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
+            this.background.setFillStyle(color, BUTTON_BACKGROUND_ALPHA);
+        } catch (error) {
+            console.warn('Error in updateButtonColor:', error);
+        }
     }
 
     protected handleClick(): void {
-        const success = this.upgradeManagerValue.purchaseUpgrade(this.skillTypeValue);
-        if (success) {
-            const gameScene = this.scene.scene.get('GameScene');
-            
-            // Play upgrade sound
-            const audioManager = (gameScene as any).audioManager;
-            if (audioManager) {
-                audioManager.playSound('upgradeButton');
+        try {
+            // Safety check for scene and upgradeManager
+            if (!this.scene || !this.upgradeManagerValue) {
+                return;
             }
-
-            // Update tower
-            (gameScene as any).tower?.upgrade();
             
-            // Update coins immediately
-            const currentCoins = (gameScene as any).coinManager?.coins_count || 0;
-            const uiManager = (gameScene as any).uiManager;
-            if (uiManager) {
-                uiManager.updateCoinCount(currentCoins);
-            }
+            const success = this.upgradeManagerValue.purchaseUpgrade(this.skillTypeValue);
+            if (success) {
+                // Check if scene.scene exists and has the get method
+                if (!this.scene.scene || typeof this.scene.scene.get !== 'function') {
+                    return;
+                }
+                
+                const gameScene = this.scene.scene.get('GameScene');
+                if (!gameScene) {
+                    return;
+                }
+                
+                // Play upgrade sound
+                const audioManager = (gameScene as any).audioManager;
+                if (audioManager) {
+                    audioManager.playSound('upgradeButton');
+                }
 
-            // Update button UI
-            this.updateUI();
+                // Update tower
+                (gameScene as any).tower?.upgrade();
+                
+                // Update coins immediately
+                const currentCoins = (gameScene as any).coinManager?.coins_count || 0;
+                const uiManager = (gameScene as any).uiManager;
+                if (uiManager) {
+                    uiManager.updateCoinCount(currentCoins);
+                }
+
+                // Update button UI
+                this.updateUI();
+            }
+        } catch (error) {
+            console.warn('Error in handleClick:', error);
         }
     }
 
     private updateUI(): void {
-        const currentValue = this.upgradeManagerValue.getState(this.skillTypeValue);
-        const newCost = this.upgradeManagerValue.getUpgradeCost(this.skillTypeValue);
-        
-        this.levelText.setText(currentValue.toString());
-        this.costText.setText(newCost.toString());
-        this.updateButtonColor();
+        try {
+            // Skip update if any required elements are missing
+            if (!this.scene || !this.levelText || !this.costText || !this.upgradeManagerValue) {
+                return;
+            }
+            
+            const currentValue = this.upgradeManagerValue.getState(this.skillTypeValue);
+            const newCost = this.upgradeManagerValue.getUpgradeCost(this.skillTypeValue);
+            
+            this.levelText.setText(currentValue.toString());
+            this.costText.setText(newCost.toString());
+            this.updateButtonColor();
+        } catch (error) {
+            console.warn('Error in updateUI:', error);
+        }
     }
 } 
