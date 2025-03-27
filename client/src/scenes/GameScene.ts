@@ -45,8 +45,11 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     }
 
     create(): void {
+        // Initialize ScreenManager first
+        this.screenManager = new ScreenManager(this);
+        
         // Создаем черный прямоугольник на весь экран
-        const { width, height } = this.scale;
+        const { width, height } = this.screenManager.getScreenSize();
         const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 1);
         fadeRect.setOrigin(0);
 
@@ -61,15 +64,20 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             }
         });
         
-        // Initialize ScreenManager
-        this.screenManager = new ScreenManager(this);
-        
         // Initial setup
         this.setupGameView();
         
         // Initialize AudioManager
         this.audioManager = AudioManager.getInstance(this);
         this.audioManager.playMusic();
+
+        // Подписываемся на изменение размера экрана
+        this.events.on('screenResize', this.handleScreenResize, this);
+    }
+
+    private handleScreenResize(gameScale: number): void {
+        // Обновляем фон
+        this.screenManager.setupBackground();
     }
 
     private setupGameView(): void {
@@ -80,7 +88,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         const center = this.screenManager.getScreenCenter();
         const gameScale = this.screenManager.getGameScale();
 
-        // Создаем башню
+        // Создаем башню с меньшим размером
         this.tower = new Tower(this, center.x, center.y, 'tower');
         this.tower.setName('tower');
         this.tower.setAlpha(0);

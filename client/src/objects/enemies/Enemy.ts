@@ -10,6 +10,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     projectileFactory: ProjectileFactory;
     isDying: boolean;
     isUnderAttack: boolean = false;
+    static readonly ENEMY_SCALE = 0.35;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string, cost: number) {
         super(scene, x, y, texture);
@@ -21,7 +22,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.maxHealth = 0;
         this.cost = Number(cost);
 
-        this.setScale(0.7);
+        this.setScale(Enemy.ENEMY_SCALE);
 
         this.tower = scene.children.getByName('tower') as Phaser.Physics.Arcade.Sprite;
 
@@ -30,7 +31,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.setCollideWorldBounds(true);
 
         if (this.body) {
-            this.body.setSize(this.width * 0.7, this.height * 0.7);
+            this.body.setSize(this.width * Enemy.ENEMY_SCALE, this.height * Enemy.ENEMY_SCALE);
             this.body.setOffset(this.width, this.height);
         }
 
@@ -58,7 +59,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (this.health <= 0 && !this.isDying) {
             this.isDying = true;
             this.anims.play('enemy_die');
-
+            
             const currentVelocity = this.body?.velocity?.clone() || new Phaser.Math.Vector2(0, 0);
 
             this.scene.tweens.add({
@@ -69,7 +70,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
                 onComplete: () => {
                     this.emit('reached');
                     this.destroy();
-                }
+                } 
             });
         }
     }
@@ -98,8 +99,6 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
                 this.tower
             );
         }
-
-        // ... rest of existing die() code ...
     }
 }
 

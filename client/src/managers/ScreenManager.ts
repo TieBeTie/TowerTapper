@@ -90,15 +90,17 @@ export class ScreenManager {
      * Устанавливает фон игры с правильным масштабированием
      */
     public setupBackground(): void {
+
         const { width, height } = this.getScreenSize();
         const background = this.scene.add.image(width / 2, height / 2, 'background');
         background.setOrigin(0.5, 0.5);
         
-        // Масштабируем фон, чтобы он покрывал весь экран
-        const scaleX = width / background.width;
-        const scaleY = height / background.height;
+        // Масштабируем фон, чтобы он покрывал весь экран с большим запасом
+        const scaleX = (width * 1.5) / background.width;
+        const scaleY = (height * 1.5) / background.height;
         const scale = Math.max(scaleX, scaleY);
         background.setScale(scale);
+        background.setDepth(0);
     }
 
     /**

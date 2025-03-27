@@ -6,7 +6,7 @@ import { ScreenManager } from '../managers/ScreenManager';
 
 export interface IScene extends Phaser.Scene {
     screenManager: ScreenManager;
-    uiManager: UIManager;
+    uiManager?: UIManager;
     preload(): void;
     create(): void;
     update(time: number, delta: number): void;

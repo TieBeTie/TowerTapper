@@ -16,6 +16,7 @@ export class Arrow extends Projectile {
     private speedMultiplier: number;
     private damage: number = 0;
     private skillStorage: SkillSetStorage;
+    static readonly ARROW_SCALE = 0.2;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -27,11 +28,11 @@ export class Arrow extends Projectile {
         this.damage = skills.get(SkillType.DAMAGE)?.value || 0;
 
         // Set arrow size
-        this.setScale(0.7);
+        this.setScale(Arrow.ARROW_SCALE);
 
         // Initialize movement properties
         this.speed = 0;
-        this.maxSpeed = 800; // Base speed
+        this.maxSpeed = 300; // Base speed
         this.acceleration = 5000; // Base acceleration
         this.deceleration = 3000; // Base deceleration
         this.initialDelay = 0;
@@ -84,7 +85,7 @@ export class Arrow extends Projectile {
                 this.direction.y * this.speed
             );
         }
-
+        
         if (this.speed > 0) {
             this.rotation = Phaser.Math.Angle.Between(this.x, this.y, this.targetX, this.targetY);
         }

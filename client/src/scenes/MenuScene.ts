@@ -35,20 +35,20 @@ export default class MenuScene extends Phaser.Scene implements IScene {
 
         // Создаем монстра в центре экрана, но с маленьким размером
         const monster = this.add.sprite(center.x, center.y, 'enemy');
-        monster.setScale(0.1 * gameScale); // Учитываем масштаб игры
+        monster.setScale(0.5 * gameScale); // Уменьшаем начальный размер
         monster.play('enemy_walk');
 
         // Анимация появления монстра
         this.tweens.add({
             targets: monster,
-            scale: 1.5 * gameScale, // Учитываем масштаб игры для финального размера
+            scale: 0.8 * gameScale, // Уменьшаем финальный размер
             duration: 800,
             ease: 'Bounce.out',
             onComplete: () => {
                 // После появления начинаем покачивание
                 this.tweens.add({
                     targets: monster,
-                    y: center.y + 10, // Используем центр экрана
+                    y: center.y + 5, // Уменьшаем амплитуду покачивания
                     duration: 1000,
                     yoyo: true,
                     repeat: -1,
@@ -91,7 +91,8 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         ) as Phaser.GameObjects.Sprite;
         
         if (monster) {
-            monster.setScale(1.5 * gameScale);
+            monster.setScale(0.8 * gameScale); // Обновляем размер при ресайзе
+            monster.setPosition(this.screenManager.getScreenCenter().x, this.screenManager.getScreenCenter().y);
         }
         
         // Находим и обновляем размер кнопки

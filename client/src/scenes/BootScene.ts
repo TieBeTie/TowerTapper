@@ -1,7 +1,11 @@
 // BootScene.js
 import Phaser from 'phaser';
+import { ScreenManager } from '../managers/ScreenManager';
+import { IScene } from '../types/IScene';
 
-class BootScene extends Phaser.Scene {
+class BootScene extends Phaser.Scene implements IScene {
+    public screenManager!: ScreenManager;
+
     constructor() {
         super({ key: 'BootScene' });
     }
@@ -60,7 +64,37 @@ class BootScene extends Phaser.Scene {
     }
 
     create() {
-        // Создаем текстуру частицы
+        // Initialize ScreenManager first
+        this.screenManager = new ScreenManager(this);
+        
+        // Создаем черный прямоугольник на весь экран
+        const { width, height } = this.screenManager.getScreenSize();
+        const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 1);
+        fadeRect.setOrigin(0);
+
+        // Анимируем появление
+        this.tweens.add({
+            targets: fadeRect,
+            alpha: 0,
+            duration: 500,
+            ease: 'Power2',
+            onComplete: () => {
+                fadeRect.destroy();
+            }
+        });
+
+        // Initial setup
+        this.setupBootView();
+
+        // Подписываемся на изменение размера экрана
+        this.events.on('screenResize', this.handleScreenResize, this);
+    }
+
+    private setupBootView(): void {
+        // Создаем фон через ScreenManager
+        this.screenManager.setupBackground();
+
+        // Создаем текстуру частиц
         const graphics = this.add.graphics();
         graphics.fillStyle(0xffffff, 1);
         graphics.fillCircle(4, 4, 4);
@@ -87,14 +121,20 @@ class BootScene extends Phaser.Scene {
                 // Удаляем элемент после короткой задержки
                 setTimeout(() => {
                     document.body.removeChild(testText);
+                    // Переходим к следующей сцене только после полной инициализации
+                    this.createAnimations();
+                    this.scene.start('MenuScene');
                 }, 100);
             },
             inactive: () => {
                 console.error('Font failed to load');
             }
         });
-        this.createAnimations();
-        this.scene.start('MenuScene');
+    }
+
+    private handleScreenResize(gameScale: number): void {
+        // Обновляем фон
+        this.screenManager.setupBackground();
     }
 
     createAnimations() {
@@ -118,6 +158,15 @@ class BootScene extends Phaser.Scene {
             frameRate: 12,
             repeat: -1
         });
+    }
+
+    destroy(): void {
+        // Удаляем подписку на событие resize
+        this.events.off('screenResize', this.handleScreenResize, this);
+        
+        if (this.screenManager) {
+            this.screenManager.destroy();
+        }
     }
 }
 

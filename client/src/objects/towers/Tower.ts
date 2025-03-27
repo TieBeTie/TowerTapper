@@ -10,16 +10,13 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private static readonly COLOR_WHITE = 0xffffff;
     
     // Константа масштаба башни
-    private static readonly TOWER_SCALE = 0.5;
+    private static readonly TOWER_SCALE = 0.4;
 
     health: number;
     maxHealth: number;
     defense: number;
     regeneration: number;
     private regenerationTimer: Phaser.Time.TimerEvent | null;
-    healthBar: Phaser.GameObjects.Graphics;
-    private HEALTH_BAR_WIDTH: number;
-    private HEALTH_BAR_HEIGHT: number;
     private isDying: boolean = false;
     private skillStorage: SkillSetStorage;
     private screenManager: ScreenManager;
@@ -31,11 +28,6 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
 
         // Инициализируем ScreenManager
         this.screenManager = new ScreenManager(scene);
-
-        // Адаптивный размер индикатора здоровья
-        const gameScale = this.screenManager.getGameScale();
-        this.HEALTH_BAR_WIDTH = 100 * gameScale;
-        this.HEALTH_BAR_HEIGHT = 10 * gameScale;
 
         this.skillStorage = SkillSetStorage.getInstance();
         const skills = this.skillStorage.load();
@@ -56,6 +48,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.setPosition(center.x, center.y);
         
         // Масштаб с учетом коэффициента из ScreenManager
+        const gameScale = this.screenManager.getGameScale();
         this.setScale(Tower.TOWER_SCALE * gameScale);
 
         if (this.body) {
@@ -63,33 +56,17 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             this.body.setOffset(this.width * 0.2, this.height * 0.2);
         }
 
-        this.healthBar = scene.add.graphics();
-        this.updateHealthBar();
-
         if (this.regeneration > 0) {
             this.startRegeneration();
         }
-        
-        // Прослушивание событий изменения размера экрана
+        this.setDepth(1);
         this.scene.events.on('screenResize', this.handleScreenResize, this);
     }
     
     private handleScreenResize(gameScale: number): void {
-        if (!this.active) return;
-        
-        // Обновление размеров индикатора здоровья
-        this.HEALTH_BAR_WIDTH = 100 * gameScale;
-        this.HEALTH_BAR_HEIGHT = 10 * gameScale;
-        
-        // Изменение масштаба башни с использованием константы
-        this.setScale(Tower.TOWER_SCALE * gameScale);
-        
-        // Обновление центрального положения
-        const center = this.screenManager.getScreenCenter();
-        this.setPosition(center.x, center.y);
-        
-        // Обновление индикатора здоровья
-        this.updateHealthBar();
+       this.setScale(Tower.TOWER_SCALE * gameScale);
+       const center = this.screenManager.getScreenCenter();
+       this.setPosition(center.x, center.y);
     }
 
     upgrade(): void {
@@ -99,7 +76,6 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || this.regeneration;
         
         this.health = this.maxHealth;
-        this.updateHealthBar();
 
         if (this.regeneration > 0) {
             this.startRegeneration();
@@ -111,7 +87,6 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
 
         const reducedAmount = amount * (1 - (this.defense / 100));
         this.health = Math.max(0, this.health - reducedAmount);
-        this.updateHealthBar();
 
         // Play tower damage sound
         if ('audioManager' in this.scene) {
@@ -144,7 +119,6 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private die(): void {
         this.isDying = true;
         this.stopRegeneration();
-        this.healthBar.destroy();
 
         // Play tower death sound
         if ('audioManager' in this.scene) {
@@ -200,35 +174,12 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private regenerateHealth = (): void => {
         if (this.health < this.maxHealth) {
             this.health = Math.min(this.health + this.regeneration, this.maxHealth);
-            this.updateHealthBar();
         }
-    }
-
-    updateHealthBar(): void {
-        if (!this.active) return;
-
-        this.healthBar.clear();
-        
-        // Вычисление правильной позиции, выровненной по пикселям
-        const barX = Math.floor(this.x - this.HEALTH_BAR_WIDTH / 2);
-        const barY = Math.floor(this.y - this.height / 2 - this.HEALTH_BAR_HEIGHT - 10);
-
-        // Background (red)
-        this.healthBar.fillStyle(Tower.COLOR_RED);
-        this.healthBar.fillRect(barX, barY, this.HEALTH_BAR_WIDTH, this.HEALTH_BAR_HEIGHT);
-
-        // Health bar (green)
-        const healthPercentage = Phaser.Math.Clamp(this.health / this.maxHealth, 0, 1);
-        this.healthBar.fillStyle(Tower.COLOR_GREEN);
-        this.healthBar.fillRect(barX, barY, this.HEALTH_BAR_WIDTH * healthPercentage, this.HEALTH_BAR_HEIGHT);
     }
 
     destroy(fromScene?: boolean): void {
         this.scene.events.off('screenResize', this.handleScreenResize, this);
         this.stopRegeneration();
-        if (this.healthBar) {
-            this.healthBar.destroy();
-        }
         super.destroy(fromScene);
     }
 }
