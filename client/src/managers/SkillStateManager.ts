@@ -45,4 +45,9 @@ export class SkillStateManager {
     public getAllStates(): Map<SkillType, ISkillState> {
         return new Map(this.state);
     }
+    
+    // Получение текущего множителя скорости игры
+    public getGameSpeed(): number {
+        return this.getState(SkillType.GAME_SPEED) || 1; // По умолчанию 1, если не установлено
+    }
 } 

@@ -8,6 +8,7 @@ import Tower from '../objects/towers/Tower';
 import { SkillSetStorage } from '../storage/SkillSetStorage';
 import { SkillType } from '../types/SkillType';
 import { IGameScene } from '../types/IGameScene';
+import { SkillStateManager } from '../managers/SkillStateManager';
 
 // ProjectileManager handles the logic for managing and firing projectiles at enemies
 class ProjectileManager {
@@ -18,11 +19,13 @@ class ProjectileManager {
     private projectileMaxLifetime: number = 5000; // Максимальное время жизни стрелы в мс
     private lastFireTime: number = 0; // Last time a projectile was fired
     private skillStorage: SkillSetStorage;
+    private skillStateManager: SkillStateManager;
 
     constructor(scene: IGameScene, enemyManager: EnemyManager) {
         this.scene = scene;
         this.enemyManager = enemyManager;
         this.skillStorage = SkillSetStorage.getInstance();
+        this.skillStateManager = SkillStateManager.getInstance();
         this.projectiles = this.scene.physics.add.group({
             classType: Projectile,
             runChildUpdate: true
@@ -33,7 +36,9 @@ class ProjectileManager {
     private getFireRate(): number {
         const skills = this.skillStorage.load();
         const attackSpeed = skills.get(SkillType.ATTACK_SPEED)?.value || 1;
-        return 500 / attackSpeed; // Base fire rate (500ms) divided by attack speed multiplier
+        // Apply game speed to fire rate (lower delay = faster fire rate)
+        const gameSpeed = this.skillStateManager.getGameSpeed();
+        return (500 / attackSpeed) / gameSpeed; 
     }
 
     private getTowerDamage(): number {
@@ -89,6 +94,10 @@ class ProjectileManager {
     }
 
     fireProjectile(speedMultiplier: number = 1): void {
+        // Get game speed multiplier and combine with provided speedMultiplier
+        const gameSpeed = this.skillStateManager.getGameSpeed();
+        const combinedSpeedMultiplier = speedMultiplier * gameSpeed;
+        
         // Находим ближайшего врага в радиусе атаки
         const targetEnemy = this.findNearestEnemyInRange();
         if (targetEnemy) {
@@ -97,10 +106,10 @@ class ProjectileManager {
             
             if (isMultishot) {
                 // Мультивыстрел: 3 стрелы с небольшим отклонением
-                this.fireMultipleArrows(targetEnemy, speedMultiplier);
+                this.fireMultipleArrows(targetEnemy, combinedSpeedMultiplier);
             } else {
                 // Обычный выстрел одной стрелой
-                this.fireSingleArrow(targetEnemy, speedMultiplier);
+                this.fireSingleArrow(targetEnemy, combinedSpeedMultiplier);
             }
             
             // Обновляем время последнего выстрела

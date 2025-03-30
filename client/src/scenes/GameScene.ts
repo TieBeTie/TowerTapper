@@ -12,6 +12,8 @@ import { WaveClearEffect } from '../ui/components/WaveClearEffect';
 import AudioManager from '../managers/AudioManager';
 import { IGameScene } from '../types/IGameScene';
 import { ScreenManager } from '../managers/ScreenManager';
+import { SupplyDropManager } from '../managers/SupplyDropManager';
+import { SkillStateManager } from '../managers/SkillStateManager';
 
 export default class GameScene extends Phaser.Scene implements IGameScene {
     // Game objects
@@ -26,13 +28,17 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     waveManager!: WaveManager;
     waveIndicator!: WaveIndicator;
     waveClearEffect!: WaveClearEffect;
+    supplyDropManager!: SupplyDropManager;
     coins!: number;
     socket!: WebSocket;
     audioManager!: AudioManager;
     private coinRewardMultiplier: number = 1;
+    private gameSpeedMultiplier: number = 1;
+    private skillStateManager: SkillStateManager;
 
     constructor() {
         super({ key: 'GameScene' });
+        this.skillStateManager = SkillStateManager.getInstance();
     }
 
     preload(): void {
@@ -76,6 +82,12 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         
         // Listen for force visibility event with a different name to avoid recursion
         this.events.on('ui-refresh-visibility', this.forceUIVisibility, this);
+
+        // Listen for game speed change events
+        this.events.on('gameSpeedChanged', this.handleGameSpeedChanged, this);
+        
+        // Initialize game speed from skill manager
+        this.gameSpeedMultiplier = this.skillStateManager.getGameSpeed();
     }
 
     private handleScreenResize(gameScale: number): void {
@@ -255,6 +267,9 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         this.enemyManager = new EnemyManager(this, this.uiManager, this.coinManager, this.waveManager);
         this.projectileManager = new ProjectileManager(this, this.enemyManager);
         this.collisionManager = new CollisionManager(this);
+        
+        // Initialize SupplyDropManager
+        this.supplyDropManager = new SupplyDropManager(this);
 
         // Initialize WaveIndicator
         this.waveIndicator = new WaveIndicator(this, this.waveManager, 10, 10);
@@ -309,6 +324,11 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         console.log(`Game ${gameId} state updated to: ${newState}`);
     }
 
+    private handleGameSpeedChanged(newSpeed: number): void {
+        this.gameSpeedMultiplier = newSpeed;
+        console.log(`Game speed changed to ${newSpeed}x`);
+    }
+
     update(time: number, delta: number): void {
         try {
             // Проверяем, инициализированы ли все необходимые менеджеры
@@ -316,11 +336,14 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 return;
             }
 
-            // Обновляем менеджеры
-            this.enemyManager.update(time, delta);
+            // Apply game speed multiplier to delta time
+            const scaledDelta = delta * this.gameSpeedMultiplier;
+
+            // Обновляем менеджеры с измененным delta
+            this.enemyManager.update(time, scaledDelta);
             
             if (this.projectileManager) {
-                this.projectileManager.update(time, delta);
+                this.projectileManager.update(time, scaledDelta);
             }
             
             // Обновляем информацию о волне
@@ -368,6 +391,9 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         if (this.screenManager) {
             this.screenManager.destroy();
         }
+
+        // Remove event listeners
+        this.events.off('gameSpeedChanged', this.handleGameSpeedChanged, this);
     }
 
     getCoinRewardMultiplier(): number {

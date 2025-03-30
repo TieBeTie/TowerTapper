@@ -6,6 +6,7 @@ import { UIManager } from './UIManager';
 import { WaveManager } from './WaveManager';
 import Tower from '../objects/towers/Tower';
 import GameScene from '../scenes/GameScene';
+import { SkillStateManager } from '../managers/SkillStateManager';
 
 // EnemyManager handles the logic for managing and spawning enemies
 class EnemyManager {
@@ -14,6 +15,7 @@ class EnemyManager {
     private coinCollectionEffectFromEnemy: CoinCollectionEffectFromEnemyManager;
     private waveManager: WaveManager;
     private spawnTimer: Phaser.Time.TimerEvent | null = null;
+    private skillStateManager: SkillStateManager;
 
     constructor(scene: Phaser.Scene, uiManager: UIManager, coinCollectionEffectFromEnemy: CoinCollectionEffectFromEnemyManager, waveManager: WaveManager) {
         this.scene = scene;
@@ -23,6 +25,7 @@ class EnemyManager {
         });
         this.coinCollectionEffectFromEnemy = coinCollectionEffectFromEnemy;
         this.waveManager = waveManager;
+        this.skillStateManager = SkillStateManager.getInstance();
 
         // Подписка на события волн
         this.waveManager.on('waveStart', (waveConfig: { number: number; enemyHealthMultiplier: number; enemyCount: number; spawnInterval: number }) => {
@@ -39,58 +42,30 @@ class EnemyManager {
     }
 
     startSpawningEnemies(waveConfig: any): void {
-        // Останавливаем предыдущий таймер, если он существует
-        if (this.spawnTimer) {
-            this.spawnTimer.remove();
-            this.spawnTimer = null;
-        }
+        // Destroy existing timer if it exists
+        this.clearSpawnTimer();
         
-        let enemiesSpawned = 0;
-        console.log(`Starting wave ${waveConfig.number} with ${waveConfig.enemyCount} enemies`);
+        // Extract wave config
+        const spawnInterval = waveConfig.spawnInterval || 2000;
+        const enemyCount = waveConfig.enemyCount || 10;
         
-        // Проверяем, что в волне есть враги для спавна
-        if (waveConfig.enemyCount <= 0) {
-            console.warn("Wave has no enemies to spawn, completing immediately");
-            this.waveManager.enemyDefeated(); // Вызываем один раз, чтобы завершить "пустую" волну
-            return;
-        }
+        // Apply game speed to spawn interval
+        const gameSpeed = this.skillStateManager.getGameSpeed();
+        const adjustedSpawnInterval = spawnInterval / gameSpeed;
         
-        // Создаем таймер для спавна врагов
+        // Create a spawn counter to track how many enemies need to be spawned
+        let enemiesLeftToSpawn = enemyCount;
+        
+        // Start a timer to spawn enemies at the configured interval
         this.spawnTimer = this.scene.time.addEvent({
-            delay: waveConfig.spawnInterval,
+            delay: adjustedSpawnInterval,
             callback: () => {
-                // Проверяем, что волна активна
-                if (!this.waveManager.isCurrentWaveActive()) {
-                    console.log("Wave is no longer active, stopping spawn timer");
-                    if (this.spawnTimer) {
-                        this.spawnTimer.remove();
-                        this.spawnTimer = null;
-                    }
-                    return;
-                }
-                
-                if (enemiesSpawned < waveConfig.enemyCount) {
-                    const success = this.spawnEnemy();
-                    if (success) {
-                        enemiesSpawned++;
-                        console.log(`Spawned enemy ${enemiesSpawned}/${waveConfig.enemyCount}`);
-                    } else {
-                        console.warn("Failed to spawn enemy, will retry");
-                    }
+                if (enemiesLeftToSpawn > 0) {
+                    this.spawnEnemy();
+                    enemiesLeftToSpawn--;
                     
-                    // Если это последний враг, сразу останавливаем таймер
-                    if (enemiesSpawned >= waveConfig.enemyCount) {
-                        console.log("All enemies spawned, removing timer");
-                        if (this.spawnTimer) {
-                            this.spawnTimer.remove();
-                            this.spawnTimer = null;
-                        }
-                    }
-                } else {
-                    console.log("Extra spawn attempt stopped, removing timer");
-                    if (this.spawnTimer) {
-                        this.spawnTimer.remove();
-                        this.spawnTimer = null;
+                    if (enemiesLeftToSpawn <= 0) {
+                        this.clearSpawnTimer();
                     }
                 }
             },
@@ -257,6 +232,13 @@ class EnemyManager {
             }
         } catch (error) {
             console.warn('Error in handleEnemyDeath:', error);
+        }
+    }
+
+    clearSpawnTimer(): void {
+        if (this.spawnTimer) {
+            this.spawnTimer.remove();
+            this.spawnTimer = null;
         }
     }
 }

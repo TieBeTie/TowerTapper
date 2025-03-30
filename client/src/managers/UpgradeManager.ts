@@ -168,6 +168,26 @@ export class UpgradeManager {
                 maxValue: 50, // Max 50% chance
                 calculateNextValue: (current: number) => current + 5, // +5% per upgrade (0.05)
                 calculateCost: (current: number) => Math.floor(30 * Math.pow(1.3, current / 5))
+            }],
+            [SkillType.SUPPLY_DROP, {
+                type: SkillType.SUPPLY_DROP,
+                name: 'Шанс золотого сундука',
+                description: 'Шанс появления золотого сундука при улучшении',
+                cost: 35,
+                currentValue: skills.get(SkillType.SUPPLY_DROP)?.value || 0, // 0% chance initially
+                maxValue: 50, // Max 50% chance
+                calculateNextValue: (current: number) => current + 5, // +5% per upgrade (0.05)
+                calculateCost: (current: number) => Math.floor(35 * Math.pow(1.4, current / 5))
+            }],
+            [SkillType.GAME_SPEED, {
+                type: SkillType.GAME_SPEED,
+                name: 'Скорость игры',
+                description: 'Увеличивает скорость всех игровых действий',
+                cost: 20,
+                currentValue: skills.get(SkillType.GAME_SPEED)?.value || 1, // базовый множитель скорости - 1
+                maxValue: 3, // максимальный множитель скорости - 3
+                calculateNextValue: (current: number) => Math.floor((current + 0.25) * 100) / 100, // +0.25 per upgrade
+                calculateCost: (current: number) => Math.floor(20 * Math.pow(1.4, (current - 1) / 0.25))
             }]
         ]);
     }
@@ -227,6 +247,18 @@ export class UpgradeManager {
 
             // Обновляем UI
             gameScene.events.emit('updateCoins', (gameScene as any).coinManager.coins_count);
+            
+            // Check for supply drop chance
+            const supplyDropChance = this.stateService.getState(SkillType.SUPPLY_DROP) / 100; // Convert from percentage to decimal
+            if (supplyDropChance > 0 && Math.random() < supplyDropChance) {
+                // Trigger supply drop
+                gameScene.events.emit('triggerSupplyDrop');
+                
+                // Show notification if available
+                if ((gameScene as any).uiManager && (gameScene as any).uiManager.showNotification) {
+                    (gameScene as any).uiManager.showNotification('Supply Drop!', 0xFFD700);
+                }
+            }
 
             return true;
         }
@@ -302,6 +334,16 @@ export class UpgradeManager {
             case SkillType.FREE_UPGRADE:
                 // Сохраняем шанс бесплатного улучшения в SkillSetStorage
                 this.stateService.saveState(SkillType.FREE_UPGRADE, upgrade.currentValue);
+                break;
+            case SkillType.SUPPLY_DROP:
+                // Сохраняем шанс появления золотого сундука в SkillSetStorage
+                this.stateService.saveState(SkillType.SUPPLY_DROP, upgrade.currentValue);
+                break;
+            case SkillType.GAME_SPEED:
+                // Сохраняем множитель скорости игры в SkillSetStorage и оповещаем о изменении
+                this.stateService.saveState(SkillType.GAME_SPEED, upgrade.currentValue);
+                // Оповещаем через событие о изменении скорости игры
+                gameScene.events.emit('gameSpeedChanged', upgrade.currentValue);
                 break;
         }
 
