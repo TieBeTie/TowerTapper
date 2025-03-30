@@ -76,6 +76,21 @@ export class ButtonPanel {
         this.distributeElements();
     }
 
+    // Get the container for external manipulation
+    getContainer(): Phaser.GameObjects.Container {
+        return this.container;
+    }
+
+    // Get the count of elements in this panel
+    getElementCount(): number {
+        return this.contentContainer.list.length;
+    }
+
+    // Set visibility of the container
+    setVisible(visible: boolean): void {
+        this.container.setVisible(visible);
+    }
+
     private distributeElements(): void {
         const elements = this.contentContainer.list;
         if (elements.length === 0) return;

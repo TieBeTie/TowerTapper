@@ -1,9 +1,7 @@
 // managers/UIManager.js
 import Phaser from 'phaser';
-import { Header } from '../ui/components/Header';
-import { ButtonPanel } from '../ui/components/ButtonPanel';
-import Button from '../ui/Button';
-import Tower from '../objects/towers/Tower';
+import { StatsView } from '../ui/components/StatsView';
+import { ScrollableButtonPanel } from '../ui/components/ScrollableButtonPanel';
 import { UpgradeButton } from '../ui/components/UpgradeButton';
 import { SkillType } from '../types/SkillType';
 import { UpgradeManager } from './UpgradeManager';
@@ -11,8 +9,8 @@ import { ScreenManager } from './ScreenManager';
 
 
 export class UIManager {
-    private header!: Header;
-    private buttonPanel!: ButtonPanel;
+    private statsView!: StatsView;
+    private upgradePanel!: ScrollableButtonPanel;
     private coinCount: number = 0;
     private coinIcon!: Phaser.GameObjects.Image;
     private coinNumberText!: Phaser.GameObjects.Text;
@@ -20,13 +18,15 @@ export class UIManager {
     private screenManager: ScreenManager;
 
     // Responsive design constants
-    private readonly HEADER_HEIGHT_RATIO = 0.03; // 3% of screen height
-    private readonly BUTTON_PANEL_HEIGHT_RATIO = 0.21; // 21% of screen height
+    private readonly STATS_VIEW_HEIGHT_PIXEL = 24;
     private readonly BUTTON_SIZE_RATIO = 0.02; // 2% of screen width
     private readonly BUTTON_SPACING_RATIO = 0.04; // 4% of screen width
-    private readonly GAME_VIEW_HEIGHT_RATIO = 0.70; // 70% of screen height
+    private readonly GAME_VIEW_HEIGHT_RATIO = 0.67; // Уменьшено с 70% до 65% для больше места внизу
     private readonly ICON_SIZE_RATIO = 0.04; // 4% of screen width
     private readonly FONT_SIZE_RATIO = 0.04; // 4% of screen width
+    
+    // Категории улучшений
+    private readonly CATEGORIES = ["Attack Upgrades", "Defense Upgrades", "Utility Upgrades"];
 
     constructor(
         private scene: Phaser.Scene,
@@ -45,9 +45,18 @@ export class UIManager {
         this.scene.events.on('screenResize', this.handleScreenResize, this);
     }
 
-    private initilizeHeader(iconSize: number, fontSize: number): void {
-        // Create header with screenManager
-        this.header = new Header(this.scene, this.screenManager);
+    private getStatsViewBeginY() {
+        const { height } = this.screenManager.getScreenSize();
+        return height * this.GAME_VIEW_HEIGHT_RATIO;
+    }
+
+    private getStatsViewEndY() {
+        return this.getStatsViewBeginY() + this.STATS_VIEW_HEIGHT_PIXEL;
+    }
+
+    private initilizeStatsView(iconSize: number, fontSize: number): void {
+        // Create statsView with screenManager
+        this.statsView = new StatsView(this.scene, this.screenManager);
         
          // Create coin elements - уменьшаем размер иконки монеты
          this.coinIcon = this.scene.add.image(0, 0, 'coin');
@@ -62,7 +71,7 @@ export class UIManager {
              fontFamily: 'pixelFont'
          }).setOrigin(0, 0.5);
 
-         // Add elements to header
+         // Add elements to statsView
          // Create a container for coin display
          const coinContainer = this.scene.add.container(0, 0);
          coinContainer.add(this.coinIcon);
@@ -72,107 +81,303 @@ export class UIManager {
          this.coinNumberText.setPosition(this.coinIcon.width * 0.6, 0);
          
          // Add the container as a single element
-         this.header.addElement(coinContainer);
+         this.statsView.addElement(coinContainer);
     }
 
-    private initilizeButtonPanel(): void {
-        this.buttonPanel = new ButtonPanel(this.scene, 2, 3, this.screenManager);
+    private initilizeUpgradePanel(): void {
+        // Создаем ScrollableButtonPanel с 3 колонками и 2 строками
+        this.upgradePanel = new ScrollableButtonPanel(
+            this.scene, 
+            2, // 2 колонки
+            3, // 3 строки
+            undefined, // не используем параметр totalButtons
+            this.screenManager,
+            this.CATEGORIES // категории кнопок
+        );
         
-        // Get responsive font size from ScreenManager
-        const fontSize = this.screenManager.getResponsiveFontSize(16);
-
-        // Create interactive text for regen
-        const regenButton = new UpgradeButton({
-            scene: this.scene,
-            skillType: SkillType.HEALTH_REGEN,
-            upgradeManager: this.upgradeManager,
-            fontSize: fontSize,
-            buttonText: 'Health\nRegen',
-            x: 0,
-            y: 0,
-            width: fontSize * 8,
-            height: fontSize * 3
-        });
-        const healthButton = new UpgradeButton({
-            scene: this.scene,
-            skillType: SkillType.MAX_HEALTH,
-            upgradeManager: this.upgradeManager,
-            fontSize: fontSize,
-            buttonText: 'Health',
-            x: 0,
-            y: 0,
-            width: fontSize * 8,
-            height: fontSize * 3
-        })
-        const defenseButton = new UpgradeButton({
-            scene: this.scene,
-            skillType: SkillType.DEFENSE,
-            upgradeManager: this.upgradeManager,
-            fontSize: fontSize,
-            buttonText: 'Defense',
-            x: 0,
-            y: 0,
-            width: fontSize * 8,
-            height: fontSize * 3
-        })
+        // Единый размер шрифта для всех кнопок (固定サイズ)
+        const fontSize = this.screenManager.getResponsiveFontSize(20);
+        
+        // Создаем кнопки улучшений атаки (Attack Upgrades)
+        const attackButtons = this.createAttackUpgradeButtons(fontSize);
+        
+        // Создаем кнопки улучшений защиты (Defense Upgrades)
+        const defenseButtons = this.createDefenseUpgradeButtons(fontSize);
+        
+        // Создаем кнопки утилитарных улучшений (Utility Upgrades)
+        const utilityButtons = this.createUtilityUpgradeButtons(fontSize);
+        
+        // Добавляем кнопки в соответствующие категории
+        this.upgradePanel.addButtonsToCategory(attackButtons, 0);
+        this.upgradePanel.addButtonsToCategory(defenseButtons, 1);
+        this.upgradePanel.addButtonsToCategory(utilityButtons, 2);
+    }
+    
+    private createAttackUpgradeButtons(fontSize: number): Phaser.GameObjects.GameObject[] {
+        const buttons: Phaser.GameObjects.GameObject[] = [];
+        
+        // 1. Damage – увеличивает урон
         const damageButton = new UpgradeButton({
             scene: this.scene,
             skillType: SkillType.DAMAGE,
             upgradeManager: this.upgradeManager,
             fontSize: fontSize,
             buttonText: 'Damage',
-            x: 0,
-            y: 0,
-            width: fontSize * 8,
+            x: 0, y: 0,
+            width: fontSize * 10,
             height: fontSize * 3
-        })
-        const goldRewardButton = new UpgradeButton({
-            scene: this.scene,
-            skillType: SkillType.COIN_REWARD,
-            upgradeManager: this.upgradeManager,
-            fontSize: fontSize,
-            buttonText: 'Gold\nBonus',
-            x: 0,
-            y: 0,
-            width: fontSize * 8,
-            height: fontSize * 3
-        })
+        });
+        buttons.push(damageButton);
+        
+        // 2. Attack Speed – увеличивает скорость атаки
         const attackSpeedButton = new UpgradeButton({
             scene: this.scene,
             skillType: SkillType.ATTACK_SPEED,
             upgradeManager: this.upgradeManager,
             fontSize: fontSize,
             buttonText: 'Attack\nSpeed',
-            x: 0,
-            y: 0,
-            width: fontSize * 8,
+            x: 0, y: 0,
+            width: fontSize * 10,
             height: fontSize * 3
-        })
-
-        this.buttonPanel.addElement(regenButton);
-        this.buttonPanel.addElement(healthButton);
-        this.buttonPanel.addElement(defenseButton);
-        this.buttonPanel.addElement(damageButton);
-        this.buttonPanel.addElement(goldRewardButton);
-        this.buttonPanel.addElement(attackSpeedButton);
-        this.updatePositions();
+        });
+        buttons.push(attackSpeedButton);
+        
+        // 3. Attack Range – увеличивает дальность атаки
+        const attackRangeButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.ATTACK_RANGE,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Attack\nRange',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(attackRangeButton);
+        
+        // 4. Multishot Chance – шанс атаки несколькими снарядами
+        const multishotButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.MULTISHOT,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Multishot\nChance',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(multishotButton);
+        
+        // 5. Critical Chance – шанс критического удара
+        const critChanceButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.CRIT_CHANCE,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Critical\nChance',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(critChanceButton);
+        
+        // 6. Critical Multiplier – множитель критического урона
+        const critMultButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.CRIT_MULTIPLIER,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Critical\nMultiplier',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(critMultButton);
+        
+        return buttons;
+    }
+    
+    private createDefenseUpgradeButtons(fontSize: number): Phaser.GameObjects.GameObject[] {
+        const buttons: Phaser.GameObjects.GameObject[] = [];
+        
+        // 1. Max Health – увеличивает максимальное здоровье
+        const maxHealthButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.MAX_HEALTH,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Max\nHealth',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(maxHealthButton);
+        
+        // 2. Health Regen – увеличивает восстановление здоровья
+        const regenButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.HEALTH_REGEN,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Health\nRegen',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(regenButton);
+        
+        // 3. Defense – уменьшает получаемый урон
+        const defenseButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.DEFENSE,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Defense',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(defenseButton);
+        
+        // 4. Knockback – увеличивает силу отталкивания врагов
+        const knockbackButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.KNOCKBACK,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Knockback',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(knockbackButton);
+        
+        // 5. Lifesteal Chance – шанс восстановления здоровья при атаке
+        const lifestealChanceButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.LIFESTEAL_CHANCE,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Lifesteal\nChance',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(lifestealChanceButton);
+        
+        // 6. Lifesteal Amount – количество восстанавливаемого здоровья
+        const lifestealAmountButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.LIFESTEAL_AMOUNT,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Lifesteal\nAmount',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(lifestealAmountButton);
+        
+        return buttons;
+    }
+    
+    private createUtilityUpgradeButtons(fontSize: number): Phaser.GameObjects.GameObject[] {
+        const buttons: Phaser.GameObjects.GameObject[] = [];
+        
+        // 1. Daily Gold Bonus – дополнительное золото каждый день
+        const dailyGoldButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.DAILY_GOLD,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Daily Gold\nBonus',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(dailyGoldButton);
+        
+        // 2. Kill Gold Bonus – больше золота за убийства
+        const killGoldButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.COIN_REWARD,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Kill Gold\nBonus',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(killGoldButton);
+        
+        // 3. Daily Gem Bonus – дополнительные гемы каждый день
+        const dailyGemButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.DAILY_GEM,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Daily Gem\nBonus',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(dailyGemButton);
+        
+        // 4. Free Upgrade Chance – шанс получить бесплатное улучшение
+        const freeUpgradeButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.FREE_UPGRADE,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Free\nUpgrade',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(freeUpgradeButton);
+        
+        // 5. Supply Drop Chance – шанс выпадения предметов
+        const supplyDropButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.SUPPLY_DROP,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Supply\nDrop',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(supplyDropButton);
+        
+        // 6. Max Gamespeed – максимальная скорость игры
+        const gameSpeedButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.GAME_SPEED,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Max Game\nSpeed',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(gameSpeedButton);
+        
+        return buttons;
     }
 
     private initialize(): void {
         // Use ScreenManager to get screen dimensions
         const { width } = this.screenManager.getScreenSize();
         const iconSize = width * this.ICON_SIZE_RATIO;
-        const fontSize = this.screenManager.getResponsiveFontSize(16);
+        const fontSize = this.screenManager.getResponsiveFontSize(20);
         
-        this.initilizeHeader(iconSize, fontSize);
-        this.initilizeButtonPanel();
+        this.initilizeStatsView(iconSize, fontSize);
+        this.initilizeUpgradePanel(); 
+        this.updatePositions();
     }
 
     private handleScreenResize(gameScale: number): void {
         // Use ScreenManager to get updated dimensions
-        const { width, height } = this.screenManager.getScreenSize();
-        
-        // Update positions based on new dimensions
         this.updatePositions();
     }
 
@@ -180,19 +385,21 @@ export class UIManager {
         const { width, height } = this.screenManager.getScreenSize();
 
         // Calculate dimensions
-        const headerHeight = height * this.HEADER_HEIGHT_RATIO;
-        const buttonPanelHeight = height * this.BUTTON_PANEL_HEIGHT_RATIO;
-        const buttonSize = width * this.BUTTON_SIZE_RATIO;
-        const buttonSpacing = width * this.BUTTON_SPACING_RATIO;
-
-        // Position and size header
-        const gameViewHeight = height * this.GAME_VIEW_HEIGHT_RATIO; // 70% of screen for game view
-        this.header.setPosition(0, gameViewHeight);
-        this.header.setSize(width, headerHeight);
-
-        // Position and size button panel
-        this.buttonPanel.setPosition(0, gameViewHeight + headerHeight);
-        this.buttonPanel.setSize(width, buttonPanelHeight);
+        const statsViewHeight = this.STATS_VIEW_HEIGHT_PIXEL;
+        
+        // Рассчитываем высоту доступную для игрового поля
+        const gameViewHeight = height * this.GAME_VIEW_HEIGHT_RATIO;
+        
+        // Position and size statsView
+        this.statsView.setPosition(0, gameViewHeight);
+        this.statsView.setSize(width, statsViewHeight);
+     
+        // Position the upgradePanel so its bottom edge aligns with the bottom of the screen
+        // We need to subtract the panel height from the screen height
+        this.upgradePanel.setPosition(0, height - this.upgradePanel.getHeight());
+        
+        // Делаем панель видимой
+        this.upgradePanel.setVisible(true);
     }
 
     updateCoinCount(count: number): void {
@@ -208,7 +415,7 @@ export class UIManager {
 
     destroy(): void {
         this.scene.events.off('screenResize', this.handleScreenResize, this);
-        this.header.destroy();
-        this.buttonPanel.destroy();
+        this.statsView.destroy();
+        this.upgradePanel.destroy();
     }
 }

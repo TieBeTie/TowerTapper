@@ -97,6 +97,11 @@ export class UpgradeManager {
         return upgrade.currentValue;
     }
 
+    getPlayerCoins(): number {
+        const gameScene = this.scene.scene.get('GameScene');
+        return (gameScene as any).coinManager?.coins_count || 0;
+    }
+
     purchaseUpgrade(type: SkillType): boolean {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return false;

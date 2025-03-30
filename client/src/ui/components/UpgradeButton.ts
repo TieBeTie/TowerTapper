@@ -33,12 +33,13 @@ export class UpgradeButton extends UIComponent {
     private static readonly COST_ICON_SIZE_RATIO = 0.5;    // Размер иконки монеты относительно fontSize
     private static readonly LEVEL_TEXT_OFFSET_RATIO = 0.5; // Отступ текста уровня как % от fontSize
     private static readonly COST_TEXT_OFFSET_RATIO = 1; // Отступ текста стоимости как % от fontSize
+    private static readonly CORNER_RADIUS = 8; // Радиус закругления углов кнопки
 
     private levelText!: Phaser.GameObjects.Text;
     private costText!: Phaser.GameObjects.Text;
     private costIcon!: Phaser.GameObjects.Image;
     private buttonText!: Phaser.GameObjects.Text;
-    private background!: Phaser.GameObjects.Rectangle;
+    private background!: Phaser.GameObjects.Graphics;
     private upgradeInfoContainer!: Phaser.GameObjects.Container;
     
     // Сохраняем необходимые параметры в отдельных полях
@@ -95,16 +96,9 @@ export class UpgradeButton extends UIComponent {
     }
 
     private createButtonBackground(): void {
-        // Создаем фон кнопки
-        this.background = this.scene.add.rectangle(
-            0,
-            0,
-            this.width,
-            this.height,
-            0x444444,
-            BUTTON_BACKGROUND_ALPHA
-        );
-        this.background.setOrigin(0.5);
+        // Создаем фон кнопки с закругленными углами
+        this.background = this.scene.add.graphics();
+        this.updateButtonColor(); // Начальный цвет кнопки
         this.add(this.background);
     }
 
@@ -182,34 +176,36 @@ export class UpgradeButton extends UIComponent {
                 return;
             }
             
+            // Создаем невидимую область для взаимодействия
+            const hitArea = new Phaser.Geom.Rectangle(
+                -this.width / 2, 
+                -this.height / 2, 
+                this.width, 
+                this.height
+            );
+            
             // Делаем интерактивным весь контейнер
-            this.setInteractive(this.background, Phaser.Geom.Rectangle.Contains)
+            this.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains)
                 .on('pointerover', () => {
                     if (!this.scene || !this.background) return;
-                    const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
-                    this.background.setFillStyle(baseColor + 0x222222, BUTTON_HOVER_ALPHA);
+                    const color = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD_HOVER : BUTTON_COLOR_HOVER;
+                    this.updateButtonColor(color, BUTTON_HOVER_ALPHA);
                 })
                 .on('pointerout', () => {
                     if (!this.scene || !this.background) return;
-                    this.background.setFillStyle(
-                        this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT,
-                        BUTTON_BACKGROUND_ALPHA
-                    );
+                    this.updateButtonColor();
                 })
                 .on('pointerdown', () => {
                     if (!this.scene || !this.background) return;
-                    const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
-                    this.background.setFillStyle(baseColor - 0x222222, BUTTON_PRESSED_ALPHA);
+                    const color = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD_PRESSED : BUTTON_COLOR_PRESSED;
+                    this.updateButtonColor(color, BUTTON_PRESSED_ALPHA);
                     this.handleClick();
                 })  
                 .on('pointerup', () => {
                     if (!this.scene || !this.background) return;
-                    const baseColor = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
-                    this.background.setFillStyle(baseColor + 0x222222, BUTTON_HOVER_ALPHA);
+                    const color = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD_HOVER : BUTTON_COLOR_HOVER;
+                    this.updateButtonColor(color, BUTTON_HOVER_ALPHA);
                 });
-
-            // Устанавливаем начальный цвет кнопки
-            this.updateButtonColor();
         } catch (error) {
             console.warn('Error in setupInteractivity:', error);
         }
@@ -242,15 +238,47 @@ export class UpgradeButton extends UIComponent {
         }
     }
 
-    private updateButtonColor(): void {
+    private updateButtonColor(color?: number, alpha?: number): void {
         try {
             // Skip color update if the scene is invalid
             if (!this.scene || !this.background) {
                 return;
             }
             
-            const color = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
-            this.background.setFillStyle(color, BUTTON_BACKGROUND_ALPHA);
+            // Если цвет не указан, используем цвет по умолчанию
+            if (color === undefined) {
+                color = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD : BUTTON_COLOR_DEFAULT;
+            }
+            
+            // Если прозрачность не указана, используем по умолчанию
+            if (alpha === undefined) {
+                alpha = BUTTON_BACKGROUND_ALPHA;
+            }
+            
+            // Очищаем предыдущий фон
+            this.background.clear();
+            
+            // Рисуем закругленный прямоугольник
+            this.background.fillStyle(color, alpha);
+            this.background.lineStyle(2, 0x666666, 1);
+            
+            // Смещаем в центр
+            this.background.fillRoundedRect(
+                -this.width / 2, 
+                -this.height / 2, 
+                this.width, 
+                this.height, 
+                UpgradeButton.CORNER_RADIUS
+            );
+            
+            // Добавляем обводку
+            this.background.strokeRoundedRect(
+                -this.width / 2, 
+                -this.height / 2, 
+                this.width, 
+                this.height, 
+                UpgradeButton.CORNER_RADIUS
+            );
         } catch (error) {
             console.warn('Error in updateButtonColor:', error);
         }
