@@ -21,8 +21,7 @@ export class UIManager {
     private readonly STATS_VIEW_HEIGHT_PIXEL = 24;
     private readonly BUTTON_SIZE_RATIO = 0.02; // 2% of screen width
     private readonly BUTTON_SPACING_RATIO = 0.04; // 4% of screen width
-    private readonly GAME_VIEW_HEIGHT_RATIO = 0.67; // Уменьшено с 70% до 65% для больше места внизу
-    private readonly ICON_SIZE_RATIO = 0.04; // 4% of screen width
+    private readonly ICON_SIZE_RATIO = 0.02; // 4% of screen width
     private readonly FONT_SIZE_RATIO = 0.04; // 4% of screen width
     
     // Категории улучшений
@@ -47,7 +46,7 @@ export class UIManager {
 
     private getStatsViewBeginY() {
         const { height } = this.screenManager.getScreenSize();
-        return height * this.GAME_VIEW_HEIGHT_RATIO;
+        return height * this.screenManager.getGameViewHeightRatio();
     }
 
     private getStatsViewEndY() {
@@ -388,7 +387,7 @@ export class UIManager {
         const statsViewHeight = this.STATS_VIEW_HEIGHT_PIXEL;
         
         // Рассчитываем высоту доступную для игрового поля
-        const gameViewHeight = height * this.GAME_VIEW_HEIGHT_RATIO;
+        const gameViewHeight = height * this.screenManager.getGameViewHeightRatio();
         
         // Position and size statsView
         this.statsView.setPosition(0, gameViewHeight);

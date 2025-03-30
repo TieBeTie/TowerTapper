@@ -56,8 +56,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.setImmovable(true);
         this.setCollideWorldBounds(true);
         
-        // Установка точного положения башни по центру
-        const center = this.screenManager.getScreenCenter();
+        // Установка точного положения башни по центру игровой области
+        const center = this.screenManager.getGameViewCenter();
         this.setPosition(center.x, center.y);
         
         // Масштаб с учетом коэффициента из ScreenManager
@@ -78,7 +78,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     
     private handleScreenResize(gameScale: number): void {
         this.setScale(Tower.TOWER_SCALE * gameScale);
-        const center = this.screenManager.getScreenCenter();
+        const center = this.screenManager.getGameViewCenter();
         this.setPosition(center.x, center.y);
         
         // Обновляем радиус атаки при изменении размера экрана

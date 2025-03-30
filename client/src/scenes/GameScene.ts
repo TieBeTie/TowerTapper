@@ -84,8 +84,8 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         // Создаем фон через ScreenManager
         this.screenManager.setupBackground();
 
-        // Получаем центр экрана и масштаб
-        const center = this.screenManager.getScreenCenter();
+        // Получаем центр игровой области и масштаб
+        const center = this.screenManager.getGameViewCenter();
         const gameScale = this.screenManager.getGameScale();
 
         // Создаем башню с меньшим размером

@@ -6,7 +6,7 @@ export class ScreenManager {
     private scene: Phaser.Scene;
     private telegramService: TelegramService;
     private isDestroyed: boolean = false;
-
+    private gameViewHeightRatio: number = 0.67;
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
         this.telegramService = TelegramService.getInstance();
@@ -84,6 +84,20 @@ export class ScreenManager {
     public getScreenCenter(): { x: number; y: number } {
         const { width, height } = this.getScreenSize();
         return { x: width / 2, y: height / 2 };
+    }
+
+    public getGameViewHeightRatio(): number {
+        return this.gameViewHeightRatio;
+    }
+
+    /**
+     * Возвращает центр игровой области (GameView)
+     * Учитывает, что GameView занимает только часть экрана (67% от высоты)
+     */
+    public getGameViewCenter(): { x: number; y: number } {
+        const { width, height } = this.getScreenSize();
+        const gameViewHeight = height * this.gameViewHeightRatio;
+        return { x: width / 2, y: gameViewHeight / 2 };
     }
 
     /**
