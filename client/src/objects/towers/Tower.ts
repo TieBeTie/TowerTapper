@@ -11,6 +11,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     
     // Константа масштаба башни
     private static readonly TOWER_SCALE = 0.4;
+    // Константа для базового радиуса атаки (в % от высоты экрана)
+    private static readonly BASE_ATTACK_RANGE_PERCENT = 0.25;
 
     health: number;
     maxHealth: number;
@@ -20,6 +22,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private isDying: boolean = false;
     private skillStorage: SkillSetStorage;
     private screenManager: ScreenManager;
+    private attackRangeCircle: Phaser.GameObjects.Graphics;
+    private attackRange: number;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -39,6 +43,15 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || 0;
         this.regenerationTimer = null;
         this.isDying = false;
+
+        // Инициализируем радиус атаки
+        const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE)?.value || 1;
+        const { height } = this.screenManager.getScreenSize();
+        this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
+
+        // Создаем графический объект для отображения радиуса атаки
+        this.attackRangeCircle = this.scene.add.graphics();
+        this.updateAttackRangeVisual();
 
         this.setImmovable(true);
         this.setCollideWorldBounds(true);
@@ -64,9 +77,16 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     }
     
     private handleScreenResize(gameScale: number): void {
-       this.setScale(Tower.TOWER_SCALE * gameScale);
-       const center = this.screenManager.getScreenCenter();
-       this.setPosition(center.x, center.y);
+        this.setScale(Tower.TOWER_SCALE * gameScale);
+        const center = this.screenManager.getScreenCenter();
+        this.setPosition(center.x, center.y);
+        
+        // Обновляем радиус атаки при изменении размера экрана
+        const { height } = this.screenManager.getScreenSize();
+        const skills = this.skillStorage.load();
+        const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE)?.value || 1;
+        this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
+        this.updateAttackRangeVisual();
     }
 
     upgrade(): void {
@@ -75,11 +95,46 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.defense = skills.get(SkillType.DEFENSE)?.value || this.defense;
         this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || this.regeneration;
         
+        // Обновляем радиус атаки при улучшении
+        const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE)?.value || 1;
+        const { height } = this.screenManager.getScreenSize();
+        this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
+        this.updateAttackRangeVisual();
+        
         this.health = this.maxHealth;
 
         if (this.regeneration > 0) {
             this.startRegeneration();
         }
+    }
+
+    // Обновляем визуальное отображение радиуса атаки
+    private updateAttackRangeVisual(): void {
+        this.attackRangeCircle.clear();
+        this.attackRangeCircle.lineStyle(2, Tower.COLOR_WHITE, 0.3);
+        this.attackRangeCircle.fillStyle(Tower.COLOR_WHITE, 0.1);
+        this.attackRangeCircle.fillCircle(this.x, this.y, this.attackRange);
+        this.attackRangeCircle.strokeCircle(this.x, this.y, this.attackRange);
+        this.attackRangeCircle.setDepth(0);
+    }
+
+    // Проверяем, находится ли враг в радиусе атаки
+    isInAttackRange(enemy: Phaser.GameObjects.GameObject): boolean {
+        if (!enemy || !enemy.active) return false;
+        
+        const distance = Phaser.Math.Distance.Between(
+            this.x, 
+            this.y, 
+            (enemy as Phaser.Physics.Arcade.Sprite).x, 
+            (enemy as Phaser.Physics.Arcade.Sprite).y
+        );
+        
+        return distance <= this.attackRange;
+    }
+
+    // Получаем текущий радиус атаки
+    getAttackRange(): number {
+        return this.attackRange;
     }
 
     // Method required by UpgradeManager
@@ -218,6 +273,12 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             this.scene.events.off('screenResize', this.handleScreenResize, this);
         }
         this.stopRegeneration();
+        
+        // Destroy the attack range circle
+        if (this.attackRangeCircle) {
+            this.attackRangeCircle.destroy();
+        }
+        
         super.destroy(fromScene);
     }
 }

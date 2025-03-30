@@ -2,6 +2,7 @@ import { SkillType, Upgrade } from '../types/SkillType';
 import { SkillStateManager } from './SkillStateManager';
 import { SkillSetStorage } from '../storage/SkillSetStorage';
 import { IScene } from '../types/IScene';
+import { IGameScene } from '../types/IGameScene';
 
 export class UpgradeManager {
     private scene: IScene;
@@ -77,6 +78,16 @@ export class UpgradeManager {
                 maxValue: 3,
                 calculateNextValue: (current: number) => Math.floor((current + 0.2) * 100) / 100,
                 calculateCost: (current: number) => Math.floor(10 * Math.pow(1.3, Math.log(current/1) / Math.log(1.3)))
+            }],
+            [SkillType.ATTACK_RANGE, {
+                type: SkillType.ATTACK_RANGE,
+                name: 'Радиус атаки',
+                description: 'Увеличивает дальность атаки башни',
+                cost: 8,
+                currentValue: skills.get(SkillType.ATTACK_RANGE)?.value || 1,
+                maxValue: 3,
+                calculateNextValue: (current: number) => Math.floor((current + 0.25) * 100) / 100,
+                calculateCost: (current: number) => Math.floor(8 * Math.pow(1.3, Math.log(current/1) / Math.log(1.3)))
             }]
         ]);
     }
@@ -134,7 +145,9 @@ export class UpgradeManager {
         const upgrade = this.upgrades.get(type);
         if (!upgrade) return;
 
-        const gameScene = this.scene as IScene;
+        const gameScene = this.scene.scene.get('GameScene') as IGameScene;
+        if (!gameScene || !gameScene.tower) return;
+
         const tower = gameScene.tower;
 
         switch (type) {
@@ -160,6 +173,10 @@ export class UpgradeManager {
                 if (gameScene) {
                     (gameScene as any).attackSpeedMultiplier = upgrade.currentValue;
                 }
+                break;
+            case SkillType.ATTACK_RANGE:
+                // Радиус атаки обновляется через SkillSetStorage при обновлении башни
+                tower.upgrade(); // Вызываем метод upgrade для обновления радиуса атаки
                 break;
         }
 

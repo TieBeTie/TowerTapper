@@ -41,9 +41,44 @@ class ProjectileManager {
         return skills.get(SkillType.DAMAGE)?.value || 20; // Return base damage of 20 if not found
     }
 
+    // Находит ближайшего врага в диапазоне атаки башни
+    findNearestEnemyInRange(): Enemy | null {
+        // Проверяем, что башня существует
+        if (!this.scene.tower) return null;
+        
+        // Получаем всех врагов
+        const enemies = this.enemyManager.enemies.getChildren();
+        if (!enemies.length) return null;
+        
+        let nearestEnemy: Enemy | null = null;
+        let minDistance = Infinity;
+        
+        // Перебираем всех врагов
+        for (const enemy of enemies) {
+            // Проверяем, что враг активен и находится в радиусе атаки
+            if (enemy.active && this.scene.tower.isInAttackRange(enemy)) {
+                const enemyObj = enemy as Enemy;
+                const distance = Phaser.Math.Distance.Between(
+                    this.scene.tower.x, 
+                    this.scene.tower.y, 
+                    enemyObj.x, 
+                    enemyObj.y
+                );
+                
+                // Обновляем ближайшего врага
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestEnemy = enemyObj;
+                }
+            }
+        }
+        
+        return nearestEnemy;
+    }
+
     fireProjectile(speedMultiplier: number = 1): void {
-        // Находим ближайшего врага
-        const targetEnemy = this.enemyManager.findNearestAvailableEnemy(this.scene.tower.x, this.scene.tower.y);
+        // Находим ближайшего врага в радиусе атаки
+        const targetEnemy = this.findNearestEnemyInRange();
         if (targetEnemy) {
             // Создаем стрелу
             const arrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
