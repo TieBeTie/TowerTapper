@@ -98,6 +98,16 @@ export class UpgradeManager {
                 maxValue: 500,
                 calculateNextValue: (current: number) => Math.floor(current * 1.3),
                 calculateCost: (current: number) => Math.floor(7 * Math.pow(1.3, Math.log(current/50) / Math.log(1.3)))
+            }],
+            [SkillType.MULTISHOT, {
+                type: SkillType.MULTISHOT,
+                name: 'Мультивыстрел',
+                description: 'Шанс выпустить 3 стрелы одновременно',
+                cost: 15,
+                currentValue: skills.get(SkillType.MULTISHOT)?.value || 5, // 5% chance initially
+                maxValue: 50, // Max 50% chance
+                calculateNextValue: (current: number) => Math.floor(current + 3), // +3% per upgrade
+                calculateCost: (current: number) => Math.floor(15 * Math.pow(1.4, (current - 5) / 3))
             }]
         ]);
     }
@@ -191,6 +201,10 @@ export class UpgradeManager {
             case SkillType.KNOCKBACK:
                 // Сохраняем новое значение knockback в SkillSetStorage
                 this.stateService.saveState(SkillType.KNOCKBACK, upgrade.currentValue);
+                break;
+            case SkillType.MULTISHOT:
+                // Просто сохраняем новое значение в SkillSetStorage
+                this.stateService.saveState(SkillType.MULTISHOT, upgrade.currentValue);
                 break;
         }
 

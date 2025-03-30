@@ -41,6 +41,18 @@ class ProjectileManager {
         return skills.get(SkillType.DAMAGE)?.value || 20; // Return base damage of 20 if not found
     }
 
+    // Проверяет, должен ли сработать мультивыстрел
+    private shouldTriggerMultishot(): boolean {
+        const skills = this.skillStorage.load();
+        const multishotChance = skills.get(SkillType.MULTISHOT)?.value || 0;
+        
+        // Генерируем случайное число от 0 до 100
+        const roll = Math.random() * 100;
+        
+        // Если выпавшее число меньше шанса мультивыстрела, то активируем навык
+        return roll < multishotChance;
+    }
+
     // Находит ближайшего врага в диапазоне атаки башни
     findNearestEnemyInRange(): Enemy | null {
         // Проверяем, что башня существует
@@ -80,27 +92,18 @@ class ProjectileManager {
         // Находим ближайшего врага в радиусе атаки
         const targetEnemy = this.findNearestEnemyInRange();
         if (targetEnemy) {
-            // Создаем стрелу
-            const arrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
+            // Проверяем, должен ли сработать мультивыстрел
+            const isMultishot = this.shouldTriggerMultishot();
             
-
-            const towerDamage = this.getTowerDamage();
-            console.log('Setting arrow damage:', towerDamage);
-            arrow.setDamage(towerDamage);
+            if (isMultishot) {
+                // Мультивыстрел: 3 стрелы с небольшим отклонением
+                this.fireMultipleArrows(targetEnemy, speedMultiplier);
+            } else {
+                // Обычный выстрел одной стрелой
+                this.fireSingleArrow(targetEnemy, speedMultiplier);
+            }
             
-            // Запускаем стрелу в направлении врага
-            arrow.fire(targetEnemy.x, targetEnemy.y, speedMultiplier);
-            
-            // Устанавливаем таймер автоматического удаления стрелы
-            this.scene.time.delayedCall(this.projectileMaxLifetime, () => {
-                if (arrow.active) {
-                    // Если стрела все еще активна, удаляем её
-                    arrow.destroy();
-                }
-            });
-            
-            // Добавляем стрелу в группу
-            this.projectiles.add(arrow);
+            // Обновляем время последнего выстрела
             this.lastFireTime = this.scene.time.now;
             
             // Проигрываем звук
@@ -109,6 +112,78 @@ class ProjectileManager {
                 gameScene.audioManager.playSound('arrow');
             }
         }
+    }
+    
+    // Стреляем одной стрелой в цель
+    private fireSingleArrow(target: Enemy, speedMultiplier: number): void {
+        // Создаем стрелу
+        const arrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
+        
+        // Устанавливаем урон
+        const towerDamage = this.getTowerDamage();
+        console.log('Setting arrow damage:', towerDamage);
+        arrow.setDamage(towerDamage);
+        
+        // Запускаем стрелу в направлении врага
+        arrow.fire(target.x, target.y, speedMultiplier);
+        
+        // Устанавливаем таймер автоматического удаления стрелы
+        this.scene.time.delayedCall(this.projectileMaxLifetime, () => {
+            if (arrow.active) {
+                // Если стрела все еще активна, удаляем её
+                arrow.destroy();
+            }
+        });
+        
+        // Добавляем стрелу в группу
+        this.projectiles.add(arrow);
+    }
+    
+    // Стреляем тремя стрелами с отклонением
+    private fireMultipleArrows(target: Enemy, speedMultiplier: number): void {
+        // Получаем угол от башни к цели
+        const angle = Phaser.Math.Angle.Between(
+            this.scene.tower.x, 
+            this.scene.tower.y, 
+            target.x, 
+            target.y
+        );
+        
+        // Угол отклонения (в радианах) для боковых стрел
+        const deviation = Phaser.Math.DegToRad(10); // 10 градусов
+        
+        // Стреляем центральной стрелой (прямо в цель)
+        this.fireSingleArrow(target, speedMultiplier);
+        
+        // Вычисляем позиции для боковых стрел
+        // Левая стрела (угол - отклонение)
+        const leftAngle = angle - deviation;
+        const leftX = target.x + Math.cos(leftAngle) * 50; // Небольшое смещение для визуального эффекта
+        const leftY = target.y + Math.sin(leftAngle) * 50;
+        
+        // Правая стрела (угол + отклонение)
+        const rightAngle = angle + deviation;
+        const rightX = target.x + Math.cos(rightAngle) * 50;
+        const rightY = target.y + Math.sin(rightAngle) * 50;
+        
+        // Создаем левую стрелу
+        const leftArrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
+        const towerDamage = this.getTowerDamage();
+        leftArrow.setDamage(towerDamage);
+        leftArrow.fire(leftX, leftY, speedMultiplier);
+        this.scene.time.delayedCall(this.projectileMaxLifetime, () => {
+            if (leftArrow.active) leftArrow.destroy();
+        });
+        this.projectiles.add(leftArrow);
+        
+        // Создаем правую стрелу
+        const rightArrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
+        rightArrow.setDamage(towerDamage);
+        rightArrow.fire(rightX, rightY, speedMultiplier);
+        this.scene.time.delayedCall(this.projectileMaxLifetime, () => {
+            if (rightArrow.active) rightArrow.destroy();
+        });
+        this.projectiles.add(rightArrow);
     }
     
     // Обработка попадания стрелы (используется в CollisionManager)
