@@ -21,7 +21,7 @@ export class UIManager {
     private readonly STATS_VIEW_HEIGHT_PIXEL = 24;
     private readonly BUTTON_SIZE_RATIO = 0.02; // 2% of screen width
     private readonly BUTTON_SPACING_RATIO = 0.04; // 4% of screen width
-    private readonly ICON_SIZE_RATIO = 0.02; // 4% of screen width
+    private readonly ICON_SIZE_RATIO = 0.04; // 4% of screen width
     private readonly FONT_SIZE_RATIO = 0.04; // 4% of screen width
     
     // Категории улучшений
@@ -42,6 +42,9 @@ export class UIManager {
         
         // Subscribe to screen resize events from ScreenManager
         this.scene.events.on('screenResize', this.handleScreenResize, this);
+        
+        // Listen for ui-force-visibility event with the updated name
+        this.scene.events.on('ui-refresh-visibility', this.forceAllButtonsVisible, this);
     }
 
     private getStatsViewBeginY() {
@@ -375,12 +378,7 @@ export class UIManager {
         this.updatePositions();
     }
 
-    private handleScreenResize(gameScale: number): void {
-        // Use ScreenManager to get updated dimensions
-        this.updatePositions();
-    }
-
-    private updatePositions(): void {
+    public updatePositions(): void {
         const { width, height } = this.screenManager.getScreenSize();
 
         // Calculate dimensions
@@ -392,13 +390,76 @@ export class UIManager {
         // Position and size statsView
         this.statsView.setPosition(0, gameViewHeight);
         this.statsView.setSize(width, statsViewHeight);
-     
+ 
         // Position the upgradePanel so its bottom edge aligns with the bottom of the screen
         // We need to subtract the panel height from the screen height
         this.upgradePanel.setPosition(0, height - this.upgradePanel.getHeight());
         
-        // Делаем панель видимой
+        // Ensure components are visible
+        this.statsView.setVisible(true);
         this.upgradePanel.setVisible(true);
+        
+        // Ensure coin display is visible
+        if (this.coinIcon && this.coinNumberText) {
+            this.coinIcon.setVisible(true);
+            this.coinNumberText.setVisible(true);
+            
+            // Set high depth for coin display
+            this.coinIcon.setDepth(100);
+            this.coinNumberText.setDepth(100);
+            
+            // Update coin text to force redraw
+            this.coinNumberText.setText(this.coinCount.toString());
+        }
+        
+        // Delay a final visibility check to ensure elements appear
+        if (this.scene && this.scene.time) {
+            this.scene.time.delayedCall(150, () => {
+                // Final visibility check
+                this.statsView.setVisible(true);
+                this.upgradePanel.setVisible(true);
+                
+                if (this.coinIcon && this.coinNumberText) {
+                    this.coinIcon.setVisible(true);
+                    this.coinNumberText.setVisible(true);
+                    this.coinIcon.setDepth(100);
+                    this.coinNumberText.setDepth(100);
+                }
+                
+                // Try one more delayed update as last resort
+                this.scene.time.delayedCall(300, () => {
+                    this.statsView.setVisible(true);
+                    this.upgradePanel.setVisible(true);
+                });
+            });
+        }
+    }
+
+    private handleScreenResize(gameScale: number): void {
+        // Use ScreenManager to get updated dimensions
+        this.updatePositions();
+        
+        // Force upgrade buttons to be visible
+        this.forceAllButtonsVisible();
+    }
+
+    // Add a new method to ensure all buttons are visible
+    private forceAllButtonsVisible(): void {
+        // Ensure upgradePanel buttons are visible, using a specific event name
+        // to avoid recursive event emission
+        this.scene.events.emit('upgradeButtonsVisibility');
+        
+        // Ensure stats view and upgrade panel are visible
+        this.statsView.setVisible(true);
+        this.upgradePanel.setVisible(true);
+        
+        // Ensure coin display is visible
+        if (this.coinIcon && this.coinNumberText) {
+            this.coinIcon.setVisible(true);
+            this.coinNumberText.setVisible(true);
+            this.coinIcon.setDepth(100);
+            this.coinNumberText.setDepth(100);
+        }
     }
 
     updateCoinCount(count: number): void {
@@ -413,7 +474,11 @@ export class UIManager {
     }
 
     destroy(): void {
+        // Clean up event listeners
         this.scene.events.off('screenResize', this.handleScreenResize, this);
+        this.scene.events.off('ui-refresh-visibility', this.forceAllButtonsVisible, this);
+        
+        // Destroy UI components
         this.statsView.destroy();
         this.upgradePanel.destroy();
     }

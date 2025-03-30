@@ -73,11 +73,112 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
 
         // Подписываемся на изменение размера экрана
         this.events.on('screenResize', this.handleScreenResize, this);
+        
+        // Listen for force visibility event with a different name to avoid recursion
+        this.events.on('ui-refresh-visibility', this.forceUIVisibility, this);
     }
 
     private handleScreenResize(gameScale: number): void {
         // Обновляем фон
         this.screenManager.setupBackground();
+        
+        // Make sure all UI components are properly positioned and visible after resize
+        const { width, height } = this.screenManager.getScreenSize();
+        
+        // Update other UI components if needed
+        if (this.uiManager) {
+            this.uiManager.updatePositions();
+        }
+        
+        // Ensure the tower is properly positioned
+        if (this.tower) {
+            const center = this.screenManager.getGameViewCenter();
+            this.tower.setPosition(center.x, center.y);
+            // Use direct method call instead of event emission to avoid recursion
+            this.tower.updateAttackRangeVisual();
+        }
+        
+        // Force re-layout of all buttons and UI components using a different event
+        // to avoid recursion
+        this.events.emit('ui-refresh');
+        
+        // Trigger visibility refresh with non-recursive event
+        this.events.emit('ui-refresh-visibility');
+    }
+
+    private forceUIVisibility(): void {
+        // Force tower attack range visibility
+        if (this.tower) {
+            // Instead of calling these methods, emit the event that the tower listens for
+            this.tower.setVisible(true);
+            this.tower.setDepth(10); // Ensure tower has proper depth
+            
+            // Use a specific event name for the tower to avoid recursion
+            this.events.emit('tower-force-attack-circle');
+        }
+        
+        // Force wave indicator visibility
+        if (this.waveIndicator) {
+            this.waveIndicator.updateUI();
+        }
+        
+        // Force other UI elements visibility
+        if (this.uiManager) {
+            this.uiManager.updatePositions();
+        }
+        
+        // Force all text elements to be visible
+        this.children.list.forEach(child => {
+            if (child instanceof Phaser.GameObjects.Text) {
+                const currentText = child.text;
+                child.setText(currentText);
+                child.setVisible(true);
+                (child as any).setDepth(100); // Set high depth for all text elements
+            }
+        });
+        
+        // Set proper depth for various game elements
+        this.sortGameObjectsByDepth();
+    }
+
+    // New method to ensure proper depth sorting
+    private sortGameObjectsByDepth(): void {
+        // Get all game objects and sort them by their intended depth
+        this.children.list.forEach(child => {
+            // Background elements
+            if (child.name === 'background') {
+                (child as any).setDepth(-100);
+            }
+            
+            // Attack range circle (should be below tower)
+            if (child instanceof Phaser.GameObjects.Graphics) {
+                if (this.tower && Phaser.Math.Distance.Between(
+                    child.x, child.y, this.tower.x, this.tower.y
+                ) < this.tower.getAttackRange() * 1.5) {
+                    child.setDepth(-10);
+                }
+            }
+            
+            // Tower (should be above attack range)
+            if (child.name === 'tower') {
+                (child as any).setDepth(10);
+            }
+            
+            // Enemies (should be above background, but below UI)
+            if (child.name && child.name.includes('enemy')) {
+                (child as any).setDepth(5);
+            }
+            
+            // UI elements should be on top
+            if (child instanceof Phaser.GameObjects.Text) {
+                child.setDepth(100);
+            }
+            
+            // Make sure they're visible
+            if ('setVisible' in child) {
+                (child as any).setVisible(true);
+            }
+        });
     }
 
     private setupGameView(): void {

@@ -53,9 +53,22 @@ export class ScreenManager {
     private handleResize(): void {
         if (this.isDestroyed) return;
         
+        // Recalculate game scale
         this.calculateGameScale();
-        // Оповещаем о необходимости обновления UI
-        this.scene.events.emit('screenResize', this.gameScale);
+        
+        // Force a small delay to allow layout to update
+        this.scene.time.delayedCall(50, () => {
+            // Notify components about screen resize with the new scale
+            this.scene.events.emit('screenResize', this.gameScale);
+            
+            // Force another update after a short delay to ensure all components have updated
+            this.scene.time.delayedCall(100, () => {
+                this.scene.events.emit('screenResize', this.gameScale);
+                
+                // Force visibility on all UI elements
+                this.scene.events.emit('ui-force-visibility');
+            });
+        });
     }
 
     /**
@@ -114,7 +127,7 @@ export class ScreenManager {
         const scaleY = (height * 1.5) / background.height;
         const scale = Math.max(scaleX, scaleY);
         background.setScale(scale);
-        background.setDepth(0);
+        background.setDepth(-3000);
     }
 
     /**

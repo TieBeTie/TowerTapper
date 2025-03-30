@@ -55,15 +55,23 @@ export class UpgradeButton extends UIComponent {
             y: config.y,
             width: config.width,
             height: config.height,
-            fontSize: config.fontSize
+            fontSize: config.fontSize,
+            responsive: true // Add responsive flag to use screen resizing
         });
         this.buttonTextValue = config.buttonText;
         this.fontSizeValue = config.fontSize;
         this.skillTypeValue = config.skillType;
         this.upgradeManagerValue = config.upgradeManager;
 
+        // Set high depth to ensure visibility
+        this.setDepth(2000);
+
         // Подписываемся на событие обновления монет
         this.scene.events.on('updateCoins', this.updateUI, this);
+        
+        // Use only the specific event name for upgrade buttons to avoid recursive emissions
+        this.scene.events.on('upgradeButtonsVisibility', this.forceVisibility, this);
+        
         this.init();
     }
 
@@ -85,6 +93,11 @@ export class UpgradeButton extends UIComponent {
                 this.off('pointerup');
             }
             
+            // Remove additional event listeners - only the specific upgrade button event
+            if (this.scene) {
+                this.scene.events.off('upgradeButtonsVisibility', this.forceVisibility, this);
+            }
+            
             // Mark component as inactive
             this.active = false;
             
@@ -100,6 +113,7 @@ export class UpgradeButton extends UIComponent {
         this.background = this.scene.add.graphics();
         this.updateButtonColor(); // Начальный цвет кнопки
         this.add(this.background);
+        this.background.setDepth(1999); // Set high depth but below text
     }
 
     private createButton(): void {
@@ -116,7 +130,7 @@ export class UpgradeButton extends UIComponent {
                 fontFamily: 'pixelFont',
                 align: 'center'
             }
-        ).setOrigin(1, 0.5);
+        ).setOrigin(1, 0.5).setDepth(2002); // Increased from 1001 to 2002
 
         // Создаем текст уровня
         this.levelText = this.scene.add.text(
@@ -129,7 +143,7 @@ export class UpgradeButton extends UIComponent {
                 fontFamily: 'pixelFont',
                 align: 'center'
             }
-        ).setOrigin(0, 0.5);
+        ).setOrigin(0, 0.5).setDepth(2002); // Increased from 1001 to 2002
 
         // Создаем иконку монеты
         this.costIcon = this.scene.add.image(
@@ -141,7 +155,8 @@ export class UpgradeButton extends UIComponent {
             this.fontSizeValue * UpgradeButton.COST_ICON_SIZE_RATIO,
             this.fontSizeValue * UpgradeButton.COST_ICON_SIZE_RATIO
         )
-        .setOrigin(0, 0.5);
+        .setOrigin(0, 0.5)
+        .setDepth(2002); // Increased from 1001 to 2002
 
         // Создаем текст стоимости
         this.costText = this.scene.add.text(
@@ -154,16 +169,24 @@ export class UpgradeButton extends UIComponent {
                 fontFamily: 'pixelFont',
                 align: 'center'
             }
-        ).setOrigin(0, 0.5);
+        ).setOrigin(0, 0.5).setDepth(2002); // Increased from 1001 to 2002
 
         // Создаем контейнер для стоимости
-        const costContainer = this.scene.add.container(0, 0, [this.costIcon, this.costText]);
+        const costContainer = this.scene.add.container(0, 0, [this.costIcon, this.costText])
+            .setDepth(2002); // Increased from 1001 to 2002
         
         // Создаем контейнер для информации об улучшении
-        this.upgradeInfoContainer = this.scene.add.container(0, 0, [this.levelText, costContainer]);
+        this.upgradeInfoContainer = this.scene.add.container(0, 0, [this.levelText, costContainer])
+            .setDepth(2002); // Increased from 1001 to 2002
 
         // Добавляем все элементы в кнопку
         this.add([this.buttonText, this.upgradeInfoContainer]);
+
+        // Ensure all elements are visible
+        this.buttonText.setVisible(true);
+        this.levelText.setVisible(true);
+        this.costIcon.setVisible(true);
+        this.costText.setVisible(true);
 
         // Обновляем UI
         this.updateUI();
@@ -322,19 +345,102 @@ export class UpgradeButton extends UIComponent {
 
     private updateUI(): void {
         try {
-            // Skip update if any required elements are missing
-            if (!this.scene || !this.levelText || !this.costText || !this.upgradeManagerValue) {
+            // Skip UI update if the scene is invalid
+            if (!this.scene || !this.levelText || !this.costText) {
                 return;
             }
             
+            // Get current upgrade info from the manager
             const currentValue = this.upgradeManagerValue.getState(this.skillTypeValue);
-            const newCost = this.upgradeManagerValue.getUpgradeCost(this.skillTypeValue);
+            const cost = this.upgradeManagerValue.getUpgradeCost(this.skillTypeValue);
             
-            this.levelText.setText(currentValue.toString());
-            this.costText.setText(newCost.toString());
+            // Обновляем текст уровня и стоимости
+            this.levelText.setText(`Level ${currentValue}`);
+            this.costText.setText(`${cost}`);
+            
+            // Обновляем цвет кнопки в зависимости от доступности улучшения
             this.updateButtonColor();
+            
+            // Force visibility
+            this.setVisible(true);
+            this.buttonText.setVisible(true);
+            this.levelText.setVisible(true);
+            this.costIcon.setVisible(true);
+            this.costText.setVisible(true);
+            if (this.upgradeInfoContainer) {
+                this.upgradeInfoContainer.setVisible(true);
+            }
         } catch (error) {
             console.warn('Error in updateUI:', error);
         }
+    }
+
+    // Force visibility of all elements - safer implementation
+    private forceVisibility(): void {
+        // Check if button is still active to avoid issues with destroyed objects
+        if (!this.active || !this.scene) return;
+        
+        try {
+            // Update the background
+            this.updateButtonColor();
+            
+            // Make all elements visible
+            if (this.background && this.background.visible !== undefined) {
+                this.background.setVisible(true);
+            }
+            
+            if (this.buttonText && this.buttonText.visible !== undefined) {
+                this.buttonText.setVisible(true);
+                this.buttonText.setDepth(2002);
+            }
+            
+            if (this.levelText && this.levelText.visible !== undefined) {
+                this.levelText.setVisible(true);
+                this.levelText.setDepth(2002);
+            }
+            
+            if (this.costIcon && this.costIcon.visible !== undefined) {
+                this.costIcon.setVisible(true);
+                this.costIcon.setDepth(2002);
+            }
+            
+            if (this.costText && this.costText.visible !== undefined) {
+                this.costText.setVisible(true);
+                this.costText.setDepth(2002);
+            }
+            
+            if (this.upgradeInfoContainer && this.upgradeInfoContainer.visible !== undefined) {
+                this.upgradeInfoContainer.setVisible(true);
+                this.upgradeInfoContainer.setDepth(2002);
+            }
+            
+            // Set proper depths
+            this.setDepth(2000);
+            if (this.background) this.background.setDepth(1999);
+            
+            // Force text refresh - only do this if elements are still valid
+            if (this.levelText && this.levelText.text !== undefined) {
+                this.levelText.setText(this.levelText.text);
+            }
+            
+            if (this.costText && this.costText.text !== undefined) {
+                this.costText.setText(this.costText.text);
+            }
+            
+            if (this.buttonText && this.buttonText.text !== undefined) {
+                this.buttonText.setText(this.buttonText.text);
+            }
+        } catch (error) {
+            console.warn('Error in forceVisibility:', error);
+        }
+    }
+
+    // Override handleScreenResize from parent UIComponent
+    protected handleScreenResize(gameScale: number): void {
+        super.handleScreenResize(gameScale);
+        
+        // Update after resize
+        this.updateUI();
+        this.forceVisibility();
     }
 } 

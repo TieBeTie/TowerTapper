@@ -34,7 +34,13 @@ const config: Phaser.Types.Core.GameConfig = {
         autoCenter: Phaser.Scale.CENTER_BOTH,
         parent: 'game-container',
         width: gameWidth,
-        height: gameHeight
+        height: gameHeight,
+        // Add more detailed resize handling
+        resizeInterval: 200,  // Check for resize less frequently to reduce performance impact
+        min: {
+            width: 300,
+            height: 400
+        }
     },
     physics: {
         default: 'arcade',
@@ -43,7 +49,13 @@ const config: Phaser.Types.Core.GameConfig = {
         }
     },
     scene: [BootScene, MenuScene, GameScene],
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
+    // Add these flags to improve rendering
+    render: {
+        pixelArt: true,  // Sharper text and pixel rendering
+        antialias: false,  // Disable antialiasing for crisp graphics
+        roundPixels: true  // Fixes blurry graphics on certain devices
+    }
 };
 
 const game = new Phaser.Game(config);

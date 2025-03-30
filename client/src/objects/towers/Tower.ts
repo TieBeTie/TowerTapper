@@ -8,6 +8,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private static readonly COLOR_RED = 0xff6b6b;  // Более розовый оттенок
     private static readonly COLOR_GREEN = 0x00ff00;
     private static readonly COLOR_WHITE = 0xffffff;
+    private static readonly COLOR_CIRCLE = 0xffffff; // Голубой цвет для круга
     
     // Константа масштаба башни
     private static readonly TOWER_SCALE = 0.4;
@@ -49,8 +50,9 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         const { height } = this.screenManager.getScreenSize();
         this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
 
-        // Создаем графический объект для отображения радиуса атаки
+        // Создаем графический объект для отображения радиуса атаки с нужной глубиной
         this.attackRangeCircle = this.scene.add.graphics();
+        this.attackRangeCircle.setDepth(-10); // Set a very low depth to ensure it's below everything
         this.updateAttackRangeVisual();
 
         this.setImmovable(true);
@@ -72,8 +74,13 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         if (this.regeneration > 0) {
             this.startRegeneration();
         }
-        this.setDepth(1);
+        
+        // Set tower to a high depth to ensure it's above the attack circle
+        this.setDepth(10);
         this.scene.events.on('screenResize', this.handleScreenResize, this);
+        
+        // Use the new specific event name to avoid recursion
+        this.scene.events.on('tower-force-attack-circle', this.safeUpdateAttackCircle, this);
     }
     
     private handleScreenResize(gameScale: number): void {
@@ -86,7 +93,9 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         const skills = this.skillStorage.load();
         const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE)?.value || 1;
         this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
-        this.updateAttackRangeVisual();
+        
+        // Use the safer method that doesn't recreate the graphics object
+        this.safeUpdateAttackCircle();
     }
 
     upgrade(): void {
@@ -108,14 +117,55 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    // Обновляем визуальное отображение радиуса атаки
-    private updateAttackRangeVisual(): void {
-        this.attackRangeCircle.clear();
-        this.attackRangeCircle.lineStyle(2, Tower.COLOR_WHITE, 0.3);
-        this.attackRangeCircle.fillStyle(Tower.COLOR_WHITE, 0.1);
-        this.attackRangeCircle.fillCircle(this.x, this.y, this.attackRange);
-        this.attackRangeCircle.strokeCircle(this.x, this.y, this.attackRange);
-        this.attackRangeCircle.setDepth(0);
+    // Add a safe method that doesn't destroy and recreate the circle
+    private safeUpdateAttackCircle(): void {
+        // Only update if active and has a scene
+        if (!this.active || !this.scene) return;
+        
+        // Make sure the circle exists
+        if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {
+            this.attackRangeCircle = this.scene.add.graphics();
+            this.attackRangeCircle.setDepth(-10);
+        } else {
+            // Just clear the existing one instead of destroying and recreating
+            this.attackRangeCircle.clear();
+        }
+        
+        // Draw with more visible style 
+        this.attackRangeCircle.lineStyle(3, Tower.COLOR_CIRCLE, 0.7);
+        this.attackRangeCircle.fillStyle(Tower.COLOR_CIRCLE, 0.2);
+        
+        const center = this.getPosition();
+        this.attackRangeCircle.fillCircle(center.x, center.y, this.attackRange);
+        this.attackRangeCircle.strokeCircle(center.x, center.y, this.attackRange);
+        this.attackRangeCircle.setVisible(true);
+    }
+
+    // Обновляем визуальное отображение радиуса атаки - safer version that doesn't recreate
+    public updateAttackRangeVisual(): void {
+        // First, ensure the graphics object exists
+        if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {
+            this.attackRangeCircle = this.scene.add.graphics();
+            this.attackRangeCircle.setDepth(-10);
+        } else {
+            // Just clear it rather than destroying and recreating
+            this.attackRangeCircle.clear();
+        }
+        
+        // Draw with more visible style
+        this.attackRangeCircle.lineStyle(3, Tower.COLOR_CIRCLE, 0.7); 
+        this.attackRangeCircle.fillStyle(Tower.COLOR_CIRCLE, 0.2);
+        
+        const center = this.getPosition();
+        this.attackRangeCircle.fillCircle(center.x, center.y, this.attackRange);
+        this.attackRangeCircle.strokeCircle(center.x, center.y, this.attackRange);
+        this.attackRangeCircle.setVisible(true);
+    }
+
+    // Keep this method, but make it safer
+    private forceAttackRangeVisibility(): void {
+        // Use the safer update method instead of destroying and recreating
+        this.safeUpdateAttackCircle();
     }
 
     // Проверяем, находится ли враг в радиусе атаки
@@ -271,6 +321,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         // Check if scene still exists before trying to access it
         if (this.scene && this.scene.events) {
             this.scene.events.off('screenResize', this.handleScreenResize, this);
+            this.scene.events.off('tower-force-attack-circle', this.safeUpdateAttackCircle, this);
         }
         this.stopRegeneration();
         
@@ -280,6 +331,11 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         }
         
         super.destroy(fromScene);
+    }
+
+    // Helper method to get current position
+    public getPosition(): Phaser.Math.Vector2 {
+        return new Phaser.Math.Vector2(this.x, this.y);
     }
 }
 

@@ -36,8 +36,8 @@ export class ScrollableButtonPanel {
     ) {
         this.screenManager = screenManager || new ScreenManager(scene);
         
-        // Create containers
-        this.container = this.scene.add.container(0, 0).setDepth(1000);
+        // Create containers with maximum depth
+        this.container = this.scene.add.container(0, 0).setDepth(2000); // Increase from 1000 to 2000
         this.background = this.scene.add.graphics();
         this.contentContainer = this.scene.add.container(0, 0);
         this.categoryContainer = this.scene.add.container(0, 0);
@@ -60,6 +60,9 @@ export class ScrollableButtonPanel {
         
         // Listen for screen resize
         this.scene.events.on('screenResize', this.handleScreenResize, this);
+        
+        // Listen for force visibility events
+        this.scene.events.on('ui-force-visibility', this.forceVisibility, this);
     }
 
     private setupScrollingEvents(): void {
@@ -196,6 +199,7 @@ export class ScrollableButtonPanel {
             
             // Create button container
             const buttonContainer = this.scene.add.container(x, this.currentHeight - (categoryHeight / 2));
+            buttonContainer.setDepth(2001); // Increase from 1000 to 2001
             
             // Create background
             const background = this.scene.add.graphics();
@@ -212,7 +216,7 @@ export class ScrollableButtonPanel {
                 color: '#ffffff',
                 align: 'center',
                 fontFamily: 'pixelFont'
-            }).setOrigin(0.5);
+            }).setOrigin(0.5).setDepth(2002); // Increase from 1001 to 2002
             buttonContainer.add(text);
             
             // Make button interactive
@@ -293,8 +297,61 @@ export class ScrollableButtonPanel {
     }
 
     private handleScreenResize(): void {
+        // Get new screen dimensions
         const { width, height } = this.screenManager.getScreenSize();
+        
+        // Update panel size
         this.setSize(width, height * 0.3);
+        
+        // Recreate category buttons for proper sizing
+        this.createCategoryButtons();
+        
+        // Ensure all components are visible
+        this.container.setVisible(true);
+        this.container.setDepth(2000); // Increase from 1000 to 2000
+        this.contentContainer.setVisible(true);
+        this.categoryContainer.setVisible(true);
+        
+        // Make sure current panel and scrollbar are visible
+        if (this.upgradeButtonsPanel.length > 0) {
+            this.upgradeButtonsPanel[this.currentCategoryIndex].setVisible(true);
+            if (this.scrollBars[this.currentCategoryIndex]) {
+                this.scrollBars[this.currentCategoryIndex].setVisible(true);
+            }
+        }
+        
+        // Force visibility with a slight delay
+        if (this.scene && this.scene.time) {
+            this.scene.time.delayedCall(100, () => {
+                // Ensure all category buttons are visible
+                this.categoryButtons.forEach(button => {
+                    button.setVisible(true);
+                    button.setDepth(2001); // Increase from 1000 to 2001
+                    
+                    // Make text visible
+                    const text = button.list[1] as Phaser.GameObjects.Text;
+                    if (text) {
+                        text.setVisible(true);
+                        text.setDepth(2002); // Increase from 1001 to 2002
+                    }
+                });
+                
+                // Ensure current panel is visible
+                if (this.upgradeButtonsPanel.length > 0) {
+                    const currentPanel = this.upgradeButtonsPanel[this.currentCategoryIndex];
+                    currentPanel.setVisible(true);
+                    
+                    // Force update button positions
+                    const panelContainer = currentPanel.getContainer();
+                    if (panelContainer) {
+                        panelContainer.setVisible(true);
+                        panelContainer.setDepth(2000); // Increase from 1000 to 2000
+                    }
+                }
+                
+                this.forceVisibility();
+            });
+        }
     }
 
     setPosition(x: number, y: number): void {
@@ -327,6 +384,7 @@ export class ScrollableButtonPanel {
     destroy(): void {
         // Remove event listeners
         this.scene.events.off('screenResize', this.handleScreenResize, this);
+        this.scene.events.off('ui-force-visibility', this.forceVisibility, this);
         this.scene.input.off('pointerdown');
         this.scene.input.off('pointermove');
         this.scene.input.off('pointerup');
@@ -340,5 +398,43 @@ export class ScrollableButtonPanel {
         this.contentContainer.destroy();
         this.background.destroy();
         this.container.destroy();
+    }
+
+    // Add a new method to force visibility of all UI elements
+    private forceVisibility(): void {
+        // Make sure container and all its contents are visible
+        this.container.setVisible(true);
+        this.container.setDepth(2000);
+        
+        // Ensure all category buttons are properly visible
+        this.categoryButtons.forEach(button => {
+            button.setVisible(true);
+            button.setDepth(2001);
+            
+            // Make text visible
+            const text = button.list[1] as Phaser.GameObjects.Text;
+            if (text) {
+                text.setVisible(true);
+                text.setDepth(2002);
+            }
+        });
+        
+        // Make sure the current panel is visible
+        if (this.upgradeButtonsPanel.length > 0) {
+            const currentPanel = this.upgradeButtonsPanel[this.currentCategoryIndex];
+            currentPanel.setVisible(true);
+            
+            // Force the panel container to be visible
+            const panelContainer = currentPanel.getContainer();
+            if (panelContainer) {
+                panelContainer.setVisible(true);
+                panelContainer.setDepth(2000);
+            }
+        }
+        
+        // Make sure scrollbars are visible
+        if (this.scrollBars.length > 0 && this.scrollBars[this.currentCategoryIndex]) {
+            this.scrollBars[this.currentCategoryIndex].setVisible(true);
+        }
     }
 } 
