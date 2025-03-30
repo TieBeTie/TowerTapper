@@ -30,10 +30,30 @@ export class TelegramService {
         this.webApp.setHeaderColor('#ffffff');
         this.webApp.setBackgroundColor('#ffffff');
 
+        // Разворачиваем приложение на весь экран
+        this.expandWebApp();
+
+        // Check if running on iOS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        
+        if (isIOS) {
+            console.log('Running on iOS - applying special viewport handling');
+        }
+
+        // Use a debounced handler for iOS to prevent too many viewport updates
+        let timeout: any = null;
+        const debouncedCallback = () => {
+            if (timeout) clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                this.viewportChangeCallbacks.forEach(callback => callback());
+            }, isIOS ? 250 : 50); // Longer delay for iOS
+        };
+
         // Подписываемся на изменения viewport
-        this.webApp.onEvent('viewportChanged', () => {
-            this.viewportChangeCallbacks.forEach(callback => callback());
-        });
+        this.webApp.onEvent('viewportChanged', debouncedCallback);
+        
+        // Also listen for window resize events as a fallback
+        window.addEventListener('resize', debouncedCallback);
     }
 
     // Получить данные пользователя
@@ -63,6 +83,18 @@ export class TelegramService {
     // Проверить, развернуто ли приложение на весь экран
     public isExpanded(): boolean {
         return this.webApp?.isExpanded || false;
+    }
+
+    // Развернуть приложение на весь экран
+    public expandWebApp(): void {
+        if (this.webApp && !this.isExpanded()) {
+            try {
+                this.webApp.expand();
+                console.log('WebApp expanded to fullscreen');
+            } catch (error) {
+                console.error('Failed to expand WebApp:', error);
+            }
+        }
     }
 
     // Добавить обработчик изменения viewport

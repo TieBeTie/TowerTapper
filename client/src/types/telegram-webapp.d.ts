@@ -21,6 +21,7 @@ declare global {
         viewportHeight: number;
         viewportWidth: number;
         isExpanded: boolean;
+        expand: () => void;
     }
 
     interface Window {

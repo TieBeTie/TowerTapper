@@ -50,11 +50,33 @@ const config: Phaser.Types.Core.GameConfig = {
     },
     scene: [BootScene, MenuScene, GameScene],
     backgroundColor: '#ffffff',
-    // Add these flags to improve rendering
+    // Modify render settings to be more iOS-friendly
     render: {
-        pixelArt: true,  // Sharper text and pixel rendering
-        antialias: false,  // Disable antialiasing for crisp graphics
-        roundPixels: true  // Fixes blurry graphics on certain devices
+        pixelArt: false,  // Changed from true to false for iOS
+        antialias: true,  // Changed from false to true for iOS
+        roundPixels: false,  // Changed from true to false for iOS
+        clearBeforeRender: true,  // Add explicit clear for iOS
+        powerPreference: 'high-performance',  // Prioritize performance on iOS
+        batchSize: 2048  // Increase batch size for better performance
+    },
+    // Add these to improve iOS performance
+    loader: {
+        maxParallelDownloads: 4,  // Limit parallel downloads on iOS
+        crossOrigin: 'anonymous'
+    },
+    // Enable better error handling for debugging on iOS
+    callbacks: {
+        postBoot: function(game) {
+            // Check if running on iOS
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+            if (isIOS) {
+                console.log('Game booted on iOS, enabling special handling');
+                // Add global error handler
+                window.addEventListener('error', (e) => {
+                    console.error('Game error caught:', e.message);
+                });
+            }
+        }
     }
 };
 

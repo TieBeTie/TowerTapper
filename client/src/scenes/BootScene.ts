@@ -11,14 +11,24 @@ class BootScene extends Phaser.Scene implements IScene {
     }
 
     preload() {
+        // Check if running on iOS for special handling
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        if (isIOS) {
+            console.log('BootScene: Running on iOS - applying special handling');
+            // Add iOS-specific validation handlers
+            this.load.on('complete', () => {
+                console.log('All assets loaded on iOS');
+            });
+        }
+
         // Load WebFont loader
         this.load.script('webfont', 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js');
 
-        // Load the pixel font
-        this.load.image('logo', 'assets/images/ui/logo.png');
-        
-        // Load audio assets
-        this.load.audio('gameMusic', 'assets/music/GameMusic.ogg');
+        // Load audio assets with MP3 fallback for iOS
+        this.load.audio('gameMusic', [
+            'assets/music/GameMusic.mp3', // Add MP3 version first for iOS
+            'assets/music/GameMusic.ogg'
+        ]);
         this.load.audio('arrow', 'assets/sounds/arrow.wav');
         this.load.audio('enemyDie', 'assets/sounds/enemy_die.wav');
         this.load.audio('towerDie', 'assets/sounds/tower_die.wav');
@@ -50,11 +60,6 @@ class BootScene extends Phaser.Scene implements IScene {
         this.load.image('tower', 'assets/images/towers/Tower-type-3.6@2x.png');
         this.load.image('projectile', 'assets/images/projectiles/arrow.png');
         this.load.image('background', 'assets/images/towers/Background1.png');
-
-        // Загрузка ресурсов для кнопок
-        this.load.image('playButton', 'assets/images/ui/play.png');
-        this.load.image('pauseButton', 'assets/images/ui/pause.png');
-        this.load.image('upgradeButton', 'assets/images/ui/upgrade.png');
 
         // Загрузка монет
         this.load.spritesheet('coin', 'assets/images/towers/Coin-sheet.png', {
@@ -94,12 +99,33 @@ class BootScene extends Phaser.Scene implements IScene {
         // Создаем фон через ScreenManager
         this.screenManager.setupBackground();
 
+        // Check if running on iOS for special handling
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+
         // Создаем текстуру частиц
         const graphics = this.add.graphics();
         graphics.fillStyle(0xffffff, 1);
         graphics.fillCircle(4, 4, 4);
         graphics.generateTexture('particle', 8, 8);
         graphics.destroy();
+
+        // Force a check that all sprite images are available
+        if (isIOS) {
+            console.log('Verifying sprite availability on iOS...');
+            // Check if key sprites are available
+            const testEnemy = this.textures.exists('enemy');
+            const testBackground = this.textures.exists('background');
+            console.log(`iOS texture check - enemy: ${testEnemy}, background: ${testBackground}`);
+            
+            // Pre-create a test frame to warm up the animation system
+            if (testEnemy) {
+                const testSprite = this.add.sprite(-100, -100, 'enemy');
+                testSprite.setVisible(false);
+                this.time.delayedCall(100, () => {
+                    testSprite.destroy();
+                });
+            }
+        }
 
         // @ts-ignore
         WebFont.load({
@@ -124,7 +150,7 @@ class BootScene extends Phaser.Scene implements IScene {
                     // Переходим к следующей сцене только после полной инициализации
                     this.createAnimations();
                     this.scene.start('MenuScene');
-                }, 100);
+                }, 500);
             },
             inactive: () => {
                 console.error('Font failed to load');
@@ -140,7 +166,7 @@ class BootScene extends Phaser.Scene implements IScene {
     createAnimations() {
         this.anims.create({
             key: 'enemy_walk',
-            frames: this.anims.generateFrameNumbers('enemy', { start: 0, end: 8 }),
+            frames: this.anims.generateFrameNumbers('enemy', { start: 0, end: 7 }),
             frameRate: 32,
             repeat: -1
         });
@@ -154,7 +180,7 @@ class BootScene extends Phaser.Scene implements IScene {
 
         this.anims.create({
             key: 'coin_spin',
-            frames: this.anims.generateFrameNumbers('coin', { start: 0, end: 8 }),
+            frames: this.anims.generateFrameNumbers('coin', { start: 0, end: 7 }),
             frameRate: 12,
             repeat: -1
         });

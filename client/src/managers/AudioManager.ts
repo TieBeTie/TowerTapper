@@ -23,25 +23,53 @@ class AudioManager {
     }
 
     private initialize(): void {
-        // Only initialize if music hasn't been created yet
-        if (!this.music) {
-            // Load and play background music with reduced volume
-            this.music = this.scene.sound.add('gameMusic', {
-                loop: true,
-                volume: 0.05    
-            });
-        }
+        try {
+            // Check if running on iOS
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+            
+            // Only initialize if music hasn't been created yet
+            if (!this.music) {
+                // Check if the audio file exists in cache first
+                if (this.scene.cache.audio.exists('gameMusic')) {
+                    // Load and play background music with reduced volume
+                    this.music = this.scene.sound.add('gameMusic', {
+                        loop: true,
+                        volume: 0.05
+                    });
+                    
+                    if (isIOS) {
+                        console.log('iOS: Successfully created gameMusic audio');
+                    }
+                } else {
+                    console.warn('gameMusic not found in audio cache');
+                }
+            }
 
-        // Only initialize sounds if they haven't been created yet
-        if (this.sounds.size === 0) {
-            // Load sound effects with adjusted volumes
-            this.sounds.set('arrow', this.scene.sound.add('arrow', { volume: 0.3 }));
-            this.sounds.set('enemyDie', this.scene.sound.add('enemyDie', { volume: 0.07 }));
-            this.sounds.set('towerDie', this.scene.sound.add('towerDie', { volume: 0.3 }));
-            this.sounds.set('waveCompleted', this.scene.sound.add('waveCompleted', { volume: 0.07 }));
-            this.sounds.set('upgradeButton', this.scene.sound.add('upgradeButton', { volume: 0.1 }));
-            this.sounds.set('towerDamage', this.scene.sound.add('towerDamage', { volume: 0.2 }));
-            this.sounds.set('playButton', this.scene.sound.add('playButton', { volume: 0.2 }));
+            // Only initialize sounds if they haven't been created yet
+            if (this.sounds.size === 0) {
+                // Array of sound keys to add
+                const soundKeys = ['arrow', 'enemyDie', 'towerDie', 'waveCompleted', 
+                                  'upgradeButton', 'towerDamage', 'playButton'];
+                
+                // Add each sound only if it exists in cache
+                soundKeys.forEach(key => {
+                    if (this.scene.cache.audio.exists(key)) {
+                        const volume = {
+                            'arrow': 0.3,
+                            'enemyDie': 0.07,
+                            'towerDie': 0.3,
+                            'waveCompleted': 0.07,
+                            'upgradeButton': 0.1,
+                            'towerDamage': 0.2,
+                            'playButton': 0.2
+                        }[key] || 0.2;
+                        
+                        this.sounds.set(key, this.scene.sound.add(key, { volume }));
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('Error initializing audio:', err);
         }
     }
 
@@ -81,10 +109,18 @@ class AudioManager {
         return this.isMuted;
     }
 
+    public isMusicPlaying(): boolean {
+        return this.music ? this.music.isPlaying : false;
+    }
+
     public destroy(): void {
         // Don't destroy music and sounds on scene change
         // The singleton pattern will handle cleanup when the game is closed
         this.stopMusic();
+    }
+
+    public hasSoundCached(key: string): boolean {
+        return this.scene.cache.audio.exists(key);
     }
 }
 

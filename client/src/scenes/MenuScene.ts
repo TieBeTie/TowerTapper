@@ -21,63 +21,116 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         // Initialize ScreenManager
         this.screenManager = new ScreenManager(this);
         
-        // Initialize AudioManager
-        this.audioManager = AudioManager.getInstance(this);
-        this.audioManager.playMusic();
+        // Check if we're running on iOS for special handling
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        
+        try {
+            // Initialize AudioManager but don't play music immediately on iOS
+            this.audioManager = AudioManager.getInstance(this);
+            
+            if (isIOS) {
+                console.log('MenuScene: Running on iOS - applying special handling');
+                // On iOS, we'll play music only after user interaction
+            } else {
+                // On non-iOS platforms, play music immediately if available
+                if (this.audioManager.hasSoundCached('gameMusic')) {
+                    this.audioManager.playMusic();
+                } else {
+                    console.warn('Unable to play music - gameMusic not found in cache');
+                }
+            }
+        } catch (err) {
+            console.error('Error setting up audio in MenuScene:', err);
+        }
 
         // Создаем фон через ScreenManager
         this.screenManager.setupBackground();
 
-        // Получаем размеры экрана через ScreenManager
-        const { width, height } = this.screenManager.getScreenSize();
-        const gameScale = this.screenManager.getGameScale();
-        const center = this.screenManager.getScreenCenter();
+        // Force a small delay on iOS to ensure textures are loaded
+        const setupComponents = () => {
+            // Получаем размеры экрана через ScreenManager
+            const { width, height } = this.screenManager.getScreenSize();
+            const gameScale = this.screenManager.getGameScale();
+            const center = this.screenManager.getScreenCenter();
 
-        // Создаем монстра в центре экрана, но с маленьким размером
-        const monster = this.add.sprite(center.x, center.y, 'enemy');
-        monster.setScale(0.5 * gameScale); // Уменьшаем начальный размер
-        monster.play('enemy_walk');
 
-        // Анимация появления монстра
-        this.tweens.add({
-            targets: monster,
-            scale: 0.8 * gameScale, // Уменьшаем финальный размер
-            duration: 800,
-            ease: 'Bounce.out',
-            onComplete: () => {
-                // После появления начинаем покачивание
+            // Создаем монстра в центре экрана, но с маленьким размером
+            try {
+                if (isIOS) console.log('Creating enemy sprite on iOS');
+                const monster = this.add.sprite(center.x, center.y, 'enemy');
+                monster.setScale(0.5 * gameScale); // Уменьшаем начальный размер
+                
+                // Verify the texture is available before playing animation
+                if (this.textures.exists('enemy')) {
+                    if (isIOS) console.log('Starting enemy_walk animation on iOS');
+                    monster.play('enemy_walk');
+                } else {
+                    console.error('Enemy texture not available!');
+                }
+
+                // Анимация появления монстра
                 this.tweens.add({
                     targets: monster,
-                    y: center.y + 5, // Уменьшаем амплитуду покачивания
-                    duration: 1000,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'Sine.easeInOut'
+                    scale: 0.8 * gameScale, // Уменьшаем финальный размер
+                    duration: 800,
+                    ease: 'Bounce.out',
+                    onComplete: () => {
+                        // После появления начинаем покачивание
+                        this.tweens.add({
+                            targets: monster,
+                            y: center.y + 5, // Уменьшаем амплитуду покачивания
+                            duration: 1000,
+                            yoyo: true,
+                            repeat: -1,
+                            ease: 'Sine.easeInOut'
+                        });
+                    }
                 });
+            } catch (err) {
+                console.error('Error creating monster sprite:', err);
             }
-        });
 
-        // Создаем кнопку "Играть" с использованием адаптивного шрифта
-        const fontSize = this.screenManager.getResponsiveFontSize(64);
-        const playButton = this.add.text(center.x, height * 0.7, '►', {
-            fontSize: `${fontSize}px`,
-            color: '#ffffff',
-            fontFamily: 'pixelFont'
-        }).setOrigin(0.5);
+            // Создаем кнопку "Играть" с использованием адаптивного шрифта
+            const fontSize = this.screenManager.getResponsiveFontSize(64);
+            const playButton = this.add.text(center.x, height * 0.7, '►', {
+                fontSize: `${fontSize}px`,
+                color: '#ffffff',
+                fontFamily: 'pixelFont'
+            }).setOrigin(0.5);
 
-        // Добавляем интерактивность кнопке
-        playButton.setInteractive()
-            .on('pointerover', () => {
-                playButton.setScale(1.2);
-            })
-            .on('pointerout', () => {
-                playButton.setScale(1);
-            })
-            .on('pointerdown', () => {
-                // Play sound before starting the game
-                this.audioManager.playSound('playButton');
-                this.startGame();
-            });
+            // Добавляем интерактивность кнопке
+            playButton.setInteractive()
+                .on('pointerover', () => {
+                    playButton.setScale(1.2);
+                })
+                .on('pointerout', () => {
+                    playButton.setScale(1);
+                })
+                .on('pointerdown', () => {
+                    try {
+                        // On iOS, start playing music on first interaction
+                        if (isIOS && !this.audioManager.isMusicPlaying()) {
+                            this.audioManager.playMusic();
+                        }
+                        
+                        // Play sound before starting the game (only if available)
+                        if (this.audioManager.hasSoundCached('playButton')) {
+                            this.audioManager.playSound('playButton');
+                        }
+                    } catch (err) {
+                        console.error('Error playing audio on button click:', err);
+                    }
+                    
+                    this.startGame();
+                });
+        };
+
+        // Use a longer delay for iOS to ensure assets are loaded
+        if (isIOS) {
+            this.time.delayedCall(500, setupComponents);
+        } else {
+            setupComponents();
+        }
             
         // Подписываемся на изменение размера экрана
         this.events.on('screenResize', this.handleScreenResize, this);
@@ -118,13 +171,22 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     private startGame(): void {
         // Создаем затемнение через ScreenManager
         const fadeRect = this.screenManager.createFadeOverlay();
+        
+        // Store reference to scene for clean completion
+        const currentScene = this;
 
         // Анимируем затемнение и масштабирование кнопки
         this.tweens.add({
             targets: fadeRect,
             alpha: 1,
             duration: 500,
-            ease: 'Power2'
+            ease: 'Power2',
+            onComplete: function() {
+                // Ensure we always proceed to GameScene even if other animations fail
+                currentScene.time.delayedCall(600, () => {
+                    currentScene.scene.start('GameScene');
+                });
+            }
         });
 
         // Находим монстра и анимируем его исчезновение
