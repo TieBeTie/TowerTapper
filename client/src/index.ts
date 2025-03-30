@@ -50,14 +50,14 @@ const config: Phaser.Types.Core.GameConfig = {
     },
     scene: [BootScene, MenuScene, GameScene],
     backgroundColor: '#ffffff',
-    // Modify render settings to be more iOS-friendly
+    // Modify render settings to fix blurry text
     render: {
-        pixelArt: false,  // Changed from true to false for iOS
-        antialias: true,  // Changed from false to true for iOS
-        roundPixels: false,  // Changed from true to false for iOS
-        clearBeforeRender: true,  // Add explicit clear for iOS
-        powerPreference: 'high-performance',  // Prioritize performance on iOS
-        batchSize: 2048  // Increase batch size for better performance
+        pixelArt: true,  // Enable pixelArt to prevent anti-aliasing
+        antialias: false,  // Disable antialiasing for sharper text
+        roundPixels: true,  // Enable roundPixels for crisp rendering
+        clearBeforeRender: true,
+        powerPreference: 'high-performance',
+        batchSize: 2048
     },
     // Add these to improve iOS performance
     loader: {
@@ -81,6 +81,13 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 const game = new Phaser.Game(config);
+
+// Instead, set canvas properties directly after the game is created
+if (game.canvas) {
+    // Set crisp rendering CSS properties (instead of using Phaser.Canvas.setImageRenderingCrisp)
+    game.canvas.style.imageRendering = 'pixelated';
+    game.canvas.style.imageRendering = 'crisp-edges';
+}
 
 // Добавляем обработчик изменения размера viewport в Telegram
 telegramService.onViewportChange(() => {

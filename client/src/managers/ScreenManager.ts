@@ -7,6 +7,8 @@ export class ScreenManager {
     private telegramService: TelegramService;
     private isDestroyed: boolean = false;
     private gameViewHeightRatio: number = 0.67;
+
+    
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
         this.telegramService = TelegramService.getInstance();
@@ -69,6 +71,22 @@ export class ScreenManager {
                 this.scene.events.emit('ui-force-visibility');
             });
         });
+    }
+
+    public getLargeFontSize(): number {
+        return this.getResponsiveFontSize(32);
+    }
+
+    public getMediumFontSize(): number {
+        return this.getResponsiveFontSize(28);
+    }
+
+    public getSmallFontSize(): number {
+        return this.getResponsiveFontSize(24);
+    }
+
+    public getSmallestFontSize(): number {
+        return this.getResponsiveFontSize(12);
     }
 
     /**
@@ -195,7 +213,7 @@ export class ScreenManager {
             fontFamily: 'pixelFont',
             stroke: options.stroke || '#000000',
             strokeThickness: options.strokeThickness || Math.max(2, Math.round(3 * this.gameScale)),
-            resolution: 2, // Высокое разрешение для четкости
+            resolution: 3, // Увеличиваем разрешение для четкости
             align: options.align || 'center',
             padding: options.padding || { x: 1, y: 1 },
             ...options
@@ -203,11 +221,14 @@ export class ScreenManager {
         
         // Создаем текст с правильным позиционированием
         const textObj = this.scene.add.text(
-            Math.round(x), // Округляем до целых координат
-            Math.round(y), 
+            Math.floor(x), // Используем floor вместо round для большей четкости
+            Math.floor(y), 
             text, 
             textStyle
         );
+        
+        // Улучшаем четкость текста
+        textObj.setResolution(3);
         
         // Устанавливаем origin, если указан
         if (options.origin !== undefined) {

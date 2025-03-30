@@ -44,13 +44,19 @@ export class Button extends UIComponent {
             color: `#${this.textColor.toString(16).padStart(6, '0')}`,
             fontFamily: 'pixelFont',
             stroke: '#000000',
-            strokeThickness: strokeThickness
+            strokeThickness: strokeThickness,
+            resolution: 3,
+            align: 'center',
+            padding: { x: 1, y: 1 }
         }).setOrigin(0.5);
         this.add(this.label);
 
+        // Set the text position to integer coordinates for sharper rendering
+        this.label.setPosition(Math.floor(this.label.x), Math.floor(this.label.y));
+
         // Make interactive
-        this.setInteractive(new Phaser.Geom.Rectangle(-this.width/2, -this.height/2, this.width, this.height), Phaser.Geom.Rectangle.Contains);
-        this.on('pointerdown', this.onClick);
+        this.background.setInteractive();
+        this.background.on('pointerdown', this.onClick);
 
         // Layout
         this.layout();
@@ -65,6 +71,7 @@ export class Button extends UIComponent {
         
         this.label.setFontSize(fontSize);
         this.label.setStroke('#000000', strokeThickness);
+        this.label.setResolution(3);
         
         // Update layout
         this.layout();
@@ -73,7 +80,9 @@ export class Button extends UIComponent {
     layout(): void {
         super.layout();
         this.background.setSize(this.width, this.height);
-        this.label.setPosition(0, 0);
+        
+        // Set to integer position for sharp rendering
+        this.label.setPosition(Math.floor(0), Math.floor(0));
     }
 
     destroy(fromScene?: boolean): void {

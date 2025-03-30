@@ -95,14 +95,14 @@ export abstract class UIComponent extends Phaser.GameObjects.Container {
                     }
                     
                     // Force position update with integer values to avoid blurry rendering
-                    this.setPosition(Math.round(this.x), Math.round(this.y));
+                    this.setPosition(Math.floor(this.x), Math.floor(this.y));
                 }
                 
                 // Make sure component and all children are visible
                 this.setVisible(true);
                 this.setAlpha(this.alpha);
                 
-                // Ensure all children are visible too
+                // Ensure all children are visible too and set to integer positions
                 this.list.forEach(child => {
                     if (child) {
                         if ('setVisible' in child) {
@@ -110,6 +110,13 @@ export abstract class UIComponent extends Phaser.GameObjects.Container {
                         }
                         if ('setAlpha' in child) {
                             (child as any).setAlpha(1);
+                        }
+                        // Set integer coordinates for all children
+                        if (child instanceof Phaser.GameObjects.Text) {
+                            child.setPosition(Math.floor(child.x), Math.floor(child.y));
+                            child.setResolution(3); // Ensure high resolution for text
+                        } else if ('x' in child && 'y' in child) {
+                            (child as any).setPosition(Math.floor((child as any).x), Math.floor((child as any).y));
                         }
                     }
                 });

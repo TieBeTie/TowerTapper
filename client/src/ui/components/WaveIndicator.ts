@@ -20,16 +20,13 @@ export class WaveIndicator {
         this.screenManager = screenManager || new ScreenManager(scene);
         
         // Create UI elements with responsive font sizes
-        const largeFontSize = this.screenManager.getResponsiveFontSize(48);
-        const mediumFontSize = this.screenManager.getResponsiveFontSize(36);
-        const smallFontSize = this.screenManager.getResponsiveFontSize(32);
         
         // Calculate spacing based on font size
         const spacing = this.screenManager.getResponsivePadding(40);
         
         // Создаем UI элементы с высоким значением depth для отображения поверх других объектов
         this.waveText = this.scene.add.text(x, y, 'Wave: 1', { 
-            fontSize: `${largeFontSize}px`, 
+            fontSize: `${this.screenManager.getMediumFontSize()}px`, 
             color: '#ffffff',
             fontFamily: 'pixelFont',
             stroke: '#000000',
@@ -37,7 +34,7 @@ export class WaveIndicator {
         }).setDepth(100);
         
         this.enemiesText = this.scene.add.text(x, y + spacing * 0.8, 'Enemies: 0', { 
-            fontSize: `${mediumFontSize}px`, 
+            fontSize: `${this.screenManager.getSmallFontSize()}px`, 
             color: '#ffffff',
             fontFamily: 'pixelFont',
             stroke: '#000000',
@@ -45,7 +42,7 @@ export class WaveIndicator {
         }).setDepth(100);
         
         this.statusText = this.scene.add.text(x, y + spacing * 1.6, '', { 
-            fontSize: `${smallFontSize}px`, 
+            fontSize: `${this.screenManager.getSmallFontSize()}px`, 
             color: '#ffcc00',
             fontFamily: 'pixelFont',
             stroke: '#000000',
@@ -65,35 +62,32 @@ export class WaveIndicator {
     
     private handleScreenResize(gameScale: number): void {
         // Update font sizes
-        const largeFontSize = this.screenManager.getResponsiveFontSize(48);
-        const mediumFontSize = this.screenManager.getResponsiveFontSize(36);
-        const smallFontSize = this.screenManager.getResponsiveFontSize(32);
         
         // Calculate spacing based on font size
         const spacing = this.screenManager.getResponsivePadding(40);
         
         // Update text styles
-        this.waveText.setFontSize(largeFontSize);
+        this.waveText.setFontSize(this.screenManager.getMediumFontSize());
         this.waveText.setStyle({ 
-            fontSize: `${largeFontSize}px`,
+            fontSize: `${this.screenManager.getMediumFontSize()}px`,
             strokeThickness: Math.round(4 * gameScale),
             color: '#ffffff',
             fontFamily: 'pixelFont',
             stroke: '#000000'
         });
         
-        this.enemiesText.setFontSize(mediumFontSize);
+        this.enemiesText.setFontSize(this.screenManager.getMediumFontSize());
         this.enemiesText.setStyle({ 
-            fontSize: `${mediumFontSize}px`,
+            fontSize: `${this.screenManager.getMediumFontSize()}px`,
             strokeThickness: Math.round(3 * gameScale),
             color: '#ffffff',
             fontFamily: 'pixelFont',
             stroke: '#000000'
         });
         
-        this.statusText.setFontSize(smallFontSize);
+        this.statusText.setFontSize(this.screenManager.getSmallFontSize());
         this.statusText.setStyle({ 
-            fontSize: `${smallFontSize}px`,
+            fontSize: `${this.screenManager.getSmallFontSize()}px`,
             strokeThickness: Math.round(3 * gameScale),
             color: '#ffcc00',
             fontFamily: 'pixelFont',

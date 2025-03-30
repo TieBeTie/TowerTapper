@@ -22,7 +22,7 @@ export class DamageNumber extends Phaser.GameObjects.Container {
 
     private createDamageText(config: DamageNumberConfig): void {
         // Get responsive sizing
-        const fontSize = this.screenManager.getResponsiveFontSize(32);
+        const fontSize = this.screenManager.getResponsiveFontSize(this.screenManager.getSmallestFontSize());
         const gameScale = this.screenManager.getGameScale();
         const verticalOffset = this.screenManager.getResponsivePadding(30);
         const horizontalJitter = this.screenManager.getResponsivePadding(30);
@@ -33,20 +33,22 @@ export class DamageNumber extends Phaser.GameObjects.Container {
         // Создаем текст урона
         this.damageText = this.scene.add.text(0, -verticalOffset, config.damage.toString(), {
             fontSize: `${fontSize}px`,
-            color: '#ff69b4',
+            color: '#ffffff',
             fontFamily: 'pixelFont',
             stroke: '#000000',
             strokeThickness: strokeSize,
+            resolution: 3, // Высокое разрешение для четкости
             shadow: {
                 offsetX: shadowSize,
                 offsetY: shadowSize,
-                color: '#000000',
+                color: '#ffffff',
                 blur: shadowSize * 2
             }
         }).setOrigin(0.5);
 
-        // Добавляем небольшой разброс по X для разных чисел
-        this.damageText.x += (Math.random() - 0.5) * horizontalJitter;
+        // Устанавливаем точные целочисленные координаты для четкости
+        this.damageText.x = Math.floor(this.damageText.x + (Math.random() - 0.5) * horizontalJitter);
+        this.damageText.y = Math.floor(this.damageText.y);
 
         // Анимация появления
         this.scene.tweens.add({
