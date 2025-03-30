@@ -14,6 +14,7 @@ import { IGameScene } from '../types/IGameScene';
 import { ScreenManager } from '../managers/ScreenManager';
 import { SupplyDropManager } from '../managers/SupplyDropManager';
 import { SkillStateManager } from '../managers/SkillStateManager';
+import { EmblemManager } from '../managers/EmblemManager';
 
 export default class GameScene extends Phaser.Scene implements IGameScene {
     // Game objects
@@ -29,6 +30,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     waveIndicator!: WaveIndicator;
     waveClearEffect!: WaveClearEffect;
     supplyDropManager!: SupplyDropManager;
+    emblemManager!: EmblemManager;
     coins!: number;
     socket!: WebSocket;
     audioManager!: AudioManager;
@@ -53,6 +55,9 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     create(): void {
         // Initialize ScreenManager first
         this.screenManager = new ScreenManager(this);
+        
+        // Store the game instance globally for access from other components
+        (window as any).game = this.game;
         
         // Создаем черный прямоугольник на весь экран
         const { width, height } = this.screenManager.getScreenSize();
@@ -246,6 +251,10 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             this.waveClearEffect.show(waveNumber);
         });
 
+        // Initialize emblem manager first
+        this.emblemManager = EmblemManager.getInstance();
+        this.emblemManager.initialize();
+
         // Initialize UpgradeManager
         this.upgradeManager = new UpgradeManager(this);
 
@@ -351,6 +360,11 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 this.waveIndicator.updateUI();
             }
             
+            // Update emblem count in UI
+            if (this.emblemManager) {
+                this.events.emit('updateEmblems', this.emblemManager.getEmblemBonus());
+            }
+            
             // Проверка на "зависшую" волну - только если нет врагов на экране и нет таймера спавна
             if (this.waveManager.isCurrentWaveActive() && 
                 this.enemyManager.enemies && 
@@ -398,5 +412,15 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
 
     getCoinRewardMultiplier(): number {
         return this.coinRewardMultiplier;
+    }
+
+    // Method to get emblem bonus
+    getEmblemBonus(): number {
+        return this.emblemManager.getEmblemBonus();
+    }
+    
+    // Метод для получения количества эмблем
+    getEmblemCount(): number {
+        return this.emblemManager.getEmblemCount();
     }
 }

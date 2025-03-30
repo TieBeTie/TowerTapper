@@ -14,6 +14,8 @@ export class UIManager {
     private coinCount: number = 0;
     private coinIcon!: Phaser.GameObjects.Image;
     private coinNumberText!: Phaser.GameObjects.Text;
+    private emblemIcon!: Phaser.GameObjects.Image;
+    private emblemNumberText!: Phaser.GameObjects.Text;
     private upgradeManager: UpgradeManager;
     private screenManager: ScreenManager;
 
@@ -45,6 +47,12 @@ export class UIManager {
         
         // Listen for ui-force-visibility event with the updated name
         this.scene.events.on('ui-refresh-visibility', this.forceAllButtonsVisible, this);
+        
+        // Listen for emblem updates
+        this.scene.events.on('updateEmblems', this.updateEmblemCount, this);
+        
+        // Set up update callback for regular updates
+        this.scene.events.on('update', this.onUpdate, this);
     }
 
     private getStatsViewBeginY() {
@@ -84,6 +92,32 @@ export class UIManager {
          
          // Add the container as a single element
          this.statsView.addElement(coinContainer);
+         
+         // Create emblem elements
+         this.emblemIcon = this.scene.add.image(0, 0, 'emblem_icon');
+         
+         // Set emblem icon size
+         this.emblemIcon.setDisplaySize(reducedIconSize, reducedIconSize);
+         
+         this.emblemNumberText = this.scene.add.text(0, 0, '0', {
+             fontSize: `${fontSize}px`,
+             color: '#ffffff',
+             fontFamily: 'pixelFont'
+         }).setOrigin(0, 0.5);
+         
+         // Create a container for emblem display
+         const emblemContainer = this.scene.add.container(0, 0);
+         emblemContainer.add(this.emblemIcon);
+         emblemContainer.add(this.emblemNumberText);
+         
+         // Position the emblem text relative to the icon
+         this.emblemNumberText.setPosition(this.emblemIcon.width * 0.6, 0);
+         
+         // Add the container as a single element
+         this.statsView.addElement(emblemContainer);
+         
+         // Update emblem count
+         this.updateEmblemCount();
     }
 
     private initilizeUpgradePanel(): void {
@@ -315,10 +349,10 @@ export class UIManager {
         // 3. Daily Gem Bonus – дополнительные гемы каждый день
         const dailyGemButton = new UpgradeButton({
             scene: this.scene,
-            skillType: SkillType.DAILY_GEM,
+            skillType: SkillType.EMBLEM_BONUS,
             upgradeManager: this.upgradeManager,
             fontSize: fontSize,
-            buttonText: 'Daily Gem\nBonus',
+            buttonText: 'Emblem\nBonus',
             x: 0, y: 0,
             width: fontSize * 10,
             height: fontSize * 3
@@ -363,6 +397,19 @@ export class UIManager {
             height: fontSize * 3
         });
         buttons.push(gameSpeedButton);
+        
+        // Emblem Bonus upgrade
+        const emblemBonusButton = new UpgradeButton({
+            scene: this.scene,
+            skillType: SkillType.EMBLEM_BONUS,
+            upgradeManager: this.upgradeManager,
+            fontSize: fontSize,
+            buttonText: 'Emblem\nBonus',
+            x: 0, y: 0,
+            width: fontSize * 10,
+            height: fontSize * 3
+        });
+        buttons.push(emblemBonusButton);
         
         return buttons;
     }
@@ -462,10 +509,10 @@ export class UIManager {
         }
     }
 
-    updateCoinCount(count: number): void {
-        this.coinCount = count;
+    public updateCoins(coins: number): void {
+        this.coinCount = coins;
         if (this.coinNumberText) {
-            this.coinNumberText.setText(count.toString());
+            this.coinNumberText.setText(coins.toString());
         }
     }
 
@@ -532,5 +579,37 @@ export class UIManager {
         // Destroy UI components
         this.statsView.destroy();
         this.upgradePanel.destroy();
+    }
+
+    private updateEmblemCount(): void {
+        try {
+            // Get the emblem count from the GameScene
+            const gameScene = this.scene.scene.get('GameScene');
+            // Используем getEmblemCount для получения общего количества эмблем
+            const emblemCount = (gameScene as any).getEmblemCount?.() || 0;
+            
+            // Update the emblem text
+            if (this.emblemNumberText) {
+                this.emblemNumberText.setText(emblemCount.toString());
+            }
+        } catch (error) {
+            console.log('Emblem count not available yet');
+            // Use default value when emblem manager is not yet initialized
+            if (this.emblemNumberText) {
+                this.emblemNumberText.setText('0');
+            }
+        }
+    }
+
+    // Update both coin and emblem counts
+    updateCounts(): void {
+        this.updateCoins(this.coinCount);
+        this.updateEmblemCount();
+    }
+
+    // Update method that gets called every frame
+    private onUpdate(): void {
+        // Update the emblem count every frame
+        this.updateEmblemCount();
     }
 }

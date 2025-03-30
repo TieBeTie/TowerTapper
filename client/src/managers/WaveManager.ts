@@ -56,6 +56,9 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         // Apply daily gold bonus at the beginning of each wave
         this.applyDailyGoldBonus();
         
+        // Apply emblem bonus at the beginning of each wave
+        this.applyEmblemBonus();
+        
         // Получаем конфигурацию текущей волны
         const waveConfig = this.getCurrentWaveConfig();
         
@@ -181,6 +184,34 @@ export class WaveManager extends Phaser.Events.EventEmitter {
                 
                 // Log bonus for debugging
                 console.log(`Applied daily gold bonus: +${goldBonus} coins at wave ${this.currentWave}`);
+            }
+        }
+    }
+
+    // Add a new method to apply emblem bonus
+    private applyEmblemBonus(): void {
+        const gameScene = this.scene as GameScene;
+        
+        if (gameScene.emblemManager) {
+            const emblemBonusLevel = this.skillStateManager.getState(SkillType.EMBLEM_BONUS);
+            
+            if (emblemBonusLevel > 0) {
+                // Количество эмблем = уровень улучшения + 1
+                const emblemBonus = emblemBonusLevel;
+                
+                // Добавляем эмблемы
+                gameScene.emblemManager.addEmblems(emblemBonus);
+                
+                // Уведомляем UI
+                gameScene.events.emit('updateEmblems', emblemBonus);
+                
+                // Показываем уведомление
+                if (gameScene.uiManager && gameScene.uiManager.showNotification) {
+                    gameScene.uiManager.showNotification(`+${emblemBonus} Emblem!`, 0x9370DB); // Purple color
+                }
+                
+                // Log bonus for debugging
+                console.log(`Applied emblem bonus: +${emblemBonus} at wave ${this.currentWave}`);
             }
         }
     }

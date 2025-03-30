@@ -159,6 +159,16 @@ export class UpgradeManager {
                 calculateNextValue: (current: number) => current + 1, // +1 level per upgrade
                 calculateCost: (current: number) => Math.floor(25 * Math.pow(1.5, current))
             }],
+            [SkillType.EMBLEM_BONUS, {
+                type: SkillType.EMBLEM_BONUS,
+                name: 'Бонус эмблем',
+                description: 'Увеличивает бонус эмблем в начале каждой волны',
+                cost: 30,
+                currentValue: skills.get(SkillType.EMBLEM_BONUS)?.value || 1, // 1 initially
+                maxValue: 10, // Max level 10
+                calculateNextValue: (current: number) => current + 1, // +1 level per upgrade
+                calculateCost: (current: number) => Math.floor(30 * Math.pow(1.6, current - 1))
+            }],
             [SkillType.FREE_UPGRADE, {
                 type: SkillType.FREE_UPGRADE,
                 name: 'Шанс бесплатного улучшения',
@@ -330,6 +340,10 @@ export class UpgradeManager {
             case SkillType.DAILY_GOLD:
                 // Сохраняем уровень ежедневного золота в SkillSetStorage
                 this.stateService.saveState(SkillType.DAILY_GOLD, upgrade.currentValue);
+                break;
+            case SkillType.EMBLEM_BONUS:
+                // Сохраняем уровень бонуса эмблем в SkillSetStorage
+                this.stateService.saveState(SkillType.EMBLEM_BONUS, upgrade.currentValue);
                 break;
             case SkillType.FREE_UPGRADE:
                 // Сохраняем шанс бесплатного улучшения в SkillSetStorage

@@ -62,6 +62,9 @@ class BootScene extends Phaser.Scene implements IScene {
         this.load.image('tower', 'assets/images/towers/Tower-type-3.6@2x.png');
         this.load.image('projectile', 'assets/images/projectiles/arrow.png');
         this.load.image('background', 'assets/images/towers/Background1.png');
+        
+        // Load emblem icon
+        this.load.image('emblem_icon', 'assets/images/currency/heraldic_emblem32x32.png');
 
         // Загрузка монет
         this.load.spritesheet('coin', 'assets/images/towers/Coin-sheet.png', {

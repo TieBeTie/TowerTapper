@@ -13,7 +13,7 @@ export enum SkillType {
     LIFESTEAL_CHANCE = 'LIFESTEAL_CHANCE',
     LIFESTEAL_AMOUNT = 'LIFESTEAL_AMOUNT',
     DAILY_GOLD = 'DAILY_GOLD',
-    DAILY_GEM = 'DAILY_GEM',
+    EMBLEM_BONUS = 'EMBLEM_BONUS',
     FREE_UPGRADE = 'FREE_UPGRADE',
     SUPPLY_DROP = 'SUPPLY_DROP',
     GAME_SPEED = 'GAME_SPEED'
@@ -45,7 +45,7 @@ export interface UpgradeState {
     [SkillType.LIFESTEAL_CHANCE]: number;
     [SkillType.LIFESTEAL_AMOUNT]: number;
     [SkillType.DAILY_GOLD]: number;
-    [SkillType.DAILY_GEM]: number;
+    [SkillType.EMBLEM_BONUS]: number;
     [SkillType.FREE_UPGRADE]: number;
     [SkillType.SUPPLY_DROP]: number;
     [SkillType.GAME_SPEED]: number;
