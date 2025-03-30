@@ -35,7 +35,7 @@ class EnemyManager {
 
     // Геттер для получения статуса таймера спавна
     public isSpawnTimerActive(): boolean {
-        return this.spawnTimer !== null;
+        return this.spawnTimer !== null && !this.spawnTimer.hasDispatched;
     }
 
     startSpawningEnemies(waveConfig: any): void {
@@ -100,29 +100,56 @@ class EnemyManager {
     }
 
     spawnEnemy(): boolean {
-        const enemyType = Phaser.Math.RND.pick(['orc', 'goblin']) as 'orc' | 'goblin';
-        const xPosition = Phaser.Math.Between(50, this.scene.scale.width - 50);
-        const yPosition = Phaser.Math.RND.pick([0, this.scene.scale.height - 100]) as number;
+        try {
+            // First make sure we have a valid scene and physics system
+            if (!this.scene || !this.scene.physics) {
+                console.error('Scene or physics not available');
+                return false;
+            }
+            
+            // Check if enemies group exists and recreate if needed
+            if (!this.enemies) {
+                console.warn('Enemies group not found, recreating');
+                this.enemies = this.scene.physics.add.group({
+                    classType: Enemy,
+                    runChildUpdate: true
+                });
+            }
+            
+            // Generate random enemy position
+            const enemyType = Phaser.Math.RND.pick(['orc', 'goblin']) as 'orc' | 'goblin';
+            const xPosition = Phaser.Math.Between(50, this.scene.scale.width - 50);
+            const yPosition = Phaser.Math.RND.pick([0, this.scene.scale.height - 100]) as number;
 
-        const enemy = EnemyFactory.createEnemy(enemyType, this.scene, xPosition, yPosition, this.waveManager);
-        if (enemy) {
-            this.enemies.add(enemy);
+            // Create the enemy
+            const enemy = EnemyFactory.createEnemy(enemyType, this.scene, xPosition, yPosition, this.waveManager);
             
-            // Подписываемся на событие когда враг достигает башни (это не то же самое, что смерть от стрелы)
-            enemy.once('reached', () => {
-                // Удаляем врага из группы
-                this.enemies.remove(enemy, true, true);
+            // Add enemy to group if valid
+            if (enemy && this.enemies && this.enemies.add) {
+                this.enemies.add(enemy);
                 
-                // Уведомляем WaveManager о поражении врага только если он достиг башни
-                this.waveManager.enemyDefeated();
+                // Set up reached event
+                enemy.once('reached', () => {
+                    // Safely remove from group
+                    if (this.enemies && this.enemies.remove) {
+                        this.enemies.remove(enemy, true, true);
+                    }
+                    
+                    // Update wave manager
+                    if (this.waveManager) {
+                        this.waveManager.enemyDefeated();
+                    }
+                    
+                    console.log("Enemy reached tower");
+                });
                 
-                console.log("Enemy reached tower");
-            });
-            
-            return true;
-        } else {
-            console.error(`Failed to create enemy of type: ${enemyType}`);
-            // НЕ вызываем enemyDefeated если просто не удалось создать врага
+                return true;
+            } else {
+                console.error(`Failed to create enemy of type: ${enemyType}`);
+                return false;
+            }
+        } catch (error) {
+            console.error('Error in spawnEnemy:', error);
             return false;
         }
     }

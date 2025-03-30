@@ -8,6 +8,7 @@ interface DamageNumberConfig {
     y: number;
     screenManager?: ScreenManager;
     isCritical?: boolean;
+    isHeal?: boolean;
 }
 
 export class DamageNumber extends Phaser.GameObjects.Container {
@@ -31,28 +32,47 @@ export class DamageNumber extends Phaser.GameObjects.Container {
         const strokeSize = Math.max(2, Math.round(4 * gameScale));
         const riseDistance = this.screenManager.getResponsivePadding(50);
         
-        // Determine display style based on critical hit status
-        const textColor = config.isCritical ? '#ff69b4' : '#ffffff'; // Pink for critical hits (was red)
-        const critFontSize = config.isCritical ? fontSize * 1.2 : fontSize; // 50% larger for critical hits
-        const critStrokeSize = config.isCritical ? strokeSize * 1.2 : strokeSize; // Thicker outline
+        // Determine display style based on number type (heal or damage)
+        let textColor, shadowColor, textPrefix, finalFontSize, finalStrokeSize;
         
-        // Add a prefix for critical hits
-        const displayText = config.isCritical ? 
-            `${config.damage}` : // Add exclamation marks for critical hits
-            config.damage.toString();
+        if (config.isHeal) {
+            // Healing number style
+            textColor = '#00ff00'; // Green for healing
+            shadowColor = '#90ee90'; // Light green shadow
+            textPrefix = '+'; // Add plus sign for healing
+            finalFontSize = fontSize * 1.1; // Slightly larger for healing
+            finalStrokeSize = strokeSize;
+        } else if (config.isCritical) {
+            // Critical hit style
+            textColor = '#ff69b4'; // Pink for critical hits
+            shadowColor = '#ff9ed8'; // Light pink shadow
+            textPrefix = ''; 
+            finalFontSize = fontSize * 1.2; // 20% larger for critical hits
+            finalStrokeSize = strokeSize * 1.2; // Thicker outline
+        } else {
+            // Regular damage style
+            textColor = '#ffffff'; // White for regular damage
+            shadowColor = '#ffffff'; // White shadow
+            textPrefix = '';
+            finalFontSize = fontSize;
+            finalStrokeSize = strokeSize;
+        }
+        
+        // Create the display text with appropriate prefix
+        const displayText = `${textPrefix}${config.damage}`;
         
         // Создаем текст урона
         this.damageText = this.scene.add.text(0, -verticalOffset, displayText, {
-            fontSize: `${critFontSize}px`,
+            fontSize: `${finalFontSize}px`,
             color: textColor,
             fontFamily: 'pixelFont',
             stroke: '#000000',
-            strokeThickness: critStrokeSize,
+            strokeThickness: finalStrokeSize,
             resolution: 3, // Высокое разрешение для четкости
             shadow: {
                 offsetX: shadowSize,
                 offsetY: shadowSize,
-                color: config.isCritical ? '#ff9ed8' : '#ffffff', // Light pink shadow for critical hits
+                color: shadowColor,
                 blur: shadowSize * 2
             }
         }).setOrigin(0.5);
@@ -61,22 +81,34 @@ export class DamageNumber extends Phaser.GameObjects.Container {
         this.damageText.x = Math.floor(this.damageText.x + (Math.random() - 0.5) * horizontalJitter);
         this.damageText.y = Math.floor(this.damageText.y);
 
-        // Анимация появления - more dramatic for critical hits
-        this.scene.tweens.add({
-            targets: this.damageText,
-            scale: config.isCritical ? 1.2 * gameScale : 1.2 * gameScale,
-            duration: config.isCritical ? 120 : 100,
-            ease: 'Power2',
-            yoyo: true
-        });
+        // Different animation for different types
+        if (config.isHeal) {
+            // Healing animation - scale up and float up
+            this.scene.tweens.add({
+                targets: this.damageText,
+                scale: 1.3 * gameScale,
+                duration: 150,
+                ease: 'Sine.easeOut',
+                yoyo: true
+            });
+        } else {
+            // Regular damage animation
+            this.scene.tweens.add({
+                targets: this.damageText,
+                scale: config.isCritical ? 1.2 * gameScale : 1.2 * gameScale,
+                duration: config.isCritical ? 120 : 100,
+                ease: 'Power2',
+                yoyo: true
+            });
+        }
 
-        // Анимация подъема и исчезновения
+        // Анимация подъема и исчезновения - healing floats up more gently
         this.scene.tweens.add({
             targets: this.damageText,
             y: -verticalOffset - riseDistance,
             alpha: 0,
-            duration: config.isCritical ? 1000 : 1000, // Critical hits stay visible longer
-            ease: 'Power2',
+            duration: config.isHeal ? 1200 : (config.isCritical ? 1000 : 1000),
+            ease: config.isHeal ? 'Sine.easeOut' : 'Power2',
             onComplete: () => {
                 this.destroy();
             }

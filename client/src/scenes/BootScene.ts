@@ -36,6 +36,8 @@ class BootScene extends Phaser.Scene implements IScene {
         this.load.audio('upgradeButton', 'assets/sounds/upgrade_button.wav');
         this.load.audio('towerDamage', 'assets/sounds/tower_damage.wav');
         this.load.audio('playButton', 'assets/sounds/play_button.wav');
+        this.load.audio('crit', 'assets/sounds/crit.wav');
+        this.load.audio('heal', 'assets/sounds/heal.wav');
         
         // Обработчики событий загрузки
         this.load.on('filecomplete', (key: string) => {

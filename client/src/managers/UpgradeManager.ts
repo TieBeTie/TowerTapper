@@ -128,6 +128,26 @@ export class UpgradeManager {
                 maxValue: 200, // Max 200% damage increase
                 calculateNextValue: (current: number) => Math.floor(current + 25), // +25% per upgrade
                 calculateCost: (current: number) => Math.floor(20 * Math.pow(1.4, (current - 25) / 25))
+            }],
+            [SkillType.LIFESTEAL_CHANCE, {
+                type: SkillType.LIFESTEAL_CHANCE,
+                name: 'Шанс вампиризма',
+                description: 'Шанс восстановить здоровье при атаке',
+                cost: 15,
+                currentValue: skills.get(SkillType.LIFESTEAL_CHANCE)?.value || 25, // 25% chance initially
+                maxValue: 100, // Max 100% chance
+                calculateNextValue: (current: number) => Math.floor(current + 25), // +25% per upgrade
+                calculateCost: (current: number) => Math.floor(15 * Math.pow(1.4, (current - 25) / 25))
+            }],
+            [SkillType.LIFESTEAL_AMOUNT, {
+                type: SkillType.LIFESTEAL_AMOUNT,
+                name: 'Сила вампиризма',
+                description: 'Количество восстанавливаемого здоровья',
+                cost: 20,
+                currentValue: skills.get(SkillType.LIFESTEAL_AMOUNT)?.value || 0, // 0 health initially
+                maxValue: 20, // Max 20 health
+                calculateNextValue: (current: number) => Math.floor(current + 1), // +1 per upgrade
+                calculateCost: (current: number) => Math.floor(20 * Math.pow(1.4, current))
             }]
         ]);
     }
@@ -233,6 +253,14 @@ export class UpgradeManager {
             case SkillType.CRIT_MULTIPLIER:
                 // Сохраняем множитель критического урона в SkillSetStorage
                 this.stateService.saveState(SkillType.CRIT_MULTIPLIER, upgrade.currentValue);
+                break;
+            case SkillType.LIFESTEAL_CHANCE:
+                // Сохраняем шанс вампиризма в SkillSetStorage
+                this.stateService.saveState(SkillType.LIFESTEAL_CHANCE, upgrade.currentValue);
+                break;
+            case SkillType.LIFESTEAL_AMOUNT:
+                // Сохраняем силу вампиризма в SkillSetStorage
+                this.stateService.saveState(SkillType.LIFESTEAL_AMOUNT, upgrade.currentValue);
                 break;
         }
 

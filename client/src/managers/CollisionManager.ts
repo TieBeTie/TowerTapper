@@ -150,7 +150,33 @@ class CollisionManager {
             y: enemy.y,
             isCritical: isCriticalHit
         });
-
+        
+        // Проверяем, должен ли сработать Lifesteal
+        const lifestealChance = skills.get(SkillType.LIFESTEAL_CHANCE)?.value || 0;
+        const lifestealAmount = skills.get(SkillType.LIFESTEAL_AMOUNT)?.value || 0;
+        
+        if (lifestealAmount > 0 && Math.random() * 100 < lifestealChance) {
+            // Lifesteal activated, heal the tower
+            if (this.scene.tower && this.scene.tower.active) {
+                const prevHealth = this.scene.tower.health;
+                this.scene.tower.health = Math.min(
+                    this.scene.tower.health + lifestealAmount,
+                    this.scene.tower.maxHealth
+                );
+                
+                // Update health bar if needed
+                this.scene.tower.updateHealthBar();
+                
+                // Show lifesteal effect
+                this.showLifestealEffect(enemy, this.scene.tower, lifestealAmount);
+                
+                // Play heal sound if available
+                if (this.scene.scene.get('GameScene') && (this.scene as any).audioManager) {
+                    (this.scene as any).audioManager.playSound('heal');
+                }
+            }
+        }
+        
         if (enemy.health <= 0) {
             this.scene.enemyManager.handleEnemyDeath(enemy);
         }
@@ -206,6 +232,71 @@ class CollisionManager {
                     });
                 }
             }
+        }
+    }
+
+    private showLifestealEffect(enemy: Enemy, tower: Tower, amount: number): void {
+        try {
+            // Safety check to make sure the scene and objects are valid
+            if (!this.scene || !enemy || !tower || !enemy.active || !tower.active) {
+                return;
+            }
+            
+            // Create a lifesteal text indicator with safety checks
+            try {
+                new DamageNumber({
+                    scene: this.scene,
+                    damage: amount,
+                    x: enemy.x,
+                    y: enemy.y - 20,
+                    isCritical: false,
+                    isHeal: true
+                });
+            } catch (e) {
+                console.warn('Failed to create heal number indicator:', e);
+                // Continue with the effect even if the number indicator fails
+            }
+            
+            // Create a simpler green line effect from enemy to tower
+            try {
+                const graphics = this.scene.add.graphics();
+                if (graphics) {
+                    graphics.lineStyle(3, 0x00ff00, 0.4); // More transparent line
+                    graphics.beginPath();
+                    graphics.moveTo(enemy.x, enemy.y);
+                    graphics.lineTo(tower.x, tower.y);
+                    graphics.strokePath();
+                    
+                    // Use a simple fade-out with a short duration
+                    this.scene.tweens.add({
+                        targets: graphics,
+                        alpha: 0,
+                        duration: 200, // Shorter duration
+                        ease: 'Linear',
+                        onComplete: () => {
+                            if (graphics && graphics.destroy) {
+                                graphics.destroy();
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn('Failed to create lifesteal line effect:', e);
+            }
+            
+            // Add a green tint to the tower with safety check
+            if (tower && tower.setTint) {
+                tower.setTint(0x00ff00);
+                
+                // Clear the tint after a short delay with safety check
+                this.scene.time.delayedCall(200, () => { 
+                    if (tower && tower.active && tower.clearTint) {
+                        tower.clearTint();
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('Error showing lifesteal effect:', e);
         }
     }
 }
