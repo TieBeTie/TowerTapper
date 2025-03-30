@@ -193,25 +193,19 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         const gameScene = this.scene as GameScene;
         
         if (gameScene.emblemManager) {
-            const emblemBonusLevel = this.skillStateManager.getState(SkillType.EMBLEM_BONUS);
+            const emblemBonus = gameScene.emblemManager.getEmblemBonus();
             
-            if (emblemBonusLevel > 0) {
-                // Количество эмблем = уровень улучшения + 1
-                const emblemBonus = emblemBonusLevel;
-                
-                // Добавляем эмблемы
+            if (emblemBonus > 0) {
+                // Add emblems each wave based on the bonus level
                 gameScene.emblemManager.addEmblems(emblemBonus);
                 
-                // Уведомляем UI
-                gameScene.events.emit('updateEmblems', emblemBonus);
-                
-                // Показываем уведомление
-                if (gameScene.uiManager && gameScene.uiManager.showNotification) {
-                    gameScene.uiManager.showNotification(`+${emblemBonus} Emblem!`, 0x9370DB); // Purple color
-                }
-                
                 // Log bonus for debugging
-                console.log(`Applied emblem bonus: +${emblemBonus} at wave ${this.currentWave}`);
+                console.log(`Added ${emblemBonus} emblems at wave ${this.currentWave}`);
+                
+                // You can display a notification if needed
+                if (gameScene.uiManager && gameScene.uiManager.showNotification) {
+                    gameScene.uiManager.showNotification(`+${emblemBonus} Emblems!`, 0x9370DB); // Purple color
+                }
             }
         }
     }

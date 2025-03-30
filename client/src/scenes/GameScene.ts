@@ -416,11 +416,13 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
 
     // Method to get emblem bonus
     getEmblemBonus(): number {
+        if (!this.emblemManager) return 0;
         return this.emblemManager.getEmblemBonus();
     }
-    
-    // Метод для получения количества эмблем
+
+    // Get current emblem count
     getEmblemCount(): number {
+        if (!this.emblemManager) return 0;
         return this.emblemManager.getEmblemCount();
     }
 }

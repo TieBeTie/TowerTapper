@@ -162,7 +162,7 @@ export class UpgradeManager {
             [SkillType.EMBLEM_BONUS, {
                 type: SkillType.EMBLEM_BONUS,
                 name: 'Бонус эмблем',
-                description: 'Увеличивает бонус эмблем в начале каждой волны',
+                description: 'Увеличивает количество получаемых эмблем за волну',
                 cost: 30,
                 currentValue: skills.get(SkillType.EMBLEM_BONUS)?.value || 1, // 1 initially
                 maxValue: 10, // Max level 10

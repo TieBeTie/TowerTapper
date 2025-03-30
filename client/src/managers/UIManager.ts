@@ -585,8 +585,10 @@ export class UIManager {
         try {
             // Get the emblem count from the GameScene
             const gameScene = this.scene.scene.get('GameScene');
-            // Используем getEmblemCount для получения общего количества эмблем
-            const emblemCount = (gameScene as any).getEmblemCount?.() || 0;
+            if (!gameScene) return;
+            
+            // Get emblem count directly
+            const emblemCount = (gameScene as any).emblemManager?.getEmblemCount() || 0;
             
             // Update the emblem text
             if (this.emblemNumberText) {

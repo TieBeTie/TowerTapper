@@ -1,16 +1,14 @@
 import { SkillStateManager } from './SkillStateManager';
 import { SkillType } from '../types/SkillType';
 import Phaser from 'phaser';
-import { EmblemStorage } from '../storage/EmblemStorage';
 
 export class EmblemManager {
     private static instance: EmblemManager;
     private skillStateManager: SkillStateManager;
-    private emblemStorage: EmblemStorage;
+    private emblemCount: number = 0;
     
     private constructor() {
         this.skillStateManager = SkillStateManager.getInstance();
-        this.emblemStorage = EmblemStorage.getInstance();
     }
     
     public static getInstance(): EmblemManager {
@@ -22,36 +20,56 @@ export class EmblemManager {
     
     // Initialize emblems at game start
     public initialize(): void {
-        // Set initial emblem bonus level to 1
-        this.skillStateManager.saveState(SkillType.EMBLEM_BONUS, 1);
+        // Set initial emblem bonus level to 1 if not set
+        const level = this.skillStateManager.getState(SkillType.EMBLEM_BONUS);
+        if (level <= 0) {
+            this.skillStateManager.saveState(SkillType.EMBLEM_BONUS, 1);
+        }
     }
     
-    // Get emblem bonus - based on skill level
-    public getEmblemBonus(): number {
-        const emblemBonusLevel = this.skillStateManager.getState(SkillType.EMBLEM_BONUS);
-        return emblemBonusLevel;
-    }
-    
-    // Get total emblem count
+    // Get current emblem count
     public getEmblemCount(): number {
-        return this.emblemStorage.loadEmblemCount();
+        return this.emblemCount;
     }
     
-    // Add emblems
-    public addEmblems(count: number): void {
-        const currentCount = this.emblemStorage.loadEmblemCount();
-        this.emblemStorage.saveEmblemCount(currentCount + count);
+    // Add emblems to the counter
+    public addEmblems(amount: number): void {
+        this.emblemCount += amount;
         this.notifyUpdate();
     }
     
-    // Update UI
+    // Remove emblems from the counter
+    public removeEmblems(amount: number): void {
+        this.emblemCount = Math.max(0, this.emblemCount - amount);
+        this.notifyUpdate();
+    }
+    
+    // Reset emblem count
+    public resetEmblems(): void {
+        this.emblemCount = 0;
+        this.notifyUpdate();
+    }
+    
+    // Get emblem bonus based on upgrade level
+    public getEmblemBonus(): number {
+        const emblemBonusLevel = this.skillStateManager.getState(SkillType.EMBLEM_BONUS);
+        
+        // If emblem bonus is not upgraded yet, return 0
+        if (emblemBonusLevel <= 0) {
+            return 0;
+        }
+        
+        return emblemBonusLevel;
+    }
+    
+    // Notify UI to update emblem display
     private notifyUpdate(): void {
         try {
             const game = (window as any).game as Phaser.Game;
             if (game && game.scene) {
                 const gameScene = game.scene.getScene('GameScene');
                 if (gameScene) {
-                    gameScene.events.emit('updateEmblems', this.getEmblemCount());
+                    gameScene.events.emit('updateEmblems', this.emblemCount);
                 }
             }
         } catch (error) {
