@@ -86,7 +86,7 @@ export class ScreenManager {
     }
 
     public getSmallestFontSize(): number {
-        return this.getResponsiveFontSize(12);
+        return this.getResponsiveFontSize(8);
     }
 
     /**

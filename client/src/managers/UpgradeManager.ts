@@ -108,6 +108,26 @@ export class UpgradeManager {
                 maxValue: 50, // Max 50% chance
                 calculateNextValue: (current: number) => Math.floor(current + 3), // +3% per upgrade
                 calculateCost: (current: number) => Math.floor(15 * Math.pow(1.4, (current - 5) / 3))
+            }],
+            [SkillType.CRIT_CHANCE, {
+                type: SkillType.CRIT_CHANCE,
+                name: 'Шанс крита',
+                description: 'Шанс нанести критический урон',
+                cost: 15,
+                currentValue: skills.get(SkillType.CRIT_CHANCE)?.value || 25, // 25% chance initially (0.25)
+                maxValue: 75, // Max 75% chance
+                calculateNextValue: (current: number) => Math.floor(current + 25), // +25% per upgrade
+                calculateCost: (current: number) => Math.floor(15 * Math.pow(1.4, (current - 25) / 25))
+            }],
+            [SkillType.CRIT_MULTIPLIER, {
+                type: SkillType.CRIT_MULTIPLIER,
+                name: 'Множитель крита',
+                description: 'Увеличивает урон критического удара',
+                cost: 20,
+                currentValue: skills.get(SkillType.CRIT_MULTIPLIER)?.value || 25, // 25% damage increase initially (0.25)
+                maxValue: 200, // Max 200% damage increase
+                calculateNextValue: (current: number) => Math.floor(current + 25), // +25% per upgrade
+                calculateCost: (current: number) => Math.floor(20 * Math.pow(1.4, (current - 25) / 25))
             }]
         ]);
     }
@@ -205,6 +225,14 @@ export class UpgradeManager {
             case SkillType.MULTISHOT:
                 // Просто сохраняем новое значение в SkillSetStorage
                 this.stateService.saveState(SkillType.MULTISHOT, upgrade.currentValue);
+                break;
+            case SkillType.CRIT_CHANCE:
+                // Сохраняем шанс критического удара в SkillSetStorage
+                this.stateService.saveState(SkillType.CRIT_CHANCE, upgrade.currentValue);
+                break;
+            case SkillType.CRIT_MULTIPLIER:
+                // Сохраняем множитель критического урона в SkillSetStorage
+                this.stateService.saveState(SkillType.CRIT_MULTIPLIER, upgrade.currentValue);
                 break;
         }
 

@@ -49,7 +49,7 @@ class AudioManager {
             if (this.sounds.size === 0) {
                 // Array of sound keys to add
                 const soundKeys = ['arrow', 'enemyDie', 'towerDie', 'waveCompleted', 
-                                  'upgradeButton', 'towerDamage', 'playButton'];
+                                  'upgradeButton', 'towerDamage', 'playButton', 'crit'];
                 
                 // Add each sound only if it exists in cache
                 soundKeys.forEach(key => {
@@ -61,7 +61,8 @@ class AudioManager {
                             'waveCompleted': 0.07,
                             'upgradeButton': 0.1,
                             'towerDamage': 0.2,
-                            'playButton': 0.2
+                            'playButton': 0.2,
+                            'crit': 0.25
                         }[key] || 0.2;
                         
                         this.sounds.set(key, this.scene.sound.add(key, { volume }));

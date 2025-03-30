@@ -91,6 +91,23 @@ class CollisionManager {
         // Get knockback value from storage
         const knockbackForce = skills.get(SkillType.KNOCKBACK)?.value || 50;
         
+        // Get critical hit values
+        const critChance = skills.get(SkillType.CRIT_CHANCE)?.value || 0;
+        const critMultiplier = skills.get(SkillType.CRIT_MULTIPLIER)?.value || 0;
+        
+        // Calculate if this is a critical hit
+        const isCriticalHit = Math.random() * 100 < critChance;
+        
+        // Calculate final damage
+        let finalDamage = damage;
+        if (isCriticalHit) {
+            // Add the critical multiplier (convert from percentage)
+            finalDamage = Math.floor(damage * (1 + critMultiplier / 100));
+            
+            // Display critical hit effect (optional)
+            this.showCriticalHitEffect(enemy);
+        }
+        
         // Уведомляем ProjectileManager о попадании
         this.scene.projectileManager.handleProjectileHit(projectile, enemy);
         
@@ -123,14 +140,15 @@ class CollisionManager {
         projectile.destroy();
         
         // Наносим урон врагу
-        enemy.takeDamage(damage);
+        enemy.takeDamage(finalDamage);
 
-        // Показываем число урона
+        // Показываем число урона с учетом критического удара
         new DamageNumber({
             scene: this.scene,
-            damage: damage,
+            damage: finalDamage,
             x: enemy.x,
-            y: enemy.y
+            y: enemy.y,
+            isCritical: isCriticalHit
         });
 
         if (enemy.health <= 0) {
@@ -160,6 +178,35 @@ class CollisionManager {
         }
 
         this.scene.events.off('shutdown', this.cleanup);
+    }
+
+    /**
+     * Displays a visual effect for critical hits
+     * @param enemy The enemy that received a critical hit
+     */
+    private showCriticalHitEffect(enemy: Enemy): void {
+        // Play critical hit sound with increased volume if available
+        if (this.scene.scene.get('GameScene') && (this.scene as any).audioManager) {
+            // Play critical hit sound with slightly higher volume
+            const audioManager = (this.scene as any).audioManager;
+            const originalVolume = audioManager.sounds.get('crit')?.volume || 0.25;
+            
+            // Temporarily increase volume for this specific play
+            if (audioManager.sounds.has('crit')) {
+                const critSound = audioManager.sounds.get('crit');
+                if (critSound) {
+                    critSound.setVolume(originalVolume * 1.5); // 50% louder
+                    audioManager.playSound('crit');
+                    
+                    // Reset volume after playing
+                    this.scene.time.delayedCall(200, () => {
+                        if (critSound) {
+                            critSound.setVolume(originalVolume);
+                        }
+                    });
+                }
+            }
+        }
     }
 }
 
