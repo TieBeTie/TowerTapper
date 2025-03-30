@@ -41,6 +41,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     update(time: number, delta: number): void {
+        // If the enemy has an active body with non-zero velocity, 
+        // we assume it's being knocked back, so we don't override its movement
+        if (this.body && (this.body as Phaser.Physics.Arcade.Body).velocity.length() > 0) {
+            return;
+        }
+        
+        // Normal movement toward the tower
         this.scene.physics.moveToObject(this, this.tower, this.speed);
     }
 

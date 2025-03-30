@@ -115,6 +115,9 @@ class ProjectileManager {
     handleProjectileHit(projectile: Projectile, enemy: Enemy): void {
         // Проверяем, что стрела и враг активны
         if (!projectile.active || !enemy.active) return;
+        
+        // Log hit for debugging purposes
+        console.log('Projectile hit enemy, knockback being handled in CollisionManager');
     }
 
     update(time: number, delta: number): void {

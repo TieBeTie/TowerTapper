@@ -88,6 +88,16 @@ export class UpgradeManager {
                 maxValue: 3,
                 calculateNextValue: (current: number) => Math.floor((current + 0.25) * 100) / 100,
                 calculateCost: (current: number) => Math.floor(8 * Math.pow(1.3, Math.log(current/1) / Math.log(1.3)))
+            }],
+            [SkillType.KNOCKBACK, {
+                type: SkillType.KNOCKBACK,
+                name: 'Отбрасывание',
+                description: 'Увеличивает силу отбрасывания врагов при попадании',
+                cost: 7,
+                currentValue: skills.get(SkillType.KNOCKBACK)?.value || 50,
+                maxValue: 500,
+                calculateNextValue: (current: number) => Math.floor(current * 1.3),
+                calculateCost: (current: number) => Math.floor(7 * Math.pow(1.3, Math.log(current/50) / Math.log(1.3)))
             }]
         ]);
     }
@@ -177,6 +187,10 @@ export class UpgradeManager {
             case SkillType.ATTACK_RANGE:
                 // Радиус атаки обновляется через SkillSetStorage при обновлении башни
                 tower.upgrade(); // Вызываем метод upgrade для обновления радиуса атаки
+                break;
+            case SkillType.KNOCKBACK:
+                // Сохраняем новое значение knockback в SkillSetStorage
+                this.stateService.saveState(SkillType.KNOCKBACK, upgrade.currentValue);
                 break;
         }
 

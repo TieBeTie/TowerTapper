@@ -88,8 +88,36 @@ class CollisionManager {
         const skills = this.skillStorage.load();
         const damage = skills.get(SkillType.DAMAGE)?.value || 20;
         
+        // Get knockback value from storage
+        const knockbackForce = skills.get(SkillType.KNOCKBACK)?.value || 50;
+        
         // Уведомляем ProjectileManager о попадании
         this.scene.projectileManager.handleProjectileHit(projectile, enemy);
+        
+        // Apply knockback effect
+        if (knockbackForce > 0) {
+            // Calculate knockback direction (away from tower/projectile source)
+            const knockbackDirection = new Phaser.Math.Vector2(
+                enemy.x - this.scene.tower.x,
+                enemy.y - this.scene.tower.y
+            ).normalize();
+            
+            // Apply force to enemy
+            if (enemy.body) {
+                const body = enemy.body as Phaser.Physics.Arcade.Body;
+                body.setVelocity(
+                    knockbackDirection.x * knockbackForce,
+                    knockbackDirection.y * knockbackForce
+                );
+                
+                // Reset the enemy's normal movement after a short delay
+                this.scene.time.delayedCall(300, () => {
+                    if (enemy.active && enemy.body) {
+                        body.setVelocity(0, 0);
+                    }
+                });
+            }
+        }
         
         // Уничтожаем стрелу
         projectile.destroy();
