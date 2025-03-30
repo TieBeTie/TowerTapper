@@ -53,6 +53,12 @@ class CoinManager {
         this.uiManager.updateCoinCount(coins);
         this.scene.events.emit('updateCoins', coins);
     }
+
+    // Add a new method to update coins directly without animation
+    updateCoinsDirectly(coins: number): void {
+        this.coins_count = coins;
+        this.updateCoins(Math.floor(this.coins_count));
+    }
 }
 
 export default CoinManager; 

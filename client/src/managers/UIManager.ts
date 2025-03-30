@@ -469,6 +469,57 @@ export class UIManager {
         }
     }
 
+    // Add simple notification method
+    showNotification(message: string, color: number = 0xFFFFFF): void {
+        console.log(message);
+        
+        // Create a notification text
+        const fontSize = this.screenManager.getResponsiveFontSize(28);
+        
+        // Get cursor position or use center of screen as fallback
+        const pointer = this.scene.input.activePointer;
+        const x = pointer.x || this.scene.cameras.main.width / 2;
+        const y = pointer.y - 50 || this.scene.cameras.main.height / 2; // Offset above cursor
+        
+        // Convert the color from number to hex string
+        const colorString = '#' + color.toString(16).padStart(6, '0');
+        
+        const notificationText = this.scene.add.text(
+            x,
+            y,
+            message,
+            {
+                fontSize: `${fontSize}px`,
+                fontFamily: 'pixelFont',
+                fontStyle: 'bold',
+                color: '#FFFFFF', // White text
+                stroke: colorString, // Colored stroke based on parameter
+                strokeThickness: 6, // Increased thickness for better visibility
+                align: 'center',
+                shadow: {
+                    offsetX: 2,
+                    offsetY: 2,
+                    color: '#000000',
+                    blur: 5,
+                    stroke: true,
+                    fill: true
+                }
+            }
+        ).setOrigin(0.5).setDepth(5000);
+        
+        // Animation
+        this.scene.tweens.add({
+            targets: notificationText,
+            alpha: 0,
+            y: '-=50',
+            ease: 'Power2',
+            duration: 2000,
+            onComplete: () => {
+                notificationText.destroy();
+            }
+        });
+    }
+
     getCoinCount(): number {
         return this.coinCount;
     }

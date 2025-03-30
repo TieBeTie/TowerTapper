@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import Phaser from 'phaser';
 import GameScene from '../scenes/GameScene';
+import { SkillType } from '../types/SkillType';
+import { SkillStateManager } from './SkillStateManager';
 
 interface WaveConfig {
     number: number;
@@ -20,11 +22,13 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     private enemies: Phaser.GameObjects.Group;
     private scene: GameScene;
     private isWaveInProgress: boolean = false;
+    private skillStateManager: SkillStateManager;
 
     constructor(scene: GameScene) {
         super();
         this.scene = scene;
         this.enemies = scene.add.group();
+        this.skillStateManager = SkillStateManager.getInstance();
         this.initializeWaveConfigs();
         this.setupEventListeners();
     }
@@ -48,6 +52,9 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         }
         
         this.currentWave++;
+        
+        // Apply daily gold bonus at the beginning of each wave
+        this.applyDailyGoldBonus();
         
         // Получаем конфигурацию текущей волны
         const waveConfig = this.getCurrentWaveConfig();
@@ -155,5 +162,26 @@ export class WaveManager extends Phaser.Events.EventEmitter {
 
     private setupEventListeners(): void {
         // Implementation of setupEventListeners method
+    }
+
+    // Add a new method to apply daily gold bonus
+    private applyDailyGoldBonus(): void {
+        const dailyGoldLevel = this.skillStateManager.getState(SkillType.DAILY_GOLD);
+        
+        if (dailyGoldLevel > 0) {
+            // If daily gold bonus level is 1, give 2 gold; if level 2, give 3 gold; and so on
+            const goldBonus = dailyGoldLevel + 1;
+            
+            // Add gold to the player's account
+            const gameScene = this.scene as GameScene;
+            if (gameScene.coinManager) {
+                // Directly add gold without any animations
+                const currentCoins = gameScene.coinManager.getCoinsCount();
+                gameScene.coinManager.updateCoinsDirectly(currentCoins + goldBonus);
+                
+                // Log bonus for debugging
+                console.log(`Applied daily gold bonus: +${goldBonus} coins at wave ${this.currentWave}`);
+            }
+        }
     }
 } 

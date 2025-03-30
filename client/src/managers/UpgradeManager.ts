@@ -148,6 +148,26 @@ export class UpgradeManager {
                 maxValue: 20, // Max 20 health
                 calculateNextValue: (current: number) => Math.floor(current + 1), // +1 per upgrade
                 calculateCost: (current: number) => Math.floor(20 * Math.pow(1.4, current))
+            }],
+            [SkillType.DAILY_GOLD, {
+                type: SkillType.DAILY_GOLD,
+                name: 'Ежедневное золото',
+                description: 'Дает золото в начале каждой волны',
+                cost: 25,
+                currentValue: skills.get(SkillType.DAILY_GOLD)?.value || 0, // 0 initially
+                maxValue: 10, // Max level 10
+                calculateNextValue: (current: number) => current + 1, // +1 level per upgrade
+                calculateCost: (current: number) => Math.floor(25 * Math.pow(1.5, current))
+            }],
+            [SkillType.FREE_UPGRADE, {
+                type: SkillType.FREE_UPGRADE,
+                name: 'Шанс бесплатного улучшения',
+                description: 'Шанс получить бесплатное улучшение',
+                cost: 30,
+                currentValue: skills.get(SkillType.FREE_UPGRADE)?.value || 0, // 0% chance initially
+                maxValue: 50, // Max 50% chance
+                calculateNextValue: (current: number) => current + 5, // +5% per upgrade (0.05)
+                calculateCost: (current: number) => Math.floor(30 * Math.pow(1.3, current / 5))
             }]
         ]);
     }
@@ -181,9 +201,22 @@ export class UpgradeManager {
         const gameScene = this.scene.scene.get('GameScene');
         const coins = (gameScene as any).coinManager?.coins_count || 0;
 
-        if (coins >= cost && upgrade.currentValue < upgrade.maxValue) {
-            // Списываем монеты
-            (gameScene as any).coinManager.coins_count -= cost;
+        // Check for free upgrade chance
+        const freeUpgradeChance = this.stateService.getState(SkillType.FREE_UPGRADE) / 100; // Convert from percentage to decimal
+        const isFreeUpgrade = type !== SkillType.FREE_UPGRADE && Math.random() < freeUpgradeChance;
+
+        if ((coins >= cost || isFreeUpgrade) && upgrade.currentValue < upgrade.maxValue) {
+            // Списываем монеты только если не бесплатное улучшение
+            if (!isFreeUpgrade) {
+                (gameScene as any).coinManager.coins_count -= cost;
+            } else {
+                // Display free upgrade message
+                console.log('Free upgrade!');
+                // If game has a notification system, you could add a notification here
+                if ((gameScene as any).uiManager && (gameScene as any).uiManager.showNotification) {
+                    (gameScene as any).uiManager.showNotification('Free Upgrade!', 0x4CAF50);
+                }
+            }
 
             // Увеличиваем значение
             upgrade.currentValue = upgrade.calculateNextValue(upgrade.currentValue);
@@ -261,6 +294,14 @@ export class UpgradeManager {
             case SkillType.LIFESTEAL_AMOUNT:
                 // Сохраняем силу вампиризма в SkillSetStorage
                 this.stateService.saveState(SkillType.LIFESTEAL_AMOUNT, upgrade.currentValue);
+                break;
+            case SkillType.DAILY_GOLD:
+                // Сохраняем уровень ежедневного золота в SkillSetStorage
+                this.stateService.saveState(SkillType.DAILY_GOLD, upgrade.currentValue);
+                break;
+            case SkillType.FREE_UPGRADE:
+                // Сохраняем шанс бесплатного улучшения в SkillSetStorage
+                this.stateService.saveState(SkillType.FREE_UPGRADE, upgrade.currentValue);
                 break;
         }
 
