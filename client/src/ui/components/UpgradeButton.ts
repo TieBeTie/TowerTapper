@@ -176,16 +176,9 @@ export class UpgradeButton extends UIComponent {
                 return;
             }
             
-            // Создаем невидимую область для взаимодействия
-            const hitArea = new Phaser.Geom.Rectangle(
-                -this.width / 2, 
-                -this.height / 2, 
-                this.width, 
-                this.height
-            );
-            
-            // Делаем интерактивным весь контейнер
-            this.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains)
+            // Делаем интерактивным весь контейнер с учетом координат
+            this.setSize(this.width, this.height);
+            this.setInteractive({ useHandCursor: true })
                 .on('pointerover', () => {
                     if (!this.scene || !this.background) return;
                     const color = this.canAffordUpgrade() ? BUTTON_COLOR_AFFORD_HOVER : BUTTON_COLOR_HOVER;

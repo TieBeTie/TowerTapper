@@ -49,8 +49,8 @@ export class Button extends UIComponent {
         this.add(this.label);
 
         // Make interactive
-        this.background.setInteractive();
-        this.background.on('pointerdown', this.onClick);
+        this.setInteractive(new Phaser.Geom.Rectangle(-this.width/2, -this.height/2, this.width, this.height), Phaser.Geom.Rectangle.Contains);
+        this.on('pointerdown', this.onClick);
 
         // Layout
         this.layout();
