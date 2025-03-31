@@ -425,4 +425,12 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         if (!this.emblemManager) return 0;
         return this.emblemManager.getEmblemCount();
     }
+
+    // Add the updateHealthBar method that Tower tries to call
+    updateHealthBar(currentHP: number, maxHP: number): void {
+        // Update StatsView's HP bar through UIManager
+        if (this.uiManager && this.uiManager.updateHealthDisplay) {
+            this.uiManager.updateHealthDisplay(currentHP, maxHP);
+        }
+    }
 }

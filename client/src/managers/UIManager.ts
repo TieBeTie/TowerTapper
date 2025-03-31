@@ -87,11 +87,11 @@ export class UIManager {
          coinContainer.add(this.coinIcon);
          coinContainer.add(this.coinNumberText);
          
-         // Position the coin text relative to the icon
-         this.coinNumberText.setPosition(this.coinIcon.width * 0.6, 0);
+         // Position the coin text closer to the icon
+         this.coinNumberText.setPosition(reducedIconSize * 0.8, 0);
          
          // Add the container as a single element
-         this.statsView.addElement(coinContainer);
+         this.statsView.addCurrencyElement(coinContainer);
          
          // Create emblem elements
          this.emblemIcon = this.scene.add.image(0, 0, 'emblem_icon');
@@ -110,11 +110,11 @@ export class UIManager {
          emblemContainer.add(this.emblemIcon);
          emblemContainer.add(this.emblemNumberText);
          
-         // Position the emblem text relative to the icon
-         this.emblemNumberText.setPosition(this.emblemIcon.width * 0.6, 0);
+         // Position the emblem text closer to the icon
+         this.emblemNumberText.setPosition(reducedIconSize * 0.8, 0);
          
          // Add the container as a single element
-         this.statsView.addElement(emblemContainer);
+         this.statsView.addCurrencyElement(emblemContainer);
          
          // Update emblem count
          this.updateEmblemCount();
@@ -613,5 +613,12 @@ export class UIManager {
     private onUpdate(): void {
         // Update the emblem count every frame
         this.updateEmblemCount();
+    }
+
+    // Add a method to update the health display in StatsView
+    updateHealthDisplay(currentHP: number, maxHP: number): void {
+        if (this.statsView) {
+            this.statsView.setHP(currentHP, maxHP);
+        }
     }
 }
