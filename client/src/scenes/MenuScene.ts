@@ -92,7 +92,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
 
             // Создаем кнопку "Играть" с использованием адаптивного шрифта
             const fontSize = this.screenManager.getResponsiveFontSize(64);
-            const playButton = this.add.text(center.x, height * 0.7, '►', {
+            const playButton = this.add.text(center.x, height * 0.7, 'Play!', {
                 fontSize: `${fontSize}px`,
                 color: '#ffffff',
                 fontFamily: 'pixelFont'
@@ -123,6 +123,40 @@ export default class MenuScene extends Phaser.Scene implements IScene {
                     
                     this.startGame();
                 });
+                
+            // Add Permanent Upgrades Shop button
+            const shopFontSize = this.screenManager.getResponsiveFontSize(48);
+            const shopButton = this.add.text(center.x, height * 0.8, 'Permanent Upgrades Shop', {
+                fontSize: `${shopFontSize}px`,
+                color: '#ffffff',
+                fontFamily: 'pixelFont'
+            }).setOrigin(0.5);
+            
+            // Add interactivity to shop button
+            shopButton.setInteractive()
+                .on('pointerover', () => {
+                    shopButton.setScale(1.2);
+                })
+                .on('pointerout', () => {
+                    shopButton.setScale(1);
+                })
+                .on('pointerdown', () => {
+                    try {
+                        // On iOS, start playing music on first interaction
+                        if (isIOS && !this.audioManager.isMusicPlaying()) {
+                            this.audioManager.playMusic();
+                        }
+                        
+                        // Play sound before opening the shop (if available)
+                        if (this.audioManager.hasSoundCached('playButton')) {
+                            this.audioManager.playSound('playButton');
+                        }
+                    } catch (err) {
+                        console.error('Error playing audio on button click:', err);
+                    }
+                    
+                    this.openPermanentUpgradesShop();
+                });
         };
 
         // Use a longer delay for iOS to ensure assets are loaded
@@ -148,10 +182,10 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             monster.setPosition(this.screenManager.getScreenCenter().x, this.screenManager.getScreenCenter().y);
         }
         
-        // Находим и обновляем размер кнопки
+        // Находим и обновляем размер кнопки Play
         const playButton = this.children.list.find(child => 
             child instanceof Phaser.GameObjects.Text && 
-            (child as Phaser.GameObjects.Text).text === '►'
+            (child as Phaser.GameObjects.Text).text === 'Play!'
         ) as Phaser.GameObjects.Text;
         
         if (playButton) {
@@ -160,6 +194,21 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             playButton.setPosition(
                 this.screenManager.getScreenCenter().x,
                 this.screenManager.getScreenSize().height * 0.7
+            );
+        }
+        
+        // Находим и обновляем размер кнопки Shop
+        const shopButton = this.children.list.find(child => 
+            child instanceof Phaser.GameObjects.Text && 
+            (child as Phaser.GameObjects.Text).text === 'Permanent Upgrades Shop'
+        ) as Phaser.GameObjects.Text;
+        
+        if (shopButton) {
+            const fontSize = this.screenManager.getResponsiveFontSize(48);
+            shopButton.setFontSize(fontSize);
+            shopButton.setPosition(
+                this.screenManager.getScreenCenter().x,
+                this.screenManager.getScreenSize().height * 0.8
             );
         }
     }
@@ -208,7 +257,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         // Находим кнопку "Играть" и анимируем её
         const playButton = this.children.list.find(child => 
             child instanceof Phaser.GameObjects.Text && 
-            (child as Phaser.GameObjects.Text).text === '►'
+            (child as Phaser.GameObjects.Text).text === 'Play!'
         ) as Phaser.GameObjects.Text;
 
         if (playButton) {
@@ -224,6 +273,28 @@ export default class MenuScene extends Phaser.Scene implements IScene {
                 }
             });
         }
+    }
+    
+    private openPermanentUpgradesShop(): void {
+        // Создаем затемнение через ScreenManager
+        const fadeRect = this.screenManager.createFadeOverlay();
+        
+        // Store reference to scene for clean completion
+        const currentScene = this;
+
+        // Анимируем затемнение
+        this.tweens.add({
+            targets: fadeRect,
+            alpha: 1,
+            duration: 500,
+            ease: 'Power2',
+            onComplete: function() {
+                // Start the shop scene
+                currentScene.time.delayedCall(600, () => {
+                    currentScene.scene.start('PermanentUpgradesShopScene');
+                });
+            }
+        });
     }
 
     destroy(): void {
