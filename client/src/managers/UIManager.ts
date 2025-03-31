@@ -514,6 +514,27 @@ export class UIManager {
         if (this.coinNumberText) {
             this.coinNumberText.setText(coins.toString());
         }
+        
+        // Update StatsView with new coin amount
+        if (this.statsView) {
+            this.statsView.setCurrency(coins);
+        }
+        
+        // Trigger event for buttons to update their state
+        this.scene.events.emit('updateCoins', coins);
+    }
+
+    // Additional method used by the UpgradeButton
+    public updateCoinCount(amount: number): void {
+        this.coinCount = amount;
+        if (this.coinNumberText) {
+            this.coinNumberText.setText(amount.toString());
+        }
+        
+        // Update StatsView with new coin amount
+        if (this.statsView) {
+            this.statsView.setCurrency(amount);
+        }
     }
 
     // Add simple notification method
