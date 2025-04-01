@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import EnemyFactory from '../factories/EnemyFactory';
 import Enemy from '../objects/enemies/Enemy';
-import GoldCollectionEffectFromEnemyManager from './GoldManager';
+import GoldManager from './GoldManager';
 import { UIManager } from './UIManager';
 import { WaveManager } from './WaveManager';
 import Tower from '../objects/towers/Tower';
@@ -12,12 +12,12 @@ import { SkillStateManager } from '../managers/SkillStateManager';
 class EnemyManager {
     scene: Phaser.Scene;
     enemies: Phaser.Physics.Arcade.Group;
-    private goldCollectionEffectFromEnemy: GoldCollectionEffectFromEnemyManager;
+    private goldCollectionEffectFromEnemy: GoldManager;
     private waveManager: WaveManager;
     private spawnTimer: Phaser.Time.TimerEvent | null = null;
     private skillStateManager: SkillStateManager;
 
-    constructor(scene: Phaser.Scene, uiManager: UIManager, goldCollectionEffectFromEnemy: GoldCollectionEffectFromEnemyManager, waveManager: WaveManager) {
+    constructor(scene: Phaser.Scene, uiManager: UIManager, goldCollectionEffectFromEnemy: GoldManager, waveManager: WaveManager) {
         this.scene = scene;
         this.enemies = this.scene.physics.add.group({
             classType: Enemy,
@@ -91,10 +91,33 @@ class EnemyManager {
                 });
             }
             
-            // Generate random enemy position
+            // Определяем сторону появления врага (0 = сверху, 1 = справа, 2 = снизу, 3 = слева)
+            const spawnSide = Phaser.Math.Between(0, 3);
+            let xPosition = 0;
+            let yPosition = 0;
+            
+            // Выбираем координаты в зависимости от стороны
+            switch (spawnSide) {
+                case 0: // Сверху
+                    xPosition = Phaser.Math.Between(50, this.scene.scale.width - 50);
+                    yPosition = 0;
+                    break;
+                case 1: // Справа
+                    xPosition = this.scene.scale.width;
+                    yPosition = Phaser.Math.Between(50, this.scene.scale.height - 50);
+                    break;
+                case 2: // Снизу
+                    xPosition = Phaser.Math.Between(50, this.scene.scale.width - 50);
+                    yPosition = this.scene.scale.height;
+                    break;
+                case 3: // Слева
+                    xPosition = 0;
+                    yPosition = Phaser.Math.Between(50, this.scene.scale.height - 50);
+                    break;
+            }
+            
+            // Generate random enemy type
             const enemyType = Phaser.Math.RND.pick(['orc', 'goblin']) as 'orc' | 'goblin';
-            const xPosition = Phaser.Math.Between(50, this.scene.scale.width - 50);
-            const yPosition = Phaser.Math.RND.pick([0, this.scene.scale.height - 100]) as number;
 
             // Create the enemy
             const enemy = EnemyFactory.createEnemy(enemyType, this.scene, xPosition, yPosition, this.waveManager);

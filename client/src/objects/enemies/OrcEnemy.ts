@@ -4,7 +4,7 @@ import Enemy from './Enemy';
 class OrcEnemy extends Enemy {
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string, cost: number = 200) {
         super(scene, x, y, texture, cost);
-        this.speed = 200;
+        this.speed = 100;
         // Не переопределяем здоровье здесь, так как оно будет установлено WaveManager через setHealth
         // Additional initialization specific to Orc
     }

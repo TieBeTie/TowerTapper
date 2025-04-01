@@ -153,14 +153,14 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
                 -containerWidth * 0.2,
                 -fontSize * 0.6,
                 `${pack.amount} Emblems`,
-                { fontFamily: 'Arial', fontSize: fontSize, color: '#FFFFFF' }
+                { fontFamily: 'pixelFont', fontSize: fontSize, color: '#FFFFFF' }
             ).setOrigin(0, 0.5);
             
             const descriptionText = this.add.text(
                 -containerWidth * 0.2,
                 fontSize * 0.6,
                 pack.description,
-                { fontFamily: 'Arial', fontSize: fontSize * 0.8, color: '#CCCCCC' }
+                { fontFamily: 'pixelFont', fontSize: fontSize * 0.8, color: '#CCCCCC' }
             ).setOrigin(0, 0.5);
             
             container.add(packageText);
@@ -171,7 +171,7 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
                 containerWidth * 0.25,
                 0,
                 `${pack.starsCost} ⭐`,
-                { fontFamily: 'Arial', fontSize: fontSize, color: '#FFCC00' }
+                { fontFamily: 'pixelFont', fontSize: fontSize, color: '#FFCC00' }
             ).setOrigin(0.5);
             
             container.add(priceText);

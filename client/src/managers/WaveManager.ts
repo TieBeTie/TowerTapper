@@ -34,13 +34,13 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     }
 
     private initializeWaveConfigs(): void {
-        // Конфигурация волн. Можно настроить под ваши требования
+        // Конфигурация волн с одинаковой продолжительностью
         for (let i = 1; i <= 10; i++) {
             this.waveConfigs.push({
                 number: i,
                 enemyHealthMultiplier: 1 + (i - 1) * 0.2, // Увеличиваем здоровье на 20% с каждой волной
                 enemyCount: 5 + i * 2, // Увеличиваем количество врагов в волне
-                spawnInterval: 500 // Интервал спавна в мс (постоянный)
+                spawnInterval: 2000 // Интервал спавна в мс (увеличен для более равномерного распределения)
             });
         }
     }
