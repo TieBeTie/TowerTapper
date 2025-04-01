@@ -34,6 +34,7 @@ declare global {
         openInvoice: (url: string, callback?: (status: 'paid' | 'cancelled' | 'failed' | 'pending') => void) => void;
         showAlert: (message: string, callback?: () => void) => void;
         showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void;
+        requestStars: (amount: number, callback: (success: boolean) => void) => void;
         MainButton: {
             text: string;
             color: string;

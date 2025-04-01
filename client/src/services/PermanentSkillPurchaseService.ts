@@ -1,7 +1,7 @@
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { EmblemManager } from '../managers/EmblemManager';
 import AudioManager from '../managers/AudioManager';
-import { SkillType, CurrencyType } from '../types/SkillType';
+import { SkillType, CurrencyType, SkillInfo } from '../types/SkillType';
 
 export class PermanentSkillPurchaseService {
     constructor(
@@ -45,7 +45,12 @@ export class PermanentSkillPurchaseService {
             
             // Воспроизводим звук покупки
             try {
-                this.scene.sound.play('purchase_sound');
+                if (this.audioManager.hasSoundCached('purchase_sound')) {
+                    this.audioManager.playSound('purchase_sound');
+                } else if (this.audioManager.hasSoundCached('upgradeButton')) {
+                    // Fallback to upgradeButton sound if purchase_sound is not available
+                    this.audioManager.playSound('upgradeButton');
+                }
             } catch (err) {
                 console.error('Error playing purchase sound:', err);
             }
@@ -56,5 +61,9 @@ export class PermanentSkillPurchaseService {
     
     public getEmblemCount(): number {
         return this.emblemManager.getEmblemCount();
+    }
+    
+    public getUpdatedSkillList(): SkillInfo[] {
+        return this.upgradeManager.getAvailableSkills();
     }
 } 

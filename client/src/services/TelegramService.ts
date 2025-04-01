@@ -115,27 +115,21 @@ export class TelegramService {
                         return;
                     }
 
-                    // Create a short unique invoice ID
-                    const invoiceId = Math.random().toString(36).substring(2, 10);
-                    
-                    // Generate a backend API URL that would create an invoice
-                    // In a real implementation, this would call your server endpoint
-                    const invoiceUrl = `https://t.me/payments/${invoiceId}?amount=${starCost}&emblems=${emblemAmount}`;
-                    
                     try {
-                        // At this point, this.webApp is guaranteed to be non-null because of the check at the beginning of the method
+                        // Use Telegram's native Stars API
                         const webApp = this.webApp as TelegramWebApp;
-                        webApp.openInvoice(invoiceUrl, (status) => {
-                            if (status === 'paid') {
+                        webApp.requestStars(starCost, (success) => {
+                            if (success) {
                                 console.log(`Purchase successful: ${emblemAmount} emblems for ${starCost} stars`);
                                 resolve(true);
                             } else {
-                                console.log(`Purchase failed or cancelled with status: ${status}`);
+                                console.log('Purchase failed or cancelled');
                                 resolve(false);
                             }
                         });
                     } catch (error) {
-                        console.error('Error opening invoice:', error);
+                        console.error('Error processing stars purchase:', error);
+                        this.showAlert('Error processing payment. Please try again later.');
                         reject(error);
                     }
                 }

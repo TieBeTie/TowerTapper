@@ -61,8 +61,10 @@ export class PermanentSkillList {
         
         // Если успешно, обновляем интерфейс
         if (purchased) {
-            // В реальном приложении здесь должен быть механизм для обновления всей сцены
-            // или получения новых данных о доступных навыках
+            // Получаем текущую категорию и перезагружаем список навыков
+            const currentSkills = this.purchaseService.getUpdatedSkillList();
+            this.clearSkillCards();
+            this.create(currentSkills);
         }
     }
     

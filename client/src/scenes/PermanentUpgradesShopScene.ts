@@ -218,6 +218,11 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         );
         this.shopHeader.create();
         
+        // Добавляем слушатель события обновления эмблем
+        this.events.on('updateEmblems', () => {
+            this.shopHeader.updateEmblemCount();
+        });
+        
         // Создаем навигацию по категориям
         this.shopNavigation = new PermanentShopNavigation(
             this,
@@ -478,6 +483,9 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
             }
         });
         this.backgroundEffects = [];
+        
+        // Удаляем обработчики событий
+        this.events.off('updateEmblems');
     }
     
     /**
