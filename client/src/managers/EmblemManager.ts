@@ -44,6 +44,11 @@ export class EmblemManager {
         this.notifyUpdate();
     }
     
+    // Alias for removeEmblems to maintain compatibility with UpgradeManager
+    public deductEmblems(amount: number): void {
+        this.removeEmblems(amount);
+    }
+    
     // Reset emblem count
     public resetEmblems(): void {
         this.emblemCount = 0;
