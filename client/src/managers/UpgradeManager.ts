@@ -288,7 +288,6 @@ export class UpgradeManager {
         switch (type) {
             case SkillType.MAX_HEALTH:
                 tower.maxHealth = newValue;
-                tower.health = tower.maxHealth;
                 break;
             case SkillType.DEFENSE:
                 tower.defense = newValue;

@@ -39,7 +39,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         const skills = this.skillStorage.load();
 
         // Initialize values from storage or use defaults if not found
-        this.health = skills.get(SkillType.MAX_HEALTH)?.value || 500;
+        this.health = skills.get(SkillType.MAX_HEALTH)?.value || 200;
         this.maxHealth = this.health;
         this.defense = skills.get(SkillType.DEFENSE)?.value || 0;
         this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || 0;
@@ -123,8 +123,6 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             console.error('Error updating attack range visual:', e);
         }
         
-        this.health = this.maxHealth;
-
         if (this.regeneration > 0) {
             this.startRegeneration();
         }

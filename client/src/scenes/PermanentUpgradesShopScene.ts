@@ -250,8 +250,8 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
             this.skillList.destroy();
         }
         
-        // Уничтожаем кнопку возврата
-        if (this.backButton && this.backButton.active) {
+        // Удаляем кнопку возврата
+        if (this.backButton) {
             this.backButton.destroy();
         }
     }

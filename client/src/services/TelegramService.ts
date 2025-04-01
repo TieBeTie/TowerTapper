@@ -97,6 +97,93 @@ export class TelegramService {
         }
     }
 
+    // Purchase emblems using Telegram stars
+    public purchaseEmblems(emblemAmount: number, starCost: number): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            if (!this.webApp) {
+                console.error('Telegram WebApp not available');
+                reject(new Error('Telegram WebApp not available'));
+                return;
+            }
+
+            // Show confirmation dialog
+            this.webApp.showConfirm(
+                `Do you want to purchase ${emblemAmount} emblems for ${starCost} stars?`,
+                (confirmed) => {
+                    if (!confirmed) {
+                        resolve(false);
+                        return;
+                    }
+
+                    // Create a short unique invoice ID
+                    const invoiceId = Math.random().toString(36).substring(2, 10);
+                    
+                    // Generate a backend API URL that would create an invoice
+                    // In a real implementation, this would call your server endpoint
+                    const invoiceUrl = `https://t.me/payments/${invoiceId}?amount=${starCost}&emblems=${emblemAmount}`;
+                    
+                    try {
+                        // At this point, this.webApp is guaranteed to be non-null because of the check at the beginning of the method
+                        const webApp = this.webApp as TelegramWebApp;
+                        webApp.openInvoice(invoiceUrl, (status) => {
+                            if (status === 'paid') {
+                                console.log(`Purchase successful: ${emblemAmount} emblems for ${starCost} stars`);
+                                resolve(true);
+                            } else {
+                                console.log(`Purchase failed or cancelled with status: ${status}`);
+                                resolve(false);
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Error opening invoice:', error);
+                        reject(error);
+                    }
+                }
+            );
+        });
+    }
+
+    // Show a popup message with buttons
+    public showPopup(message: string, title?: string, buttons?: Array<{
+        id?: string;
+        type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
+        text: string;
+    }>): Promise<string> {
+        return new Promise((resolve) => {
+            if (!this.webApp) {
+                console.error('Telegram WebApp not available');
+                resolve('error');
+                return;
+            }
+
+            this.webApp.showPopup(
+                {
+                    title,
+                    message,
+                    buttons
+                },
+                (buttonId) => {
+                    resolve(buttonId);
+                }
+            );
+        });
+    }
+
+    // Show a simple alert
+    public showAlert(message: string): Promise<void> {
+        return new Promise((resolve) => {
+            if (!this.webApp) {
+                console.error('Telegram WebApp not available');
+                resolve();
+                return;
+            }
+
+            this.webApp?.showAlert(message, () => {
+                resolve();
+            });
+        });
+    }
+
     // Добавить обработчик изменения viewport
     public onViewportChange(callback: () => void): void {
         this.viewportChangeCallbacks.push(callback);

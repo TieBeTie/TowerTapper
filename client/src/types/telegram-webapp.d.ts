@@ -1,5 +1,5 @@
 declare global {
-    type TelegramEventType = 'viewportChanged' | 'themeChanged' | 'mainButtonClicked';
+    type TelegramEventType = 'viewportChanged' | 'themeChanged' | 'mainButtonClicked' | 'popupClosed' | 'paymentFormClosed';
 
     interface TelegramWebApp {
         ready: () => void;
@@ -22,6 +22,35 @@ declare global {
         viewportWidth: number;
         isExpanded: boolean;
         expand: () => void;
+        showPopup: (params: {
+            title?: string;
+            message: string;
+            buttons?: Array<{
+                id?: string;
+                type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
+                text: string;
+            }>;
+        }, callback?: (buttonId: string) => void) => void;
+        openInvoice: (url: string, callback?: (status: 'paid' | 'cancelled' | 'failed' | 'pending') => void) => void;
+        showAlert: (message: string, callback?: () => void) => void;
+        showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void;
+        MainButton: {
+            text: string;
+            color: string;
+            textColor: string;
+            isVisible: boolean;
+            isActive: boolean;
+            isProgressVisible: boolean;
+            setText: (text: string) => void;
+            onClick: (callback: () => void) => void;
+            offClick: (callback: () => void) => void;
+            show: () => void;
+            hide: () => void;
+            enable: () => void;
+            disable: () => void;
+            showProgress: (leaveActive?: boolean) => void;
+            hideProgress: () => void;
+        };
     }
 
     interface Window {

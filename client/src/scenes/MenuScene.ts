@@ -3,11 +3,13 @@ import AudioManager from '../managers/AudioManager';
 import { IScene } from '../types/IScene';
 import { ScreenManager } from '../managers/ScreenManager';
 import { UIManager } from '../managers/UIManager';
+import { EmblemManager } from '../managers/EmblemManager';
 
 export default class MenuScene extends Phaser.Scene implements IScene {
     private audioManager!: AudioManager;
     public screenManager!: ScreenManager;
     public uiManager!: UIManager;
+    private emblemManager!: EmblemManager;
 
     constructor() {
         super({ key: 'MenuScene' });
@@ -20,6 +22,9 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     create(): void {
         // Initialize ScreenManager
         this.screenManager = new ScreenManager(this);
+        
+        // Initialize EmblemManager
+        this.emblemManager = EmblemManager.getInstance();
         
         // Check if we're running on iOS for special handling
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
@@ -91,22 +96,34 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             }
 
             // Создаем кнопку "Играть" с использованием адаптивного шрифта
-            const fontSize = this.screenManager.getResponsiveFontSize(64);
-            const playButton = this.add.text(center.x, height * 0.6, '►', {
-                fontSize: `${fontSize}px`,
-                color: '#ffffff',
-                fontFamily: 'pixelFont'
-            }).setOrigin(0.5);
+            const fontSize = this.screenManager.getLargeFontSize();
+            const playButton = this.screenManager.createText(
+                center.x, 
+                height * 0.6, 
+                'Play', 
+                fontSize,
+                '#ffffff'
+            );
 
             // Добавляем кнопку для перехода в магазин постоянных улучшений
             const upgradesButtonFontSize = this.screenManager.getResponsiveFontSize(32);
-            const upgradesButton = this.add.text(center.x, height * 0.75, 'Permanent Upgrades', {
-                fontSize: `${upgradesButtonFontSize}px`,
-                color: '#ffcc00',
-                fontFamily: 'pixelFont',
-                stroke: '#000000',
-                strokeThickness: 2
-            }).setOrigin(0.5);
+            const upgradesButton = this.screenManager.createText(
+                center.x, 
+                height * 0.75, 
+                'Permanent Upgrades', 
+                upgradesButtonFontSize,
+                '#ffcc00'
+            );
+            
+            // Добавляем кнопку для пополнения эмблем
+            const replenishButtonFontSize = this.screenManager.getResponsiveFontSize(32);
+            const replenishButton = this.screenManager.createText(
+                center.x, 
+                height * 0.85, 
+                'Replenish Emblems', 
+                replenishButtonFontSize,
+                '#ffcc00'
+            );
 
             // Добавляем интерактивность кнопке магазина улучшений
             upgradesButton.setInteractive()
@@ -127,6 +144,28 @@ export default class MenuScene extends Phaser.Scene implements IScene {
                     }
                     
                     this.openPermanentUpgradesShop();
+                });
+
+            // Добавляем интерактивность кнопке пополнения эмблем
+            replenishButton.setInteractive()
+                .on('pointerover', () => {
+                    replenishButton.setScale(1.1);
+                })
+                .on('pointerout', () => {
+                    replenishButton.setScale(1);
+                })
+                .on('pointerdown', () => {
+                    try {
+                        // Проигрываем звук нажатия при наличии
+                        if (this.audioManager.hasSoundCached('playButton')) {
+                            this.audioManager.playSound('playButton');
+                        }
+                        
+                        // Navigate to emblems shop scene
+                        this.openEmblemsShop();
+                    } catch (err) {
+                        console.error('Error on replenish emblems button click:', err);
+                    }
                 });
 
             // Добавляем интерактивность кнопке
@@ -182,11 +221,11 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         // Находим и обновляем размер кнопки
         const playButton = this.children.list.find(child => 
             child instanceof Phaser.GameObjects.Text && 
-            (child as Phaser.GameObjects.Text).text === '►'
+            (child as Phaser.GameObjects.Text).text === 'Play'
         ) as Phaser.GameObjects.Text;
         
         if (playButton) {
-            const fontSize = this.screenManager.getResponsiveFontSize(64);
+            const fontSize = this.screenManager.getLargeFontSize();
             playButton.setFontSize(fontSize);
             playButton.setPosition(
                 this.screenManager.getScreenCenter().x,
@@ -206,6 +245,21 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             upgradesButton.setPosition(
                 this.screenManager.getScreenCenter().x,
                 this.screenManager.getScreenSize().height * 0.75
+            );
+        }
+
+        // Находим и обновляем размер кнопки для пополнения эмблем
+        const replenishButton = this.children.list.find(child => 
+            child instanceof Phaser.GameObjects.Text && 
+            (child as Phaser.GameObjects.Text).text === 'Replenish Emblems'
+        ) as Phaser.GameObjects.Text;
+        
+        if (replenishButton) {
+            const replenishButtonFontSize = this.screenManager.getResponsiveFontSize(32);
+            replenishButton.setFontSize(replenishButtonFontSize);
+            replenishButton.setPosition(
+                this.screenManager.getScreenCenter().x,
+                this.screenManager.getScreenSize().height * 0.85
             );
         }
     }
@@ -254,7 +308,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         // Находим кнопку "Играть" и анимируем её
         const playButton = this.children.list.find(child => 
             child instanceof Phaser.GameObjects.Text && 
-            (child as Phaser.GameObjects.Text).text === '►'
+            (child as Phaser.GameObjects.Text).text === 'Play'
         ) as Phaser.GameObjects.Text;
 
         if (playButton) {
@@ -289,6 +343,28 @@ export default class MenuScene extends Phaser.Scene implements IScene {
                 // Переходим в сцену магазина постоянных улучшений
                 currentScene.time.delayedCall(600, () => {
                     currentScene.scene.start('PermanentUpgradesShopScene');
+                });
+            }
+        });
+    }
+
+    private openEmblemsShop(): void {
+        // Создаем затемнение через ScreenManager
+        const fadeRect = this.screenManager.createFadeOverlay();
+        
+        // Store reference to scene for clean completion
+        const currentScene = this;
+
+        // Анимируем затемнение
+        this.tweens.add({
+            targets: fadeRect,
+            alpha: 1,
+            duration: 500,
+            ease: 'Power2',
+            onComplete: function() {
+                // Переходим в сцену магазина эмблем
+                currentScene.time.delayedCall(600, () => {
+                    currentScene.scene.start('EmblemsShopScene');
                 });
             }
         });
