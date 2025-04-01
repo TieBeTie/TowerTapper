@@ -1,5 +1,5 @@
 import { UIComponent } from '../UIComponent';
-import { SkillType } from '../../types/SkillType';
+import { SkillType, CurrencyType } from '../../types/SkillType';
 import { UpgradeManager } from '../../managers/UpgradeManager';
 
 // Константы для прозрачности
@@ -67,7 +67,7 @@ export class UpgradeButton extends UIComponent {
         this.setDepth(2000);
 
         // Подписываемся на событие обновления монет
-        this.scene.events.on('updateCoins', this.updateUI, this);
+        this.scene.events.on('updateGold', this.updateUI, this);
         
         // Use only the specific event name for upgrade buttons to avoid recursive emissions
         this.scene.events.on('upgradeButtonsVisibility', this.forceVisibility, this);
@@ -149,7 +149,7 @@ export class UpgradeButton extends UIComponent {
         this.costIcon = this.scene.add.image(
             padding,
             this.fontSizeValue * UpgradeButton.LEVEL_TEXT_OFFSET_RATIO,
-            'coin'
+            'gold'
         )
         .setDisplaySize(
             this.fontSizeValue * UpgradeButton.COST_ICON_SIZE_RATIO,
@@ -231,23 +231,33 @@ export class UpgradeButton extends UIComponent {
         try {
             // Safety check for scene existence
             if (!this.scene) {
+                console.warn('UpgradeButton: scene не существует');
                 return false;
             }
             
-            const cost = this.upgradeManagerValue.getUpgradeCost(this.skillTypeValue);
+            const cost = this.upgradeManagerValue.getSkillCost(this.skillTypeValue, CurrencyType.GOLD);
             
             // Check if the scene has a scene property and it's properly initialized
             if (!this.scene.scene || typeof this.scene.scene.get !== 'function') {
+                console.warn('UpgradeButton: scene.scene не существует или get не является функцией');
                 return false;
             }
             
             const gameScene = this.scene.scene.get('GameScene');
             if (!gameScene) {
+                console.warn('UpgradeButton: gameScene не существует');
                 return false;
             }
             
-            const coins = (gameScene as any).coinManager?.coins_count || 0;
-            return coins >= cost;
+            const gold = (gameScene as any).goldManager?.gold_count || 0;
+            const canAfford = gold >= cost;
+            
+            console.log(`UpgradeButton: Проверка доступности для ${this.skillTypeValue}:
+                - Стоимость: ${cost}
+                - Монеты: ${gold}
+                - Доступно: ${canAfford}`);
+            
+            return canAfford;
         } catch (error) {
             console.warn('Error in canAffordUpgrade:', error);
             return false;
@@ -304,18 +314,27 @@ export class UpgradeButton extends UIComponent {
         try {
             // Safety check for scene and upgradeManager
             if (!this.scene || !this.upgradeManagerValue) {
+                console.warn('UpgradeButton: scene или upgradeManager не существует');
                 return;
             }
             
-            const success = this.upgradeManagerValue.purchaseUpgrade(this.skillTypeValue);
+            console.log(`UpgradeButton: Попытка покупки ${this.skillTypeValue} за GOLD`);
+            
+            // Теперь явно указываем, что покупаем за золото
+            const success = this.upgradeManagerValue.purchaseUpgrade(this.skillTypeValue, CurrencyType.GOLD);
+            
+            console.log(`UpgradeButton: Результат покупки: ${success ? 'успешно' : 'неудачно'}`);
+            
             if (success) {
                 // Check if scene.scene exists and has the get method
                 if (!this.scene.scene || typeof this.scene.scene.get !== 'function') {
+                    console.warn('UpgradeButton: scene.scene не существует или get не является функцией');
                     return;
                 }
                 
                 const gameScene = this.scene.scene.get('GameScene');
                 if (!gameScene) {
+                    console.warn('UpgradeButton: gameScene не существует');
                     return;
                 }
                 
@@ -328,11 +347,12 @@ export class UpgradeButton extends UIComponent {
                 // Update tower
                 (gameScene as any).tower?.upgrade();
                 
-                // Update coins immediately
-                const currentCoins = (gameScene as any).coinManager?.coins_count || 0;
+                // Update gold immediately
+                const currentGold = (gameScene as any).goldManager?.gold_count || 0;
                 const uiManager = (gameScene as any).uiManager;
                 if (uiManager) {
-                    uiManager.updateCoinCount(currentCoins);
+                    uiManager.updateGoldCount(currentGold);
+                    console.log(`UpgradeButton: UI обновлен, текущее количество монет: ${currentGold}`);
                 }
 
                 // Update button UI
@@ -352,10 +372,10 @@ export class UpgradeButton extends UIComponent {
             
             // Get current upgrade info from the manager
             const currentValue = this.upgradeManagerValue.getState(this.skillTypeValue);
-            const cost = this.upgradeManagerValue.getUpgradeCost(this.skillTypeValue);
+            const cost = this.upgradeManagerValue.getSkillCost(this.skillTypeValue, CurrencyType.GOLD);
             
             // Обновляем текст уровня и стоимости
-            this.levelText.setText(`Level ${currentValue}`);
+            this.levelText.setText(`Amount ${currentValue}`);
             this.costText.setText(`${cost}`);
             
             // Обновляем цвет кнопки в зависимости от доступности улучшения

@@ -7,7 +7,7 @@ type Player struct {
 	ID         int64     `json:"id"`
 	TelegramID int64     `json:"telegram_id"`
 	Username   string    `json:"username"`
-	Coins      int64     `json:"coins"`
+	Gold       int64     `json:"gold"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }

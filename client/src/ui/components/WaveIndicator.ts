@@ -3,61 +3,86 @@ import { WaveManager } from '../../managers/WaveManager';
 import { ScreenManager } from '../../managers/ScreenManager';
 
 export class WaveIndicator {
-    private scene: Phaser.Scene;
-    private waveManager: WaveManager;
-    private waveText: Phaser.GameObjects.Text;
-    private enemiesText: Phaser.GameObjects.Text;
-    private statusText: Phaser.GameObjects.Text;
-    private screenManager: ScreenManager;
-    private x: number;
-    private y: number;
+    private scene!: Phaser.Scene;
+    private waveManager!: WaveManager;
+    private waveText!: Phaser.GameObjects.Text;
+    private enemiesText!: Phaser.GameObjects.Text;
+    private statusText!: Phaser.GameObjects.Text;
+    private screenManager!: ScreenManager;
+    private x: number = 0;
+    private y: number = 0;
     
     constructor(scene: Phaser.Scene, waveManager: WaveManager, x: number, y: number, screenManager?: ScreenManager) {
-        this.scene = scene;
-        this.waveManager = waveManager;
-        this.x = x;
-        this.y = y;
-        this.screenManager = screenManager || new ScreenManager(scene);
-        
-        // Create UI elements with responsive font sizes
-        
-        // Calculate spacing based on font size
-        const spacing = this.screenManager.getResponsivePadding(40);
-        
-        // Создаем UI элементы с высоким значением depth для отображения поверх других объектов
-        this.waveText = this.scene.add.text(x, y, 'Wave: 1', { 
-            fontSize: `${this.screenManager.getMediumFontSize()}px`, 
-            color: '#ffffff',
-            fontFamily: 'pixelFont',
-            stroke: '#000000',
-            strokeThickness: 4
-        }).setDepth(100);
-        
-        this.enemiesText = this.scene.add.text(x, y + spacing * 0.8, 'Enemies: 0', { 
-            fontSize: `${this.screenManager.getSmallFontSize()}px`, 
-            color: '#ffffff',
-            fontFamily: 'pixelFont',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setDepth(100);
-        
-        this.statusText = this.scene.add.text(x, y + spacing * 1.6, '', { 
-            fontSize: `${this.screenManager.getSmallFontSize()}px`, 
-            color: '#ffcc00',
-            fontFamily: 'pixelFont',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setDepth(100);
-        
-        // Подписываемся на события
-        this.waveManager.on('waveStart', () => this.onWaveStart());
-        this.waveManager.on('waveComplete', () => this.onWaveComplete());
-        
-        // Subscribe to screen resize events
-        this.scene.events.on('screenResize', this.handleScreenResize, this);
-        
-        // Первоначальное обновление
-        this.updateUI();
+        try {
+            if (!scene || !waveManager) {
+                console.error('WaveIndicator: не переданы необходимые параметры в конструктор');
+                return;
+            }
+            
+            this.scene = scene;
+            this.waveManager = waveManager;
+            this.x = x;
+            this.y = y;
+            this.screenManager = screenManager || new ScreenManager(scene);
+            
+            // Create UI elements with responsive font sizes
+            this.createUIElements();
+            
+            // Регистрируем обработчики событий с привязкой контекста (this)
+            const boundOnWaveStart = this.onWaveStart.bind(this);
+            const boundOnWaveComplete = this.onWaveComplete.bind(this);
+            
+            // Подписываемся на события
+            this.waveManager.on('waveStart', boundOnWaveStart);
+            this.waveManager.on('waveComplete', boundOnWaveComplete);
+            
+            // Subscribe to screen resize events
+            this.scene.events.on('screenResize', this.handleScreenResize, this);
+            
+            // Первоначальное обновление
+            this.safeUpdateUI();
+        } catch (error) {
+            console.error('Ошибка в конструкторе WaveIndicator:', error);
+        }
+    }
+    
+    private createUIElements(): void {
+        try {
+            // Calculate spacing based on font size
+            const spacing = this.screenManager.getResponsivePadding(40);
+            
+            // Создаем UI элементы с высоким значением depth для отображения поверх других объектов
+            this.waveText = this.scene.add.text(this.x, this.y, 'Wave: 1', { 
+                fontSize: `${this.screenManager.getMediumFontSize()}px`, 
+                color: '#ffffff',
+                fontFamily: 'pixelFont',
+                stroke: '#000000',
+                strokeThickness: 4
+            }).setDepth(100);
+            
+            this.enemiesText = this.scene.add.text(this.x, this.y + spacing * 0.8, 'Enemies: 0', { 
+                fontSize: `${this.screenManager.getSmallFontSize()}px`, 
+                color: '#ffffff',
+                fontFamily: 'pixelFont',
+                stroke: '#000000',
+                strokeThickness: 3
+            }).setDepth(100);
+            
+            this.statusText = this.scene.add.text(this.x, this.y + spacing * 1.6, '', { 
+                fontSize: `${this.screenManager.getSmallFontSize()}px`, 
+                color: '#ffcc00',
+                fontFamily: 'pixelFont',
+                stroke: '#000000',
+                strokeThickness: 3
+            }).setDepth(100);
+            
+            // Проверяем, что все элементы созданы успешно
+            if (!this.waveText || !this.enemiesText || !this.statusText) {
+                console.error('Не удалось создать текстовые элементы WaveIndicator');
+            }
+        } catch (error) {
+            console.error('Ошибка при создании UI элементов WaveIndicator:', error);
+        }
     }
     
     private handleScreenResize(gameScale: number): void {
@@ -141,61 +166,128 @@ export class WaveIndicator {
     }
     
     private onWaveStart(): void {
-        this.updateUI();
-        this.statusText.setText('Wave in progress...');
-        this.statusText.setColor('#ffcc00');
+        try {
+            // Проверяем существование и корректность текстовых объектов
+            if (!this.scene || !this.scene.textures || 
+                !this.statusText || !this.statusText.active || 
+                !this.statusText.scene) {
+                console.warn('WaveIndicator: Текстовые объекты не готовы в onWaveStart');
+                return;
+            }
+            
+            // Обновляем UI безопасно
+            this.safeUpdateUI();
+            
+            // Устанавливаем текст только если объект существует и активен
+            if (this.statusText && this.statusText.active) {
+                this.statusText.setText('Wave in progress...');
+                this.statusText.setColor('#ffcc00');
+            }
+        } catch (error) {
+            console.error('Ошибка в WaveIndicator.onWaveStart:', error);
+        }
     }
     
     private onWaveComplete(): void {
-        this.updateUI();
-        this.statusText.setText('Next wave coming...');
-        this.statusText.setColor('#00ff00');
-        
-        // Анимация мигания статуса
-        this.scene.tweens.add({
-            targets: this.statusText,
-            alpha: 0.5,
-            duration: 500,
-            yoyo: true,
-            repeat: 2
-        });
+        try {
+            // Проверяем существование и корректность текстовых объектов
+            if (!this.scene || !this.scene.textures || 
+                !this.statusText || !this.statusText.active || 
+                !this.statusText.scene) {
+                console.warn('WaveIndicator: Текстовые объекты не готовы в onWaveComplete');
+                return;
+            }
+            
+            // Обновляем UI безопасно
+            this.safeUpdateUI();
+            
+            // Устанавливаем текст только если объект существует и активен
+            if (this.statusText && this.statusText.active) {
+                this.statusText.setText('Next wave coming...');
+                this.statusText.setColor('#00ff00');
+                
+                // Анимация мигания статуса, если сцена существует
+                if (this.scene && this.scene.tweens) {
+                    this.scene.tweens.add({
+                        targets: this.statusText,
+                        alpha: 0.5,
+                        duration: 500,
+                        yoyo: true,
+                        repeat: 2
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка в WaveIndicator.onWaveComplete:', error);
+        }
+    }
+    
+    // Безопасное обновление UI с проверками
+    private safeUpdateUI(): void {
+        try {
+            // Safety check to make sure text objects and textures are valid
+            if (!this.scene || !this.scene.textures) {
+                console.warn('WaveIndicator: Сцена или текстуры не существуют');
+                return;
+            }
+
+            // Проверяем каждый текстовый объект отдельно
+            if (this.waveText && this.waveText.active && this.waveText.scene) {
+                this.waveText.setText(`Wave: ${this.waveManager.getCurrentWave()}`);
+                this.waveText.setDepth(100);
+            } else {
+                console.warn('WaveIndicator: waveText не готов');
+            }
+            
+            if (this.enemiesText && this.enemiesText.active && this.enemiesText.scene) {
+                this.enemiesText.setText(`Enemies: ${this.waveManager.getRemainingEnemies()}`);
+                this.enemiesText.setDepth(100);
+            } else {
+                console.warn('WaveIndicator: enemiesText не готов');
+            }
+            
+            if (this.statusText && this.statusText.active && this.statusText.scene) {
+                this.statusText.setDepth(100);
+            } else {
+                console.warn('WaveIndicator: statusText не готов');
+            }
+        } catch (error) {
+            console.error('Ошибка в WaveIndicator.safeUpdateUI:', error);
+        }
     }
     
     public updateUI(): void {
-        // Safety check to make sure text objects are valid
-        if (!this.scene || !this.scene.textures || !this.waveText || !this.enemiesText || !this.statusText) {
-            return;
-        }
-
-        try {
-            // Only update text if it's safe to do so
-            if (this.waveText.active) {
-                this.waveText.setText(`Wave: ${this.waveManager.getCurrentWave()}`);
-                this.waveText.setDepth(100);
-            }
-            
-            if (this.enemiesText.active) {
-                this.enemiesText.setText(`Enemies: ${this.waveManager.getRemainingEnemies()}`);
-                this.enemiesText.setDepth(100);
-            }
-            
-            if (this.statusText.active) {
-                this.statusText.setDepth(100);
-            }
-        } catch (e) {
-            console.warn('Error updating WaveIndicator UI:', e);
-        }
+        this.safeUpdateUI();
     }
     
     public destroy(): void {
-        // Clean up event listeners
-        this.scene.events.off('screenResize', this.handleScreenResize, this);
-        this.waveManager.off('waveStart');
-        this.waveManager.off('waveComplete');
-        
-        // Destroy game objects
-        this.waveText.destroy();
-        this.enemiesText.destroy();
-        this.statusText.destroy();
+        try {
+            // Clean up event listeners
+            if (this.scene && this.scene.events) {
+                this.scene.events.off('screenResize', this.handleScreenResize, this);
+            }
+            
+            if (this.waveManager) {
+                this.waveManager.off('waveStart');
+                this.waveManager.off('waveComplete');
+            }
+            
+            // Безопасное уничтожение текстовых объектов
+            if (this.waveText && this.waveText.active && this.waveText.scene) {
+                this.waveText.destroy();
+            }
+            
+            if (this.enemiesText && this.enemiesText.active && this.enemiesText.scene) {
+                this.enemiesText.destroy();
+            }
+            
+            if (this.statusText && this.statusText.active && this.statusText.scene) {
+                this.statusText.destroy();
+            }
+
+            console.log('WaveIndicator успешно уничтожен');
+        } catch (error) {
+            console.error('Ошибка при уничтожении WaveIndicator:', error);
+        }
     }
 } 

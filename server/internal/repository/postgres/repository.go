@@ -18,7 +18,7 @@ func NewPostgresRepository(db *sql.DB) domain.Repository {
 // Player methods
 func (r *postgresRepository) CreatePlayer(player *domain.Player) error {
 	query := `
-        INSERT INTO players (telegram_id, username, coins, created_at, updated_at)
+        INSERT INTO players (telegram_id, username, gold, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id`
 
@@ -30,7 +30,7 @@ func (r *postgresRepository) CreatePlayer(player *domain.Player) error {
 		query,
 		player.TelegramID,
 		player.Username,
-		player.Coins,
+		player.Gold,
 		player.CreatedAt,
 		player.UpdatedAt,
 	).Scan(&player.ID)
@@ -39,7 +39,7 @@ func (r *postgresRepository) CreatePlayer(player *domain.Player) error {
 func (r *postgresRepository) GetPlayerByTelegramID(telegramID int64) (*domain.Player, error) {
 	player := &domain.Player{}
 	query := `
-        SELECT id, telegram_id, username, coins, created_at, updated_at
+        SELECT id, telegram_id, username, gold, created_at, updated_at
         FROM players
         WHERE telegram_id = $1`
 
@@ -47,7 +47,7 @@ func (r *postgresRepository) GetPlayerByTelegramID(telegramID int64) (*domain.Pl
 		&player.ID,
 		&player.TelegramID,
 		&player.Username,
-		&player.Coins,
+		&player.Gold,
 		&player.CreatedAt,
 		&player.UpdatedAt,
 	)
@@ -60,7 +60,7 @@ func (r *postgresRepository) GetPlayerByTelegramID(telegramID int64) (*domain.Pl
 func (r *postgresRepository) UpdatePlayer(player *domain.Player) error {
 	query := `
         UPDATE players
-        SET username = $1, coins = $2, updated_at = $3
+        SET username = $1, gold = $2, updated_at = $3
         WHERE id = $4`
 
 	player.UpdatedAt = time.Now()
@@ -68,7 +68,7 @@ func (r *postgresRepository) UpdatePlayer(player *domain.Player) error {
 	_, err := r.db.Exec(
 		query,
 		player.Username,
-		player.Coins,
+		player.Gold,
 		player.UpdatedAt,
 		player.ID,
 	)

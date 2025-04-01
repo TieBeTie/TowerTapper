@@ -19,18 +19,31 @@ export enum SkillType {
     GAME_SPEED = 'GAME_SPEED'
 }
 
-export interface Upgrade {
+export enum CurrencyType {
+    GOLD = 'GOLD',
+    EMBLEMS = 'EMBLEMS'
+}
+
+export interface SkillInfo {
     type: SkillType;
     name: string;
     description: string;
-    cost: number;
-    currentValue: number;
-    maxValue: number;
-    calculateNextValue: (currentValue: number) => number;
-    calculateCost: (currentValue: number) => number;
+    currentLevel: number;
+    maxLevel: number;
+    calculateValue: (currentLevel: number) => number;
 }
 
-export interface UpgradeState {
+export interface SkillPrice {
+    skillType: SkillType;
+    goldCost: {
+        calculateCost: (currentLevel: number) => number;
+    };
+    emblemsCost: {
+        calculateCost: (currentLevel: number) => number;
+    };
+}
+
+export interface SkillState {
     [SkillType.MAX_HEALTH]: number;
     [SkillType.DEFENSE]: number;
     [SkillType.HEALTH_REGEN]: number;

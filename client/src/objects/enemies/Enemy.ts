@@ -102,17 +102,17 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (this.isDying) return;
         this.isDying = true;
 
-        // Get the game scene to access coin reward multiplier
+        // Get the game scene to access gold reward multiplier
         const gameScene = this.scene.scene.get('GameScene');
-        const coinRewardMultiplier = (gameScene as any).getCoinRewardMultiplier?.() || 1;
+        const goldRewardMultiplier = (gameScene as any).getGoldRewardMultiplier?.() || 1;
 
-        // Calculate final coin reward with multiplier
-        const finalReward = Math.floor(this.cost * coinRewardMultiplier);
+        // Calculate final gold reward with multiplier
+        const finalReward = Math.floor(this.cost * goldRewardMultiplier);
 
-        // Spawn coins with the multiplied reward
-        const coinManager = (gameScene as any).coinManager;
-        if (coinManager) {
-            coinManager.spawnCoin(
+        // Spawn gold with the multiplied reward
+        const goldManager = (gameScene as any).goldManager;
+        if (goldManager) {
+            goldManager.spawnGold(
                 new Phaser.Math.Vector2(this.x, this.y),
                 this.tower
             );

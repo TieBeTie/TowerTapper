@@ -4,7 +4,7 @@ import { UIManager } from '../managers/UIManager';
 import EnemyManager from '../managers/EnemyManager';
 import ProjectileManager from '../managers/ProjectileManager';
 import CollisionManager from '../managers/CollisionManager';
-import CoinManager from '../managers/CoinManager';
+import GoldManager from '../managers/GoldManager';
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { WaveManager } from '../managers/WaveManager';
 import { WaveIndicator } from '../ui/components/WaveIndicator';
@@ -25,16 +25,16 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     enemyManager!: EnemyManager;
     projectileManager!: ProjectileManager;
     collisionManager!: CollisionManager;
-    coinManager!: CoinManager;
+    goldManager!: GoldManager;
     waveManager!: WaveManager;
     waveIndicator!: WaveIndicator;
     waveClearEffect!: WaveClearEffect;
     supplyDropManager!: SupplyDropManager;
     emblemManager!: EmblemManager;
-    coins!: number;
+    gold!: number;
     socket!: WebSocket;
     audioManager!: AudioManager;
-    private coinRewardMultiplier: number = 1;
+    private goldRewardMultiplier: number = 1;
     private gameSpeedMultiplier: number = 1;
     private skillStateManager: SkillStateManager;
 
@@ -269,11 +269,11 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             this.screenManager
         );
 
-        // Initialize CoinManager
-        this.coinManager = new CoinManager(this, this.uiManager);
+        // Initialize GoldManager
+        this.goldManager = new GoldManager(this, this.uiManager);
 
         // Initialize other managers
-        this.enemyManager = new EnemyManager(this, this.uiManager, this.coinManager, this.waveManager);
+        this.enemyManager = new EnemyManager(this, this.uiManager, this.goldManager, this.waveManager);
         this.projectileManager = new ProjectileManager(this, this.enemyManager);
         this.collisionManager = new CollisionManager(this);
         
@@ -410,8 +410,8 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         this.events.off('gameSpeedChanged', this.handleGameSpeedChanged, this);
     }
 
-    getCoinRewardMultiplier(): number {
-        return this.coinRewardMultiplier;
+    getGoldRewardMultiplier(): number {
+        return this.goldRewardMultiplier;
     }
 
     // Method to get emblem bonus

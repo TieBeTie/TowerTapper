@@ -25,14 +25,19 @@ export class SkillStateManager {
     }
     
     // Сохранение состояния
-    public saveState(type: SkillType, value: number): void {
+    public saveState(type: SkillType, value: number, level: number = 0): void {
+        // Get the existing state or create a new one
+        const existingState = this.state.get(type);
+        const currentLevel = level > 0 ? level : (existingState?.currentLevel || 0) + 1;
+        
         this.state.set(type, {
             type,
             value,
+            currentLevel,
             lastUpdated: new Date()
         });
         
-        // Сохраняем в хранилище
+        // Save to storage
         this.storage.save(this.state);
     }
     

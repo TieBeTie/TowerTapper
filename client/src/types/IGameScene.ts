@@ -4,7 +4,7 @@ import { UIManager } from '../managers/UIManager';
 import EnemyManager from '../managers/EnemyManager';
 import ProjectileManager from '../managers/ProjectileManager';
 import CollisionManager from '../managers/CollisionManager';
-import CoinManager from '../managers/CoinManager';
+import GoldManager from '../managers/GoldManager';
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { WaveManager } from '../managers/WaveManager';
 import { WaveIndicator } from '../ui/components/WaveIndicator';
@@ -19,11 +19,11 @@ export interface IGameScene extends IScene {
     enemyManager: EnemyManager;
     projectileManager: ProjectileManager;
     collisionManager: CollisionManager;
-    coinManager: CoinManager;
+    goldManager: GoldManager;
     waveManager: WaveManager;
     waveIndicator: WaveIndicator;
     waveClearEffect: WaveClearEffect;
-    coins: number;
+    gold: number;
     audioManager: AudioManager;
 
     // Game-specific methods

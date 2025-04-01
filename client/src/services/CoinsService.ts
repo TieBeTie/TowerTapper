@@ -1,28 +1,28 @@
 import { EventEmitter } from 'events';
 import { GameServerGateway } from '../api/GameServerGateway';
 
-export interface CoinsState {
+export interface GoldState {
     amount: number;
     lastSync: number;
 }
 
-export interface CoinChangeEvent {
+export interface GoldChangeEvent {
     amount: number;
     total: number;
 }
 
-export type CoinServiceEvents = {
+export type GoldServiceEvents = {
     'change': (amount: number) => void;
-    'add': (event: CoinChangeEvent) => void;
-    'subtract': (event: CoinChangeEvent) => void;
-    'sync': (state: CoinsState) => void;
+    'add': (event: GoldChangeEvent) => void;
+    'subtract': (event: GoldChangeEvent) => void;
+    'sync': (state: GoldState) => void;
     'syncError': (error: Error) => void;
     'error': (error: Error) => void;
 }
 
-export class CoinsService {
-    private static instance: CoinsService;
-    private state: CoinsState;
+export class GoldService {
+    private static instance: GoldService;
+    private state: GoldState;
     private events: EventEmitter;
     private syncInterval: number = 10000; // 10 seconds
     private syncTimer: NodeJS.Timeout | null = null;
@@ -38,14 +38,14 @@ export class CoinsService {
         this.startSync();
     }
 
-    public static getInstance(server?: GameServerGateway): CoinsService {
-        if (!CoinsService.instance) {
+    public static getInstance(server?: GameServerGateway): GoldService {
+        if (!GoldService.instance) {
             if (!server) {
-                throw new Error('GameServerGateway instance is required for CoinsService initialization');
+                throw new Error('GameServerGateway instance is required for GoldService initialization');
             }
-            CoinsService.instance = new CoinsService(server);
+            GoldService.instance = new GoldService(server);
         }
-        return CoinsService.instance;
+        return GoldService.instance;
     }
 
     private startSync(): void {
@@ -64,7 +64,7 @@ export class CoinsService {
             this.state.lastSync = Date.now();
             this.events.emit('sync', this.state);
         } catch (error) {
-            console.error('Failed to sync coins with server:', error);
+            console.error('Failed to sync gold with server:', error);
             this.events.emit('syncError', error);
         }
     }
@@ -98,21 +98,21 @@ export class CoinsService {
         try {
             await this.server.sendEnemyKilled(this.state.amount);
         } catch (error) {
-            console.error('Failed to update coins on server:', error);
+            console.error('Failed to update gold on server:', error);
             this.events.emit('error', error instanceof Error ? error : new Error(String(error)));
         }
     }
 
-    public on<E extends keyof CoinServiceEvents>(
+    public on<E extends keyof GoldServiceEvents>(
         event: E,
-        listener: CoinServiceEvents[E]
+        listener: GoldServiceEvents[E]
     ): void {
         this.events.on(event, listener);
     }
 
-    public off<E extends keyof CoinServiceEvents>(
+    public off<E extends keyof GoldServiceEvents>(
         event: E,
-        listener: CoinServiceEvents[E]
+        listener: GoldServiceEvents[E]
     ): void {
         this.events.off(event, listener);
     }

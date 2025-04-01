@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import EnemyFactory from '../factories/EnemyFactory';
 import Enemy from '../objects/enemies/Enemy';
-import CoinCollectionEffectFromEnemyManager from './CoinManager';
+import GoldCollectionEffectFromEnemyManager from './GoldManager';
 import { UIManager } from './UIManager';
 import { WaveManager } from './WaveManager';
 import Tower from '../objects/towers/Tower';
@@ -12,18 +12,18 @@ import { SkillStateManager } from '../managers/SkillStateManager';
 class EnemyManager {
     scene: Phaser.Scene;
     enemies: Phaser.Physics.Arcade.Group;
-    private coinCollectionEffectFromEnemy: CoinCollectionEffectFromEnemyManager;
+    private goldCollectionEffectFromEnemy: GoldCollectionEffectFromEnemyManager;
     private waveManager: WaveManager;
     private spawnTimer: Phaser.Time.TimerEvent | null = null;
     private skillStateManager: SkillStateManager;
 
-    constructor(scene: Phaser.Scene, uiManager: UIManager, coinCollectionEffectFromEnemy: CoinCollectionEffectFromEnemyManager, waveManager: WaveManager) {
+    constructor(scene: Phaser.Scene, uiManager: UIManager, goldCollectionEffectFromEnemy: GoldCollectionEffectFromEnemyManager, waveManager: WaveManager) {
         this.scene = scene;
         this.enemies = this.scene.physics.add.group({
             classType: Enemy,
             runChildUpdate: true
         });
-        this.coinCollectionEffectFromEnemy = coinCollectionEffectFromEnemy;
+        this.goldCollectionEffectFromEnemy = goldCollectionEffectFromEnemy;
         this.waveManager = waveManager;
         this.skillStateManager = SkillStateManager.getInstance();
 
@@ -215,11 +215,11 @@ class EnemyManager {
             }
             console.log("Enemy killed by arrow");
 
-            // Spawn a coin above the castle (Tower)
+            // Spawn a gold above the castle (Tower)
             if (this.scene && this.scene.children && this.scene.children.getByName) {
                 const tower = this.scene.children.getByName('tower') as Tower;
-                if (tower && this.coinCollectionEffectFromEnemy) {
-                    this.coinCollectionEffectFromEnemy.spawnCoin(new Phaser.Math.Vector2(x, y), tower);
+                if (tower && this.goldCollectionEffectFromEnemy) {
+                    this.goldCollectionEffectFromEnemy.spawnGold(new Phaser.Math.Vector2(x, y), tower);
                 } else {
                     console.warn('Башня не найдена в сцене.');
                 }

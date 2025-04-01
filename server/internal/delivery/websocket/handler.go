@@ -38,7 +38,7 @@ type GameState struct {
 		ArrowSpeed  float64 `json:"arrow_speed"`
 		ArrowDamage int     `json:"arrow_damage"`
 	} `json:"castle"`
-	Coins int64 `json:"coins"`
+	Gold int64 `json:"gold"`
 }
 
 type Message struct {
@@ -82,7 +82,7 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	initialState.Castle.Health = castle.Health
 	initialState.Castle.ArrowSpeed = castle.ArrowSpeed
 	initialState.Castle.ArrowDamage = castle.ArrowDamage
-	initialState.Coins = player.Coins
+	initialState.Gold = player.Gold
 
 	if err := conn.WriteJSON(Message{
 		Type:    "initial_state",
@@ -129,10 +129,10 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 		case "enemy_killed":
 			// Обновляем монеты
-			if coins, ok := msg.Payload.(float64); ok {
-				err := h.playerUseCase.UpdatePlayerCoins(telegramID, int64(coins))
+			if gold, ok := msg.Payload.(float64); ok {
+				err := h.playerUseCase.UpdatePlayerGold(telegramID, int64(gold))
 				if err != nil {
-					log.Printf("Error updating coins: %v", err)
+					log.Printf("Error updating gold: %v", err)
 				}
 			}
 

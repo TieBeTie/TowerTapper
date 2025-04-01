@@ -3,7 +3,7 @@ import { ScreenManager } from '../../managers/ScreenManager';
 
 export class SupplyDrop extends Phaser.GameObjects.Sprite {
     private screenManager: ScreenManager;
-    private coinValue: number;
+    private goldValue: number;
     private lifespan: number;
     private lifespanTimer?: Phaser.Time.TimerEvent;
     private pulseEffect?: Phaser.Tweens.Tween;
@@ -38,7 +38,7 @@ export class SupplyDrop extends Phaser.GameObjects.Sprite {
         supplyDropGraphics.destroy();
     }
 
-    constructor(scene: Phaser.Scene, x: number, y: number, coinValue: number = 20) {
+    constructor(scene: Phaser.Scene, x: number, y: number, goldValue: number = 20) {
         // Make sure the texture exists
         SupplyDrop.createTexture(scene);
         
@@ -51,7 +51,7 @@ export class SupplyDrop extends Phaser.GameObjects.Sprite {
         const gameScale = this.screenManager.getGameScale();
         this.setScale(0.4 * gameScale);
         
-        this.coinValue = coinValue;
+        this.goldValue = goldValue;
         this.lifespan = 8000; // 8 seconds lifespan
         
         // Set up interactivity
@@ -133,7 +133,7 @@ export class SupplyDrop extends Phaser.GameObjects.Sprite {
             duration: 300,
             ease: 'Back.easeIn',
             onComplete: () => {
-                // Give coins to player
+                // Give gold to player
                 this.collectReward();
                 
                 // Destroy this object
@@ -144,7 +144,7 @@ export class SupplyDrop extends Phaser.GameObjects.Sprite {
         // Play sound effect if available
         const gameScene = this.scene.scene.get('GameScene');
         if ((gameScene as any).audioManager) {
-            (gameScene as any).audioManager.playSound('coin_collect');
+            (gameScene as any).audioManager.playSound('gold_collect');
         }
     }
     
@@ -170,14 +170,14 @@ export class SupplyDrop extends Phaser.GameObjects.Sprite {
         // Get the game scene
         const gameScene = this.scene.scene.get('GameScene');
         
-        // Add coins to player's account
-        if ((gameScene as any).coinManager) {
-            const currentCoins = (gameScene as any).coinManager.getCoinsCount();
-            (gameScene as any).coinManager.updateCoinsDirectly(currentCoins + this.coinValue);
+        // Add gold to player's account
+        if ((gameScene as any).goldManager) {
+            const currentGold = (gameScene as any).goldManager.getGoldCount();
+            (gameScene as any).goldManager.updateGoldDirectly(currentGold + this.goldValue);
             
-            // Show notification of coins collected
+            // Show notification of gold collected
             if ((gameScene as any).uiManager && (gameScene as any).uiManager.showNotification) {
-                (gameScene as any).uiManager.showNotification(`+${this.coinValue} Gold!`, 0xFFD700);
+                (gameScene as any).uiManager.showNotification(`+${this.goldValue} Gold!`, 0xFFD700);
             }
         }
     }

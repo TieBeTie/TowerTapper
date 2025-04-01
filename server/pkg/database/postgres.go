@@ -40,7 +40,7 @@ func CreateTables(db *sql.DB) error {
 			id BIGSERIAL PRIMARY KEY,
 			telegram_id BIGINT UNIQUE NOT NULL,
 			username VARCHAR(255) NOT NULL,
-			coins BIGINT NOT NULL DEFAULT 0,
+			gold BIGINT NOT NULL DEFAULT 0,
 			created_at TIMESTAMP NOT NULL,
 			updated_at TIMESTAMP NOT NULL
 		)

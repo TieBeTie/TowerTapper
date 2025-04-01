@@ -11,9 +11,9 @@ import { ScreenManager } from './ScreenManager';
 export class UIManager {
     private statsView!: StatsView;
     private upgradePanel!: ScrollableButtonPanel;
-    private coinCount: number = 0;
-    private coinIcon!: Phaser.GameObjects.Image;
-    private coinNumberText!: Phaser.GameObjects.Text;
+    private goldCount: number = 0;
+    private goldIcon!: Phaser.GameObjects.Image;
+    private goldNumberText!: Phaser.GameObjects.Text;
     private emblemIcon!: Phaser.GameObjects.Image;
     private emblemNumberText!: Phaser.GameObjects.Text;
     private upgradeManager: UpgradeManager;
@@ -28,6 +28,10 @@ export class UIManager {
     
     // Категории улучшений
     private readonly CATEGORIES = ["Attack Upgrades", "Defense Upgrades", "Utility Upgrades"];
+
+    // Добавляем поле для отслеживания времени между обновлениями
+    private lastUpdateTime: number = 0;
+    private readonly UPDATE_INTERVAL: number = 500; // миллисекунды
 
     constructor(
         private scene: Phaser.Scene,
@@ -65,59 +69,77 @@ export class UIManager {
     }
 
     private initilizeStatsView(iconSize: number, fontSize: number): void {
-        // Create statsView with screenManager
-        this.statsView = new StatsView(this.scene, this.screenManager);
-        
-         // Create coin elements - уменьшаем размер иконки монеты
-         this.coinIcon = this.scene.add.image(0, 0, 'coin');
-         
-         // Уменьшаем размер иконки монеты до 60% от оригинального размера
-         const reducedIconSize = iconSize * 0.6;
-         this.coinIcon.setDisplaySize(reducedIconSize, reducedIconSize);
+        try {
+            // Create statsView with screenManager
+            this.statsView = new StatsView(this.scene, this.screenManager);
+            
+            // Create gold elements - уменьшаем размер иконки монеты
+            this.goldIcon = this.scene.add.image(0, 0, 'gold');
+            
+            // Уменьшаем размер иконки монеты до 60% от оригинального размера
+            const reducedIconSize = iconSize * 0.6;
+            this.goldIcon.setDisplaySize(reducedIconSize, reducedIconSize);
 
-         this.coinNumberText = this.scene.add.text(0, 0, '0', {
-             fontSize: `${fontSize}px`,
-             color: '#ffffff',
-             fontFamily: 'pixelFont'
-         }).setOrigin(0, 0.5);
+            this.goldNumberText = this.scene.add.text(0, 0, '0', {
+                fontSize: `${fontSize}px`,
+                color: '#ffffff',
+                fontFamily: 'pixelFont'
+            }).setOrigin(0, 0.5);
 
-         // Add elements to statsView
-         // Create a container for coin display
-         const coinContainer = this.scene.add.container(0, 0);
-         coinContainer.add(this.coinIcon);
-         coinContainer.add(this.coinNumberText);
-         
-         // Position the coin text closer to the icon
-         this.coinNumberText.setPosition(reducedIconSize * 0.8, 0);
-         
-         // Add the container as a single element
-         this.statsView.addCurrencyElement(coinContainer);
-         
-         // Create emblem elements
-         this.emblemIcon = this.scene.add.image(0, 0, 'emblem_icon');
-         
-         // Set emblem icon size
-         this.emblemIcon.setDisplaySize(reducedIconSize, reducedIconSize);
-         
-         this.emblemNumberText = this.scene.add.text(0, 0, '0', {
-             fontSize: `${fontSize}px`,
-             color: '#ffffff',
-             fontFamily: 'pixelFont'
-         }).setOrigin(0, 0.5);
-         
-         // Create a container for emblem display
-         const emblemContainer = this.scene.add.container(0, 0);
-         emblemContainer.add(this.emblemIcon);
-         emblemContainer.add(this.emblemNumberText);
-         
-         // Position the emblem text closer to the icon
-         this.emblemNumberText.setPosition(reducedIconSize * 0.8, 0);
-         
-         // Add the container as a single element
-         this.statsView.addCurrencyElement(emblemContainer);
-         
-         // Update emblem count
-         this.updateEmblemCount();
+            // Проверяем, успешно ли созданы объекты
+            if (!this.goldIcon || !this.goldNumberText) {
+                console.error('Ошибка при создании объектов монет');
+                return;
+            }
+
+            // Add elements to statsView
+            // Create a container for gold display
+            const goldContainer = this.scene.add.container(0, 0);
+            goldContainer.add(this.goldIcon);
+            goldContainer.add(this.goldNumberText);
+            
+            // Position the gold text closer to the icon
+            this.goldNumberText.setPosition(reducedIconSize * 0.8, 0);
+            
+            // Add the container as a single element
+            this.statsView.addCurrencyElement(goldContainer);
+            
+            // Create emblem elements
+            this.emblemIcon = this.scene.add.image(0, 0, 'emblem_icon');
+            
+            // Set emblem icon size
+            this.emblemIcon.setDisplaySize(reducedIconSize, reducedIconSize);
+            
+            this.emblemNumberText = this.scene.add.text(0, 0, '0', {
+                fontSize: `${fontSize}px`,
+                color: '#ffffff',
+                fontFamily: 'pixelFont'
+            }).setOrigin(0, 0.5);
+            
+            // Проверяем, успешно ли созданы объекты эмблем
+            if (!this.emblemIcon || !this.emblemNumberText) {
+                console.error('Ошибка при создании объектов эмблем');
+                return;
+            }
+            
+            // Create a container for emblem display
+            const emblemContainer = this.scene.add.container(0, 0);
+            emblemContainer.add(this.emblemIcon);
+            emblemContainer.add(this.emblemNumberText);
+            
+            // Position the emblem text closer to the icon
+            this.emblemNumberText.setPosition(reducedIconSize * 0.8, 0);
+            
+            // Add the container as a single element
+            this.statsView.addCurrencyElement(emblemContainer);
+            
+            // Update emblem count только если объект существует
+            if (this.emblemNumberText && this.emblemNumberText.active) {
+                this.updateEmblemCount();
+            }
+        } catch (error) {
+            console.error('Ошибка при инициализации StatsView:', error);
+        }
     }
 
     private initilizeUpgradePanel(): void {
@@ -446,17 +468,17 @@ export class UIManager {
         this.statsView.setVisible(true);
         this.upgradePanel.setVisible(true);
         
-        // Ensure coin display is visible
-        if (this.coinIcon && this.coinNumberText) {
-            this.coinIcon.setVisible(true);
-            this.coinNumberText.setVisible(true);
+        // Ensure gold display is visible
+        if (this.goldIcon && this.goldNumberText) {
+            this.goldIcon.setVisible(true);
+            this.goldNumberText.setVisible(true);
             
-            // Set high depth for coin display
-            this.coinIcon.setDepth(100);
-            this.coinNumberText.setDepth(100);
+            // Set high depth for gold display
+            this.goldIcon.setDepth(100);
+            this.goldNumberText.setDepth(100);
             
-            // Update coin text to force redraw
-            this.coinNumberText.setText(this.coinCount.toString());
+            // Update gold text to force redraw
+            this.goldNumberText.setText(this.goldCount.toString());
         }
         
         // Delay a final visibility check to ensure elements appear
@@ -466,11 +488,11 @@ export class UIManager {
                 this.statsView.setVisible(true);
                 this.upgradePanel.setVisible(true);
                 
-                if (this.coinIcon && this.coinNumberText) {
-                    this.coinIcon.setVisible(true);
-                    this.coinNumberText.setVisible(true);
-                    this.coinIcon.setDepth(100);
-                    this.coinNumberText.setDepth(100);
+                if (this.goldIcon && this.goldNumberText) {
+                    this.goldIcon.setVisible(true);
+                    this.goldNumberText.setVisible(true);
+                    this.goldIcon.setDepth(100);
+                    this.goldNumberText.setDepth(100);
                 }
                 
                 // Try one more delayed update as last resort
@@ -500,40 +522,40 @@ export class UIManager {
         this.statsView.setVisible(true);
         this.upgradePanel.setVisible(true);
         
-        // Ensure coin display is visible
-        if (this.coinIcon && this.coinNumberText) {
-            this.coinIcon.setVisible(true);
-            this.coinNumberText.setVisible(true);
-            this.coinIcon.setDepth(100);
-            this.coinNumberText.setDepth(100);
+        // Ensure gold display is visible
+        if (this.goldIcon && this.goldNumberText) {
+            this.goldIcon.setVisible(true);
+            this.goldNumberText.setVisible(true);
+            this.goldIcon.setDepth(100);
+            this.goldNumberText.setDepth(100);
         }
     }
 
-    public updateCoins(coins: number): void {
-        this.coinCount = coins;
-        if (this.coinNumberText) {
-            this.coinNumberText.setText(coins.toString());
-        }
-        
-        // Update StatsView with new coin amount
-        if (this.statsView) {
-            this.statsView.setCurrency(coins);
-        }
-        
-        // Trigger event for buttons to update their state
-        this.scene.events.emit('updateCoins', coins);
+    public updateGold(gold: number): void {
+        // Делегируем работу новому методу для единого кода обновления
+        this.updateGoldCount(gold);
     }
 
     // Additional method used by the UpgradeButton
-    public updateCoinCount(amount: number): void {
-        this.coinCount = amount;
-        if (this.coinNumberText) {
-            this.coinNumberText.setText(amount.toString());
-        }
-        
-        // Update StatsView with new coin amount
-        if (this.statsView) {
-            this.statsView.setCurrency(amount);
+    public updateGoldCount(gold: number): void {
+        try {
+            // Проверяем существование текстового объекта перед обновлением
+            if (!this.goldNumberText || !this.goldNumberText.scene) {
+                console.log('Текстовый объект монет не инициализирован или уничтожен');
+                return;
+            }
+            
+            this.goldCount = gold;
+            
+            // Обновляем текст с проверкой на активность
+            if (this.goldNumberText && this.goldNumberText.active) {
+                this.goldNumberText.setText(gold.toString());
+            }
+            
+            // Обновить все кнопки улучшений, чтобы они изменили свой цвет в зависимости от доступности
+            this.scene.events.emit('updateGold', gold);
+        } catch (error) {
+            console.error('Ошибка при обновлении счетчика монет:', error);
         }
     }
 
@@ -588,8 +610,8 @@ export class UIManager {
         });
     }
 
-    getCoinCount(): number {
-        return this.coinCount;
+    getGoldCount(): number {
+        return this.goldCount;
     }
 
     destroy(): void {
@@ -604,36 +626,51 @@ export class UIManager {
 
     private updateEmblemCount(): void {
         try {
+            // Проверяем существование текстового объекта перед обновлением
+            if (!this.emblemNumberText || !this.emblemNumberText.scene) {
+                console.log('Текстовый объект эмблемы не инициализирован или уничтожен');
+                return;
+            }
+            
             // Get the emblem count from the GameScene
             const gameScene = this.scene.scene.get('GameScene');
-            if (!gameScene) return;
+            if (!gameScene) {
+                console.log('GameScene не найдена');
+                return;
+            }
             
             // Get emblem count directly
             const emblemCount = (gameScene as any).emblemManager?.getEmblemCount() || 0;
             
-            // Update the emblem text
-            if (this.emblemNumberText) {
+            // Update the emblem text с проверкой на активность
+            if (this.emblemNumberText && this.emblemNumberText.active) {
                 this.emblemNumberText.setText(emblemCount.toString());
             }
         } catch (error) {
-            console.log('Emblem count not available yet');
+            console.log('Ошибка при обновлении счетчика эмблем:', error);
             // Use default value when emblem manager is not yet initialized
-            if (this.emblemNumberText) {
+            if (this.emblemNumberText && this.emblemNumberText.active) {
                 this.emblemNumberText.setText('0');
             }
         }
     }
 
-    // Update both coin and emblem counts
+    // Update both gold and emblem counts
     updateCounts(): void {
-        this.updateCoins(this.coinCount);
+        this.updateGold(this.goldCount);
         this.updateEmblemCount();
     }
 
     // Update method that gets called every frame
-    private onUpdate(): void {
-        // Update the emblem count every frame
-        this.updateEmblemCount();
+    private onUpdate(time: number): void {
+        // Обновляем счетчики только каждые UPDATE_INTERVAL мс
+        if (time > this.lastUpdateTime + this.UPDATE_INTERVAL) {
+            // Обновляем только если объекты существуют
+            if (this.emblemNumberText && this.emblemNumberText.scene) {
+                this.updateEmblemCount();
+            }
+            this.lastUpdateTime = time;
+        }
     }
 
     // Add a method to update the health display in StatsView

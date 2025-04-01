@@ -13,8 +13,8 @@ export class UpgradeHeader extends Phaser.GameObjects.Container {
     private background: Phaser.GameObjects.Rectangle;
     private titleText: Phaser.GameObjects.Text;
     private closeButton: Phaser.GameObjects.Text;
-    private coinIcon: Phaser.GameObjects.Image;
-    private coinText: Phaser.GameObjects.Text;
+    private goldIcon: Phaser.GameObjects.Image;
+    private goldText: Phaser.GameObjects.Text;
     private screenManager: ScreenManager;
 
     constructor(config: UpgradeHeaderConfig) {
@@ -27,7 +27,7 @@ export class UpgradeHeader extends Phaser.GameObjects.Container {
         const gameScale = this.screenManager.getGameScale();
         const titleFontSize = this.screenManager.getResponsiveFontSize(32);
         const buttonFontSize = this.screenManager.getResponsiveFontSize(24);
-        const coinFontSize = this.screenManager.getResponsiveFontSize(28);
+        const goldFontSize = this.screenManager.getResponsiveFontSize(28);
         const padding = this.screenManager.getResponsivePadding(40);
         const iconScale = 0.6 * gameScale;
 
@@ -75,24 +75,24 @@ export class UpgradeHeader extends Phaser.GameObjects.Container {
             .on('pointerout', () => this.closeButton.setColor('#ffffff'))
             .on('pointerdown', config.onClose);
 
-        // Create coin display
-        this.coinIcon = new Phaser.GameObjects.Image(
+        // Create gold display
+        this.goldIcon = new Phaser.GameObjects.Image(
             this.scene,
             this.screenManager.getResponsivePadding(20),
             config.height / 2,
-            'coin'
+            'gold'
         )
             .setScale(iconScale)
             .setOrigin(0, 0.5);
 
-        this.coinText = new Phaser.GameObjects.Text(
+        this.goldText = new Phaser.GameObjects.Text(
             this.scene,
             this.screenManager.getResponsivePadding(70),
             config.height / 2,
             '0',
             {
                 fontFamily: 'pixelFont',
-                fontSize: `${coinFontSize}px`,
+                fontSize: `${goldFontSize}px`,
                 color: '#ffdd00',
                 stroke: '#000000',
                 strokeThickness: Math.max(2, Math.round(4 * gameScale))
@@ -104,8 +104,8 @@ export class UpgradeHeader extends Phaser.GameObjects.Container {
             this.background,
             this.titleText,
             this.closeButton,
-            this.coinIcon,
-            this.coinText
+            this.goldIcon,
+            this.goldText
         ]);
 
         // Subscribe to screen resize events
@@ -119,14 +119,14 @@ export class UpgradeHeader extends Phaser.GameObjects.Container {
         // Update font sizes
         const titleFontSize = this.screenManager.getResponsiveFontSize(32);
         const buttonFontSize = this.screenManager.getResponsiveFontSize(24);
-        const coinFontSize = this.screenManager.getResponsiveFontSize(28);
+        const goldFontSize = this.screenManager.getResponsiveFontSize(28);
         const padding = this.screenManager.getResponsivePadding(40);
         const iconScale = 0.6 * gameScale;
         
         // Update text styles
         this.titleText.setFontSize(titleFontSize);
         this.closeButton.setFontSize(buttonFontSize);
-        this.coinText.setFontSize(coinFontSize);
+        this.goldText.setFontSize(goldFontSize);
         
         // Update positions
         this.closeButton.setPosition(
@@ -134,18 +134,18 @@ export class UpgradeHeader extends Phaser.GameObjects.Container {
             this.background.height / 2
         );
         
-        this.coinIcon
+        this.goldIcon
             .setPosition(this.screenManager.getResponsivePadding(20), this.background.height / 2)
             .setScale(iconScale);
             
-        this.coinText.setPosition(
+        this.goldText.setPosition(
             this.screenManager.getResponsivePadding(70),
             this.background.height / 2
         );
     }
 
-    updateCoins(amount: number): void {
-        this.coinText.setText(Math.floor(amount).toString());
+    updateGold(amount: number): void {
+        this.goldText.setText(Math.floor(amount).toString());
     }
     
     destroy(fromScene?: boolean): void {

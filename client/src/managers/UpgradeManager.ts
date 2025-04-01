@@ -1,4 +1,4 @@
-import { SkillType, Upgrade } from '../types/SkillType';
+import { SkillType, SkillInfo, CurrencyType, SkillPrice } from '../types/SkillType';
 import { SkillStateManager } from './SkillStateManager';
 import { SkillSetStorage } from '../storage/SkillSetStorage';
 import { IScene } from '../types/IScene';
@@ -6,368 +6,663 @@ import { IGameScene } from '../types/IGameScene';
 
 export class UpgradeManager {
     private scene: IScene;
-    private upgrades: Map<SkillType, Upgrade>;
-    private stateService: SkillStateManager;
+    private skills: Map<SkillType, SkillInfo> = new Map();
+    private prices: Map<SkillType, SkillPrice> = new Map();
+    private stateManager: SkillStateManager;
     private skillStorage: SkillSetStorage;
 
     constructor(scene: IScene) {
         this.scene = scene;
-        this.stateService = SkillStateManager.getInstance();
+        this.stateManager = SkillStateManager.getInstance();
         this.skillStorage = SkillSetStorage.getInstance();
-        this.stateService.initialize();
+        this.stateManager.initialize();
 
+        // Initialize skill definitions and prices
+        this.initializeSkills();
+        this.initializePrices();
+    }
+
+    // Initialize skill information
+    private initializeSkills(): void {
         const skills = this.skillStorage.load();
 
-        this.upgrades = new Map([
+        // Define all skills with their properties (excluding pricing)
+        this.skills = new Map([
             [SkillType.MAX_HEALTH, {
                 type: SkillType.MAX_HEALTH,
                 name: 'Прочность замка',
                 description: 'Увеличивает максимальное здоровье замка',
-                cost: 4,
-                currentValue: skills.get(SkillType.MAX_HEALTH)?.value || 200,
-                maxValue: 10000,
-                calculateNextValue: (current: number) => Math.floor(current * 1.35),
-                calculateCost: (current: number) => Math.floor(4 * Math.pow(1.35, Math.log(current/200) / Math.log(1.35)))
+                currentLevel: skills.get(SkillType.MAX_HEALTH)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => 100 + (100 * currentLevel) // Изменено с 200*Math.pow(1.35, currentLevel)
             }],
             [SkillType.DEFENSE, {
                 type: SkillType.DEFENSE,
                 name: 'Защита замка',
                 description: 'Уменьшает получаемый урон',
-                cost: 6,
-                currentValue: skills.get(SkillType.DEFENSE)?.value || 20,
-                maxValue: 200,
-                calculateNextValue: (current: number) => Math.floor(current * 1.25),
-                calculateCost: (current: number) => Math.floor(6 * Math.pow(1.25, Math.log(current/20) / Math.log(1.25)))
+                currentLevel: skills.get(SkillType.DEFENSE)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => Math.floor(20 * Math.pow(1.25, currentLevel))
             }],
             [SkillType.HEALTH_REGEN, {
                 type: SkillType.HEALTH_REGEN,
                 name: 'Регенерация здоровья',
                 description: 'Восстанавливает здоровье замка со временем',
-                cost: 10,
-                currentValue: skills.get(SkillType.HEALTH_REGEN)?.value || 3,
-                maxValue: 50,
-                calculateNextValue: (current: number) => Math.floor(current * 1.5),
-                calculateCost: (current: number) => Math.floor(10 * Math.pow(1.5, Math.log(current/3) / Math.log(1.5)))
+                currentLevel: skills.get(SkillType.HEALTH_REGEN)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => Math.floor(3 * Math.pow(1.5, currentLevel))
             }],
             [SkillType.DAMAGE, {
                 type: SkillType.DAMAGE,
                 name: 'Урон',
                 description: 'Увеличивает урон от стрел',
-                cost: 6,
-                currentValue: skills.get(SkillType.DAMAGE)?.value || 20,
-                maxValue: 300,
-                calculateNextValue: (current: number) => Math.floor(current * 1.35),
-                calculateCost: (current: number) => Math.floor(6 * Math.pow(1.35, Math.log(current/20) / Math.log(1.35)))
+                currentLevel: skills.get(SkillType.DAMAGE)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => Math.floor(20 * Math.pow(1.35, currentLevel))
             }],
             [SkillType.COIN_REWARD, {
                 type: SkillType.COIN_REWARD,
                 name: 'Gold Reward Bonus',
                 description: 'Увеличивает количество монет с убитых врагов',
-                cost: 12,
-                currentValue: skills.get(SkillType.COIN_REWARD)?.value || 3,
-                maxValue: 50,
-                calculateNextValue: (current: number) => Math.floor(current * 1.25),
-                calculateCost: (current: number) => Math.floor(12 * Math.pow(1.25, Math.log(current/3) / Math.log(1.25)))
+                currentLevel: skills.get(SkillType.COIN_REWARD)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => Math.floor(3 * Math.pow(1.25, currentLevel))
             }],
             [SkillType.ATTACK_SPEED, {
                 type: SkillType.ATTACK_SPEED,
                 name: 'Скорость атаки',
                 description: 'Увеличивает частоту выстрелов башни',
-                cost: 10,
-                currentValue: skills.get(SkillType.ATTACK_SPEED)?.value || 1,
-                maxValue: 3,
-                calculateNextValue: (current: number) => Math.floor((current + 0.2) * 100) / 100,
-                calculateCost: (current: number) => Math.floor(10 * Math.pow(1.3, Math.log(current/1) / Math.log(1.3)))
+                currentLevel: skills.get(SkillType.ATTACK_SPEED)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => 1 + (0.2 * currentLevel)
             }],
             [SkillType.ATTACK_RANGE, {
                 type: SkillType.ATTACK_RANGE,
                 name: 'Радиус атаки',
                 description: 'Увеличивает дальность атаки башни',
-                cost: 8,
-                currentValue: skills.get(SkillType.ATTACK_RANGE)?.value || 1,
-                maxValue: 3,
-                calculateNextValue: (current: number) => Math.floor((current + 0.25) * 100) / 100,
-                calculateCost: (current: number) => Math.floor(8 * Math.pow(1.3, Math.log(current/1) / Math.log(1.3)))
+                currentLevel: skills.get(SkillType.ATTACK_RANGE)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => 1 + (0.25 * currentLevel)
             }],
             [SkillType.KNOCKBACK, {
                 type: SkillType.KNOCKBACK,
                 name: 'Отбрасывание',
                 description: 'Увеличивает силу отбрасывания врагов при попадании',
-                cost: 7,
-                currentValue: skills.get(SkillType.KNOCKBACK)?.value || 50,
-                maxValue: 500,
-                calculateNextValue: (current: number) => Math.floor(current * 1.3),
-                calculateCost: (current: number) => Math.floor(7 * Math.pow(1.3, Math.log(current/50) / Math.log(1.3)))
+                currentLevel: skills.get(SkillType.KNOCKBACK)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => Math.floor(50 * Math.pow(1.3, currentLevel))
             }],
             [SkillType.MULTISHOT, {
                 type: SkillType.MULTISHOT,
                 name: 'Мультивыстрел',
                 description: 'Шанс выпустить 3 стрелы одновременно',
-                cost: 15,
-                currentValue: skills.get(SkillType.MULTISHOT)?.value || 5, // 5% chance initially
-                maxValue: 50, // Max 50% chance
-                calculateNextValue: (current: number) => Math.floor(current + 3), // +3% per upgrade
-                calculateCost: (current: number) => Math.floor(15 * Math.pow(1.4, (current - 5) / 3))
+                currentLevel: skills.get(SkillType.MULTISHOT)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => 5 + (3 * currentLevel) // +3% per upgrade
             }],
             [SkillType.CRIT_CHANCE, {
                 type: SkillType.CRIT_CHANCE,
                 name: 'Шанс крита',
                 description: 'Шанс нанести критический урон',
-                cost: 15,
-                currentValue: skills.get(SkillType.CRIT_CHANCE)?.value || 25, // 25% chance initially (0.25)
-                maxValue: 75, // Max 75% chance
-                calculateNextValue: (current: number) => Math.floor(current + 25), // +25% per upgrade
-                calculateCost: (current: number) => Math.floor(15 * Math.pow(1.4, (current - 25) / 25))
+                currentLevel: skills.get(SkillType.CRIT_CHANCE)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => 25 + (25 * currentLevel) // +25% per upgrade
             }],
             [SkillType.CRIT_MULTIPLIER, {
                 type: SkillType.CRIT_MULTIPLIER,
                 name: 'Множитель крита',
                 description: 'Увеличивает урон критического удара',
-                cost: 20,
-                currentValue: skills.get(SkillType.CRIT_MULTIPLIER)?.value || 25, // 25% damage increase initially (0.25)
-                maxValue: 200, // Max 200% damage increase
-                calculateNextValue: (current: number) => Math.floor(current + 25), // +25% per upgrade
-                calculateCost: (current: number) => Math.floor(20 * Math.pow(1.4, (current - 25) / 25))
+                currentLevel: skills.get(SkillType.CRIT_MULTIPLIER)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => 25 + (25 * currentLevel) // +25% per upgrade
             }],
             [SkillType.LIFESTEAL_CHANCE, {
                 type: SkillType.LIFESTEAL_CHANCE,
                 name: 'Шанс вампиризма',
                 description: 'Шанс восстановить здоровье при атаке',
-                cost: 15,
-                currentValue: skills.get(SkillType.LIFESTEAL_CHANCE)?.value || 25, // 25% chance initially
-                maxValue: 100, // Max 100% chance
-                calculateNextValue: (current: number) => Math.floor(current + 25), // +25% per upgrade
-                calculateCost: (current: number) => Math.floor(15 * Math.pow(1.4, (current - 25) / 25))
+                currentLevel: skills.get(SkillType.LIFESTEAL_CHANCE)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => 25 + (25 * currentLevel) // +25% per upgrade
             }],
             [SkillType.LIFESTEAL_AMOUNT, {
                 type: SkillType.LIFESTEAL_AMOUNT,
                 name: 'Сила вампиризма',
                 description: 'Количество восстанавливаемого здоровья',
-                cost: 20,
-                currentValue: skills.get(SkillType.LIFESTEAL_AMOUNT)?.value || 0, // 0 health initially
-                maxValue: 20, // Max 20 health
-                calculateNextValue: (current: number) => Math.floor(current + 1), // +1 per upgrade
-                calculateCost: (current: number) => Math.floor(20 * Math.pow(1.4, current))
+                currentLevel: skills.get(SkillType.LIFESTEAL_AMOUNT)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => currentLevel // +1 per upgrade
             }],
             [SkillType.DAILY_GOLD, {
                 type: SkillType.DAILY_GOLD,
                 name: 'Ежедневное золото',
                 description: 'Дает золото в начале каждой волны',
-                cost: 25,
-                currentValue: skills.get(SkillType.DAILY_GOLD)?.value || 0, // 0 initially
-                maxValue: 10, // Max level 10
-                calculateNextValue: (current: number) => current + 1, // +1 level per upgrade
-                calculateCost: (current: number) => Math.floor(25 * Math.pow(1.5, current))
+                currentLevel: skills.get(SkillType.DAILY_GOLD)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => currentLevel + 1 // +1 level per upgrade
             }],
             [SkillType.EMBLEM_BONUS, {
                 type: SkillType.EMBLEM_BONUS,
                 name: 'Бонус эмблем',
                 description: 'Увеличивает количество получаемых эмблем за волну',
-                cost: 30,
-                currentValue: skills.get(SkillType.EMBLEM_BONUS)?.value || 1, // 1 initially
-                maxValue: 10, // Max level 10
-                calculateNextValue: (current: number) => current + 1, // +1 level per upgrade
-                calculateCost: (current: number) => Math.floor(30 * Math.pow(1.6, current - 1))
+                currentLevel: skills.get(SkillType.EMBLEM_BONUS)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => currentLevel + 1 // +1 level per upgrade
             }],
             [SkillType.FREE_UPGRADE, {
                 type: SkillType.FREE_UPGRADE,
                 name: 'Шанс бесплатного улучшения',
                 description: 'Шанс получить бесплатное улучшение',
-                cost: 30,
-                currentValue: skills.get(SkillType.FREE_UPGRADE)?.value || 0, // 0% chance initially
-                maxValue: 50, // Max 50% chance
-                calculateNextValue: (current: number) => current + 5, // +5% per upgrade (0.05)
-                calculateCost: (current: number) => Math.floor(30 * Math.pow(1.3, current / 5))
+                currentLevel: skills.get(SkillType.FREE_UPGRADE)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => currentLevel * 5 // +5% per upgrade (0.05)
             }],
             [SkillType.SUPPLY_DROP, {
                 type: SkillType.SUPPLY_DROP,
                 name: 'Шанс золотого сундука',
                 description: 'Шанс появления золотого сундука при улучшении',
-                cost: 35,
-                currentValue: skills.get(SkillType.SUPPLY_DROP)?.value || 0, // 0% chance initially
-                maxValue: 50, // Max 50% chance
-                calculateNextValue: (current: number) => current + 5, // +5% per upgrade (0.05)
-                calculateCost: (current: number) => Math.floor(35 * Math.pow(1.4, current / 5))
+                currentLevel: skills.get(SkillType.SUPPLY_DROP)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => currentLevel * 5 // +5% per upgrade (0.05)
             }],
             [SkillType.GAME_SPEED, {
                 type: SkillType.GAME_SPEED,
                 name: 'Скорость игры',
                 description: 'Увеличивает скорость всех игровых действий',
-                cost: 20,
-                currentValue: skills.get(SkillType.GAME_SPEED)?.value || 1, // базовый множитель скорости - 1
-                maxValue: 3, // максимальный множитель скорости - 3
-                calculateNextValue: (current: number) => Math.floor((current + 0.25) * 100) / 100, // +0.25 per upgrade
-                calculateCost: (current: number) => Math.floor(20 * Math.pow(1.4, (current - 1) / 0.25))
+                currentLevel: skills.get(SkillType.GAME_SPEED)?.currentLevel || 0,
+                maxLevel: 10,
+                calculateValue: (currentLevel: number) => 1 + (0.25 * currentLevel) // +0.25 per upgrade
+            }]
+        ]);
+
+        // Тестовый расчет для проверки
+        console.log('Тест Фибоначчи:');
+        for (let i = 0; i <= 10; i++) {
+            console.log(`Фибоначчи(${i}) = ${this.fibonacci(i)}`);
+        }
+    }
+
+    // Добавим функцию Фибоначчи для расчета цены
+    private fibonacci(n: number): number {
+        // Явно определяем последовательность для первых элементов
+        const fibValues = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
+        
+        // Возвращаем заранее вычисленное значение для n <= 10
+        if (n >= 0 && n < fibValues.length) {
+            return fibValues[n];
+        }
+        
+        // Для n > 10, рассчитываем динамически
+        let a = fibValues[fibValues.length - 2];
+        let b = fibValues[fibValues.length - 1];
+        let result = 0;
+        
+        for (let i = fibValues.length; i <= n; i++) {
+            result = a + b;
+            a = b;
+            b = result;
+        }
+        
+        return result;
+    }
+
+    // Initialize pricing information separately
+    private initializePrices(): void {
+        console.log('Инициализация цен с последовательностью Фибоначчи');
+        
+        // Для тестирования расчета стоимости навыков на разных уровнях
+        console.log('Тестовый расчет стоимости (золото):');
+        for (let level = 0; level <= 5; level++) {
+            console.log(`Уровень ${level} -> ${level+1}: ${this.fibonacci(level+1)} золота`);
+        }
+        
+        // Define prices for all skills with both currency options using Fibonacci sequence
+        this.prices = new Map([
+            [SkillType.MAX_HEALTH, {
+                skillType: SkillType.MAX_HEALTH,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => {
+                        const cost = this.fibonacci(currentLevel + 1);
+                        console.log(`MAX_HEALTH: уровень ${currentLevel}, стоимость ${cost}`);
+                        return cost;
+                    }
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.DEFENSE, {
+                skillType: SkillType.DEFENSE,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.HEALTH_REGEN, {
+                skillType: SkillType.HEALTH_REGEN,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.DAMAGE, {
+                skillType: SkillType.DAMAGE,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.COIN_REWARD, {
+                skillType: SkillType.COIN_REWARD,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.ATTACK_SPEED, {
+                skillType: SkillType.ATTACK_SPEED,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.ATTACK_RANGE, {
+                skillType: SkillType.ATTACK_RANGE,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.KNOCKBACK, {
+                skillType: SkillType.KNOCKBACK,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.MULTISHOT, {
+                skillType: SkillType.MULTISHOT,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.CRIT_CHANCE, {
+                skillType: SkillType.CRIT_CHANCE,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.CRIT_MULTIPLIER, {
+                skillType: SkillType.CRIT_MULTIPLIER,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.LIFESTEAL_CHANCE, {
+                skillType: SkillType.LIFESTEAL_CHANCE,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.LIFESTEAL_AMOUNT, {
+                skillType: SkillType.LIFESTEAL_AMOUNT,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.DAILY_GOLD, {
+                skillType: SkillType.DAILY_GOLD,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.EMBLEM_BONUS, {
+                skillType: SkillType.EMBLEM_BONUS,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.FREE_UPGRADE, {
+                skillType: SkillType.FREE_UPGRADE,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.SUPPLY_DROP, {
+                skillType: SkillType.SUPPLY_DROP,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
+            }],
+            [SkillType.GAME_SPEED, {
+                skillType: SkillType.GAME_SPEED,
+                goldCost: {
+                    calculateCost: (currentLevel: number) => this.fibonacci(currentLevel + 1)
+                },
+                emblemsCost: {
+                    calculateCost: (currentLevel: number) => Math.ceil(this.fibonacci(currentLevel + 1) / 2)
+                }
             }]
         ]);
     }
 
-    getAvailableUpgrades(): Upgrade[] {
-        return Array.from(this.upgrades.values());
+    // Getters for skill information
+
+    getAvailableSkills(): SkillInfo[] {
+        return Array.from(this.skills.values());
     }
 
-    getUpgradeCost(type: SkillType): number {
-        const upgrade = this.upgrades.get(type);
-        if (!upgrade) return 0;
-        return upgrade.calculateCost(upgrade.currentValue);
+    // Метод для обратной совместимости
+    getUpgradeCost(type: SkillType, currencyType: CurrencyType = CurrencyType.GOLD): number {
+        console.log(`getUpgradeCost вызван для ${type}. Используйте getSkillCost вместо этого метода`);
+        return this.getSkillCost(type, currencyType);
     }
 
-    getUpgradeEffect(type: SkillType): number {
-        const upgrade = this.upgrades.get(type);
-        if (!upgrade) return 0;
-        return upgrade.currentValue;
+    getSkillsForCurrency(currencyType: CurrencyType): SkillInfo[] {
+        return Array.from(this.prices.entries())
+            .filter(([_, price]) => price.goldCost.calculateCost(0) || price.emblemsCost.calculateCost(0))
+            .map(([type, _]) => this.skills.get(type)!)
+            .filter(skill => skill !== undefined);
     }
 
-    getPlayerCoins(): number {
+    getSkillCost(type: SkillType, currencyType: CurrencyType = CurrencyType.GOLD): number {
+        const price = this.prices.get(type);
+        const skill = this.skills.get(type);
+        if (!price || !skill) return 0;
+        
+        // Вычисляем цену по последовательности Фибоначчи
+        const cost = currencyType === CurrencyType.GOLD 
+            ? price.goldCost.calculateCost(skill.currentLevel)
+            : price.emblemsCost.calculateCost(skill.currentLevel);
+        
+        console.log(`[UpgradeManager] Расчет стоимости для ${type}:
+            - Уровень: ${skill.currentLevel}
+            - Валюта: ${currencyType}
+            - Стоимость (Фибоначчи): ${cost}`);
+        
+        return cost;
+    }
+
+    getSkillValue(type: SkillType): number {
+        const skill = this.skills.get(type);
+        if (!skill) return 0;
+        return skill.calculateValue(skill.currentLevel);
+    }
+
+    getSkillLevel(type: SkillType): number {
+        const skill = this.skills.get(type);
+        if (!skill) return 0;
+        return skill.currentLevel;
+    }
+
+    // Currency management methods
+
+    private getPlayerGold(): number {
         const gameScene = this.scene.scene.get('GameScene');
-        return (gameScene as any).coinManager?.coins_count || 0;
+        return (gameScene as any).goldManager?.gold_count || 0;
     }
 
-    purchaseUpgrade(type: SkillType): boolean {
-        const upgrade = this.upgrades.get(type);
-        if (!upgrade) return false;
-
-        const cost = this.getUpgradeCost(type);
+    private getPlayerEmblems(): number {
         const gameScene = this.scene.scene.get('GameScene');
-        const coins = (gameScene as any).coinManager?.coins_count || 0;
+        return (gameScene as any).emblemManager?.getEmblemCount() || 0;
+    }
+
+    private getCurrencyAmount(currencyType: CurrencyType): number {
+        switch (currencyType) {
+            case CurrencyType.GOLD:
+                return this.getPlayerGold();
+            case CurrencyType.EMBLEMS:
+                return this.getPlayerEmblems();
+            default:
+                return 0;
+        }
+    }
+
+    private deductCurrency(currencyType: CurrencyType, amount: number): void {
+        const gameScene = this.scene.scene.get('GameScene');
+        if (!gameScene) return;
+
+        switch (currencyType) {
+            case CurrencyType.GOLD:
+                if ((gameScene as any).goldManager) {
+                    (gameScene as any).goldManager.gold_count -= amount;
+                    gameScene.events.emit('updateGold', (gameScene as any).goldManager.gold_count);
+                    console.log(`Вычтено ${amount} золота, осталось: ${(gameScene as any).goldManager.gold_count}`);
+                }
+                break;
+            case CurrencyType.EMBLEMS:
+                if ((gameScene as any).emblemManager) {
+                    (gameScene as any).emblemManager.deductEmblems(amount);
+                    gameScene.events.emit('updateEmblems', (gameScene as any).emblemManager.getEmblemCount());
+                }
+                break;
+        }
+    }
+
+    // Purchase logic
+
+    canAffordUpgrade(type: SkillType, currencyType: CurrencyType): boolean {
+        const skill = this.skills.get(type);
+        if (!skill) return false;
+
+        if (skill.currentLevel >= skill.maxLevel) {
+            return false;
+        }
+
+        const cost = this.getSkillCost(type, currencyType);
+        const currency = this.getCurrencyAmount(currencyType);
+        return currency >= cost;
+    }
+
+    canAffordWithEitherCurrency(type: SkillType): { 
+        gold: boolean, 
+        emblems: boolean 
+    } {
+        return {
+            gold: this.canAffordUpgrade(type, CurrencyType.GOLD),
+            emblems: this.canAffordUpgrade(type, CurrencyType.EMBLEMS)
+        };
+    }
+
+    purchaseUpgrade(type: SkillType, currencyType: CurrencyType): boolean {
+        console.log(`Попытка купить навык ${type} за валюту ${currencyType}`);
+        
+        const skill = this.skills.get(type);
+        if (!skill) {
+            console.log(`Навык ${type} не найден`);
+            return false;
+        }
+
+        // Check if already at max level
+        if (skill.currentLevel >= skill.maxLevel) {
+            console.log(`Навык ${type} уже на максимальном уровне ${skill.maxLevel}`);
+            return false;
+        }
+
+        const cost = this.getSkillCost(type, currencyType);
+        const availableCurrency = this.getCurrencyAmount(currencyType);
+        
+        console.log(`Стоимость: ${cost}, Доступно: ${availableCurrency}`);
 
         // Check for free upgrade chance
-        const freeUpgradeChance = this.stateService.getState(SkillType.FREE_UPGRADE) / 100; // Convert from percentage to decimal
+        const freeUpgradeChance = this.stateManager.getState(SkillType.FREE_UPGRADE) / 100;
         const isFreeUpgrade = type !== SkillType.FREE_UPGRADE && Math.random() < freeUpgradeChance;
+        
+        if (isFreeUpgrade) {
+            console.log(`Бесплатное улучшение! Шанс: ${freeUpgradeChance * 100}%`);
+        }
 
-        if ((coins >= cost || isFreeUpgrade) && upgrade.currentValue < upgrade.maxValue) {
-            // Списываем монеты только если не бесплатное улучшение
+        if (availableCurrency >= cost || isFreeUpgrade) {
+            // Deduct currency only if not a free upgrade
             if (!isFreeUpgrade) {
-                (gameScene as any).coinManager.coins_count -= cost;
+                console.log(`Списание ${cost} ${currencyType}`);
+                this.deductCurrency(currencyType, cost);
             } else {
-                // Display free upgrade message
-                console.log('Free upgrade!');
-                // If game has a notification system, you could add a notification here
-                if ((gameScene as any).uiManager && (gameScene as any).uiManager.showNotification) {
-                    (gameScene as any).uiManager.showNotification('Free Upgrade!', 0x4CAF50);
-                }
+                // Show free upgrade notification
+                this.showNotification('Free Upgrade!', 0x4CAF50);
             }
 
-            // Увеличиваем значение
-            upgrade.currentValue = upgrade.calculateNextValue(upgrade.currentValue);
-            this.stateService.saveState(type, upgrade.currentValue);
+            // Increment level
+            skill.currentLevel += 1;
+            console.log(`Уровень навыка ${type} повышен до ${skill.currentLevel}`);
+            
+            // Calculate new value based on the level
+            const newValue = skill.calculateValue(skill.currentLevel);
+            console.log(`Новое значение навыка: ${newValue}`);
+            
+            // Save state to SkillStateManager with the current level
+            this.stateManager.saveState(type, newValue, skill.currentLevel);
 
-            // Применяем эффекты улучшения
+            // Apply the effects of the upgrade
             this.applyUpgradeEffects(type);
 
-            // Обновляем UI
-            gameScene.events.emit('updateCoins', (gameScene as any).coinManager.coins_count);
-            
             // Check for supply drop chance
-            const supplyDropChance = this.stateService.getState(SkillType.SUPPLY_DROP) / 100; // Convert from percentage to decimal
-            if (supplyDropChance > 0 && Math.random() < supplyDropChance) {
-                // Trigger supply drop
-                gameScene.events.emit('triggerSupplyDrop');
-                
-                // Show notification if available
-                if ((gameScene as any).uiManager && (gameScene as any).uiManager.showNotification) {
-                    (gameScene as any).uiManager.showNotification('Supply Drop!', 0xFFD700);
-                }
-            }
+            this.checkForSupplyDrop();
 
             return true;
         }
-
+        
+        console.log(`Недостаточно ${currencyType} для покупки навыка ${type}`);
         return false;
     }
 
+    private showNotification(message: string, color: number): void {
+        const gameScene = this.scene.scene.get('GameScene');
+        if ((gameScene as any).uiManager && (gameScene as any).uiManager.showNotification) {
+            (gameScene as any).uiManager.showNotification(message, color);
+        }
+    }
+
+    private checkForSupplyDrop(): void {
+        const supplyDropChance = this.stateManager.getState(SkillType.SUPPLY_DROP) / 100;
+        if (supplyDropChance > 0 && Math.random() < supplyDropChance) {
+            const gameScene = this.scene.scene.get('GameScene');
+            gameScene.events.emit('triggerSupplyDrop');
+            this.showNotification('Supply Drop!', 0xFFD700);
+        }
+    }
+
+    // Apply upgrade effects
+
     private applyUpgradeEffects(type: SkillType): void {
-        const upgrade = this.upgrades.get(type);
-        if (!upgrade) return;
+        const skill = this.skills.get(type);
+        if (!skill) return;
 
         const gameScene = this.scene.scene.get('GameScene') as IGameScene;
         if (!gameScene || !gameScene.tower) return;
 
         const tower = gameScene.tower;
+        const newValue = this.getSkillValue(type);
 
         switch (type) {
             case SkillType.MAX_HEALTH:
-                tower.maxHealth = upgrade.currentValue;
+                tower.maxHealth = newValue;
                 tower.health = tower.maxHealth;
                 break;
             case SkillType.DEFENSE:
-                tower.defense = upgrade.currentValue;
+                tower.defense = newValue;
                 break;
             case SkillType.HEALTH_REGEN:
-                tower.regeneration = upgrade.currentValue;
+                tower.regeneration = newValue;
                 break;
             case SkillType.DAMAGE:
-                // Урон теперь берется из SkillSetStorage, поэтому здесь ничего не делаем
+                // Using SkillStateManager, nothing to do here
                 break;
             case SkillType.COIN_REWARD:
                 if (gameScene) {
-                    (gameScene as any).coinRewardMultiplier = upgrade.currentValue;
+                    (gameScene as any).goldRewardMultiplier = newValue;
                 }
                 break;
             case SkillType.ATTACK_SPEED:
                 if (gameScene) {
-                    (gameScene as any).attackSpeedMultiplier = upgrade.currentValue;
+                    (gameScene as any).attackSpeedMultiplier = newValue;
                 }
                 break;
             case SkillType.ATTACK_RANGE:
-                // Радиус атаки обновляется через SkillSetStorage при обновлении башни
-                tower.upgrade(); // Вызываем метод upgrade для обновления радиуса атаки
+                tower.upgrade();
                 break;
             case SkillType.KNOCKBACK:
-                // Сохраняем новое значение knockback в SkillSetStorage
-                this.stateService.saveState(SkillType.KNOCKBACK, upgrade.currentValue);
+                // Value already saved to SkillStateManager
                 break;
             case SkillType.MULTISHOT:
-                // Просто сохраняем новое значение в SkillSetStorage
-                this.stateService.saveState(SkillType.MULTISHOT, upgrade.currentValue);
+                // Value already saved to SkillStateManager
                 break;
             case SkillType.CRIT_CHANCE:
-                // Сохраняем шанс критического удара в SkillSetStorage
-                this.stateService.saveState(SkillType.CRIT_CHANCE, upgrade.currentValue);
+                // Value already saved to SkillStateManager
                 break;
             case SkillType.CRIT_MULTIPLIER:
-                // Сохраняем множитель критического урона в SkillSetStorage
-                this.stateService.saveState(SkillType.CRIT_MULTIPLIER, upgrade.currentValue);
+                // Value already saved to SkillStateManager
                 break;
             case SkillType.LIFESTEAL_CHANCE:
-                // Сохраняем шанс вампиризма в SkillSetStorage
-                this.stateService.saveState(SkillType.LIFESTEAL_CHANCE, upgrade.currentValue);
+                // Value already saved to SkillStateManager
                 break;
             case SkillType.LIFESTEAL_AMOUNT:
-                // Сохраняем силу вампиризма в SkillSetStorage
-                this.stateService.saveState(SkillType.LIFESTEAL_AMOUNT, upgrade.currentValue);
+                // Value already saved to SkillStateManager
                 break;
             case SkillType.DAILY_GOLD:
-                // Сохраняем уровень ежедневного золота в SkillSetStorage
-                this.stateService.saveState(SkillType.DAILY_GOLD, upgrade.currentValue);
+                // Value already saved to SkillStateManager
                 break;
             case SkillType.EMBLEM_BONUS:
-                // Сохраняем уровень бонуса эмблем в SkillSetStorage
-                this.stateService.saveState(SkillType.EMBLEM_BONUS, upgrade.currentValue);
+                // Value already saved to SkillStateManager
                 break;
             case SkillType.FREE_UPGRADE:
-                // Сохраняем шанс бесплатного улучшения в SkillSetStorage
-                this.stateService.saveState(SkillType.FREE_UPGRADE, upgrade.currentValue);
+                // Value already saved to SkillStateManager
                 break;
             case SkillType.SUPPLY_DROP:
-                // Сохраняем шанс появления золотого сундука в SkillSetStorage
-                this.stateService.saveState(SkillType.SUPPLY_DROP, upgrade.currentValue);
+                // Value already saved to SkillStateManager
                 break;
             case SkillType.GAME_SPEED:
-                // Сохраняем множитель скорости игры в SkillSetStorage и оповещаем о изменении
-                this.stateService.saveState(SkillType.GAME_SPEED, upgrade.currentValue);
-                // Оповещаем через событие о изменении скорости игры
-                gameScene.events.emit('gameSpeedChanged', upgrade.currentValue);
+                // Update game speed and emit event for other components
+                gameScene.events.emit('gameSpeedChanged', newValue);
                 break;
         }
 
         tower.updateHealthBar();
     }
 
+    // Helper method to get current skill value
     getState(type: SkillType): number {
-        const upgrade = this.upgrades.get(type);
-        if (!upgrade) return 0;
-        return upgrade.currentValue;
+        return this.stateManager.getState(type);
     }
 }
 

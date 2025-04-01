@@ -48,8 +48,8 @@ export class GameStateService {
         this.server.sendClick();
     }
 
-    handleEnemyKilled(coins: number): void {
-        this.server.sendEnemyKilled(coins);
+    handleEnemyKilled(gold: number): void {
+        this.server.sendEnemyKilled(gold);
     }
 
     handleCastleDamaged(health: number): void {

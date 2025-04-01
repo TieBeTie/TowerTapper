@@ -29,7 +29,7 @@ func (uc *PlayerUseCase) RegisterPlayer(telegramID int64, username string) (*dom
 	player := &domain.Player{
 		TelegramID: telegramID,
 		Username:   username,
-		Coins:      0, // Начальное количество монет
+		Gold:       0, // Начальное количество монет
 	}
 
 	err = uc.repo.CreatePlayer(player)
@@ -72,13 +72,13 @@ func (uc *PlayerUseCase) GetPlayerData(telegramID int64) (*domain.Player, *domai
 	return player, castle, nil
 }
 
-func (uc *PlayerUseCase) UpdatePlayerCoins(playerID int64, coins int64) error {
+func (uc *PlayerUseCase) UpdatePlayerGold(playerID int64, gold int64) error {
 	player, err := uc.repo.GetPlayerByTelegramID(playerID)
 	if err != nil {
 		return err
 	}
 
-	player.Coins = coins
+	player.Gold = gold
 	return uc.repo.UpdatePlayer(player)
 }
 

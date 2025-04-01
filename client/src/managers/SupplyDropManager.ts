@@ -46,18 +46,18 @@ export class SupplyDropManager {
         const x = Phaser.Math.Between(padding, width - padding);
         const y = Phaser.Math.Between(padding, gameViewHeight - padding);
         
-        // Calculate the coin reward based on player progress
+        // Calculate the gold reward based on player progress
         const gameScene = this.scene.scene.get('GameScene') as IGameScene;
-        let coinValue = 20; // Base value
+        let goldValue = 20; // Base value
         
         // If we can access the wave manager, scale the reward with the wave number
         if (gameScene && (gameScene as any).waveManager) {
             const currentWave = (gameScene as any).waveManager.getCurrentWave() || 1;
-            coinValue = Math.floor(20 * (1 + currentWave * 0.1)); // 10% increase per wave
+            goldValue = Math.floor(20 * (1 + currentWave * 0.1)); // 10% increase per wave
         }
         
         // Create the supply drop
-        const supplyDrop = new SupplyDrop(this.scene, x, y, coinValue);
+        const supplyDrop = new SupplyDrop(this.scene, x, y, goldValue);
         
         // Start with a scale of 0 and animate to full size
         supplyDrop.setScale(0);

@@ -177,13 +177,13 @@ export class WaveManager extends Phaser.Events.EventEmitter {
             
             // Add gold to the player's account
             const gameScene = this.scene as GameScene;
-            if (gameScene.coinManager) {
+            if (gameScene.goldManager) {
                 // Directly add gold without any animations
-                const currentCoins = gameScene.coinManager.getCoinsCount();
-                gameScene.coinManager.updateCoinsDirectly(currentCoins + goldBonus);
+                const currentGold = gameScene.goldManager.getGoldCount();
+                gameScene.goldManager.updateGoldDirectly(currentGold + goldBonus);
                 
                 // Log bonus for debugging
-                console.log(`Applied daily gold bonus: +${goldBonus} coins at wave ${this.currentWave}`);
+                console.log(`Applied daily gold bonus: +${goldBonus} gold at wave ${this.currentWave}`);
             }
         }
     }

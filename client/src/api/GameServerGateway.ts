@@ -5,7 +5,7 @@ export interface GameState {
         arrowSpeed: number;
         arrowDamage: number;
     };
-    coins: number;
+    gold: number;
 }
 
 export interface GameServerGateway {
@@ -18,7 +18,7 @@ export interface GameServerGateway {
 
     // Player actions
     sendClick(): void;
-    sendEnemyKilled(coins: number): void;
+    sendEnemyKilled(gold: number): void;
     sendCastleDamaged(health: number): void;
 }
 
@@ -91,11 +91,11 @@ export class WebSocketGameServer implements GameServerGateway {
         }
     }
 
-    sendEnemyKilled(coins: number): void {
+    sendEnemyKilled(gold: number): void {
         if (this.ws) {
             this.ws.send(JSON.stringify({
                 type: 'enemy_killed',
-                payload: coins
+                payload: gold
             }));
         }
     }
@@ -134,7 +134,7 @@ export class MockGameServer implements GameServerGateway {
                     arrowSpeed: 1.0,
                     arrowDamage: 1
                 },
-                coins: 0
+                gold: 0
             });
         }
     }
@@ -150,8 +150,8 @@ export class MockGameServer implements GameServerGateway {
         }
     }
 
-    sendEnemyKilled(coins: number): void {
-        console.log('Mock: Enemy killed, coins:', coins);
+    sendEnemyKilled(gold: number): void {
+        console.log('Mock: Enemy killed, gold:', gold);
     }
 
     sendCastleDamaged(health: number): void {

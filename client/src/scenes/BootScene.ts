@@ -67,7 +67,7 @@ class BootScene extends Phaser.Scene implements IScene {
         this.load.image('emblem_icon', 'assets/images/currency/heraldic_emblem16x16.png');
 
         // Загрузка монет
-        this.load.spritesheet('coin', 'assets/images/towers/Coin-sheet.png', {
+        this.load.spritesheet('gold', 'assets/images/towers/Gold-sheet.png', {
             frameWidth: 65,
             frameHeight: 90
         });
@@ -184,8 +184,8 @@ class BootScene extends Phaser.Scene implements IScene {
         });
 
         this.anims.create({
-            key: 'coin_spin',
-            frames: this.anims.generateFrameNumbers('coin', { start: 0, end: 7 }),
+            key: 'gold_spin',
+            frames: this.anims.generateFrameNumbers('gold', { start: 0, end: 7 }),
             frameRate: 12,
             repeat: -1
         });
