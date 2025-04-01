@@ -28,6 +28,9 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
     
     // Кнопка возврата
     private backButton!: Phaser.GameObjects.Text;
+    
+    // Фоновые эффекты
+    private backgroundEffects: Phaser.GameObjects.GameObject[] = [];
 
     constructor() {
         super({ key: 'PermanentUpgradesShopScene' });
@@ -38,11 +41,19 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         if (!this.textures.exists('emblem_icon')) {
             this.load.image('emblem_icon', 'assets/images/currency/heraldic_emblem16x16.png');
         }
+        
+        // Загрузка текстур для фоновых эффектов
+        if (!this.textures.exists('particle')) {
+            this.load.image('particle', 'assets/images/particle.png');
+        }
     }
 
     create(): void {
         // Инициализация менеджеров
         this.initializeManagers();
+        
+        // Создание фоновых эффектов
+        this.createBackgroundEffects();
         
         // Создание UI компонентов
         this.createUIComponents();
@@ -87,6 +98,112 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
 
         // Create background using ScreenManager
         this.screenManager.setupBackground();
+    }
+    
+    /**
+     * Создание фоновых эффектов
+     */
+    private createBackgroundEffects(): void {
+        const { width, height } = this.screenManager.getScreenSize();
+        
+        // Создаем полупрозрачный градиентный фон
+        const bgGraphics = this.add.graphics();
+        
+        // Вместо градиента используем заполнение цветом
+        bgGraphics.fillStyle(0x10102a, 1);
+        bgGraphics.fillRect(0, 0, width, height);
+        bgGraphics.setDepth(-10);
+        this.backgroundEffects.push(bgGraphics);
+        
+        // Создаем эффект мерцающих частиц, если текстура доступна
+        if (this.textures.exists('particle')) {
+            try {
+                // Верхний эмиттер (медленные плавающие частицы)
+                const particleEmitter = this.add.particles(width / 2, height / 2, 'particle', {
+                    x: { min: -width / 2, max: width / 2 },
+                    y: { min: -height / 2, max: height / 2 },
+                    scale: { start: 0.2, end: 0.1 },
+                    alpha: { start: 0.3, end: 0 },
+                    speed: 10,
+                    angle: { min: 0, max: 360 },
+                    lifespan: 10000,
+                    gravityY: -5,
+                    frequency: 500,
+                    blendMode: Phaser.BlendModes.ADD,
+                    emitting: true
+                });
+                particleEmitter.setDepth(-5);
+                this.backgroundEffects.push(particleEmitter);
+                
+                // Нижний эмиттер (восходящие частицы)
+                const bottomEmitter = this.add.particles(width / 2, height + 10, 'particle', {
+                    x: { min: -width / 2, max: width / 2 },
+                    y: 0,
+                    scale: { start: 0.1, end: 0 },
+                    alpha: { start: 0.2, end: 0 },
+                    speed: { min: 20, max: 40 },
+                    angle: { min: 260, max: 280 },
+                    lifespan: 5000,
+                    frequency: 200,
+                    blendMode: Phaser.BlendModes.ADD,
+                    emitting: true
+                });
+                bottomEmitter.setDepth(-6);
+                this.backgroundEffects.push(bottomEmitter);
+            } catch (err) {
+                console.error('Error creating particle effects:', err);
+            }
+        }
+        
+        // Добавляем эффект "световых лучей"
+        try {
+            const raysGraphics = this.add.graphics();
+            raysGraphics.setDepth(-7);
+            
+            // Создаем световые лучи
+            const createRays = () => {
+                raysGraphics.clear();
+                
+                for (let i = 0; i < 5; i++) {
+                    const startX = Phaser.Math.Between(0, width);
+                    const angle = Phaser.Math.Between(-30, 30);
+                    const rayLength = Phaser.Math.Between(height * 0.5, height * 0.8);
+                    const alpha = Phaser.Math.FloatBetween(0.05, 0.1);
+                    const rayWidth = Phaser.Math.Between(50, 150);
+                    
+                    raysGraphics.fillStyle(0xffffff, alpha);
+                    raysGraphics.fillTriangle(
+                        startX, 0,
+                        startX + rayWidth/2, rayLength,
+                        startX - rayWidth/2, rayLength
+                    );
+                }
+            };
+            
+            // Первоначальное создание лучей
+            createRays();
+            
+            // Обновление лучей через интервал
+            this.time.addEvent({
+                delay: 10000,
+                callback: createRays,
+                loop: true
+            });
+            
+            // Анимация альфа-прозрачности для лучей
+            this.tweens.add({
+                targets: raysGraphics,
+                alpha: { from: 1, to: 0.3 },
+                duration: 5000,
+                ease: 'Sine.easeInOut',
+                yoyo: true,
+                repeat: -1
+            });
+            
+            this.backgroundEffects.push(raysGraphics);
+        } catch (err) {
+            console.error('Error creating rays effect:', err);
+        }
     }
     
     /**
@@ -146,28 +263,99 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
     private createBackButton(): void {
         const { width, height } = this.screenManager.getScreenSize();
         const center = this.screenManager.getScreenCenter();
-        const backButtonFontSize = this.screenManager.getResponsiveFontSize(36);
+        const backButtonFontSize = this.screenManager.getSmallFontSize() - 8;
+        
+        // Создаем контейнер для кнопки для анимаций
+        const buttonContainer = this.add.container(center.x, height * 0.9);
+        
+        // Создаем фон кнопки для улучшенного вида с уменьшенными размерами
+        const buttonWidth = 200;
+        const buttonHeight = 50;
+        const buttonBg = this.add.rectangle(0, 0, buttonWidth, buttonHeight, 0x444444, 0.7)
+            .setStrokeStyle(2, 0xffffff, 0.8)
+            .setOrigin(0.5);
+        
+        // Скругляем углы (если поддерживается)
+        try {
+            buttonBg.setInteractive({ useHandCursor: true });
+        } catch (err) {
+            console.error('Error setting interactive rectangle:', err);
+        }
         
         this.backButton = this.screenManager.createText(
-            center.x, 
-            height * 0.9, 
+            0, 
+            0, 
             'Back to Menu',
             backButtonFontSize,
             '#ffffff',
             {
-                fontFamily: 'pixelFont'
+                fontFamily: 'pixelFont',
+                shadow: { color: '#000000', blur: 3, offsetX: 1, offsetY: 1, fill: true }
             }
         );
+        
+        // Добавляем элементы в контейнер
+        buttonContainer.add([buttonBg, this.backButton]);
+        
+        // Добавляем свечение вокруг кнопки
+        const glowFx = this.add.graphics()
+            .fillStyle(0xffffff, 0.2)
+            .fillRoundedRect(-buttonWidth/2 - 5, -buttonHeight/2 - 5, buttonWidth + 10, buttonHeight + 10, 16);
+        buttonContainer.add(glowFx);
+        glowFx.setBlendMode(Phaser.BlendModes.ADD);
+        
+        // Добавляем анимацию свечения
+        this.tweens.add({
+            targets: glowFx,
+            alpha: { from: 0.2, to: 0.6 },
+            duration: 1500,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+        
+        // Анимация появления кнопки
+        buttonContainer.setScale(0.9);
+        buttonContainer.setAlpha(0);
+        this.tweens.add({
+            targets: buttonContainer,
+            alpha: 1,
+            scale: 1,
+            ease: 'Back.easeOut',
+            duration: 500,
+            delay: 200
+        });
 
         // Add interactivity to back button
-        this.backButton.setInteractive()
+        buttonBg.setInteractive()
             .on('pointerover', () => {
-                this.backButton.setScale(1.1);
+                this.tweens.add({
+                    targets: buttonContainer,
+                    scale: 1.05,
+                    duration: 100,
+                    ease: 'Sine.easeOut'
+                });
+                buttonBg.fillColor = 0x666666;
             })
             .on('pointerout', () => {
-                this.backButton.setScale(1);
+                this.tweens.add({
+                    targets: buttonContainer,
+                    scale: 1,
+                    duration: 100,
+                    ease: 'Sine.easeIn'
+                });
+                buttonBg.fillColor = 0x444444;
             })
             .on('pointerdown', () => {
+                // Анимация нажатия
+                this.tweens.add({
+                    targets: buttonContainer,
+                    scale: 0.95,
+                    duration: 50,
+                    yoyo: true,
+                    ease: 'Sine.easeIn'
+                });
+                
                 try {
                     // Play sound if available
                     if (this.audioManager.hasSoundCached('playButton')) {
@@ -194,11 +382,34 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         if (this.backButton) {
             const { width, height } = this.screenManager.getScreenSize();
             const center = this.screenManager.getScreenCenter();
-            const backButtonFontSize = this.screenManager.getResponsiveFontSize(36);
+            const backButtonFontSize = this.screenManager.getResponsiveFontSize(26);
             
             this.backButton.setFontSize(backButtonFontSize);
-            this.backButton.setPosition(center.x, height * 0.9);
+            
+            // Обновляем позицию контейнера кнопки
+            if (this.backButton.parentContainer) {
+                this.backButton.parentContainer.setPosition(center.x, height * 0.9);
+            }
         }
+        
+        // Обновляем фоновые эффекты
+        this.updateBackgroundEffects();
+    }
+    
+    /**
+     * Обновление фоновых эффектов при изменении размера экрана
+     */
+    private updateBackgroundEffects(): void {
+        // Уничтожаем старые эффекты
+        this.backgroundEffects.forEach(effect => {
+            if (effect.active) {
+                effect.destroy();
+            }
+        });
+        this.backgroundEffects = [];
+        
+        // Создаем новые эффекты с учетом нового размера
+        this.createBackgroundEffects();
     }
     
     /**
@@ -252,8 +463,21 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         
         // Удаляем кнопку возврата
         if (this.backButton) {
-            this.backButton.destroy();
+            // Если кнопка находится в контейнере, удаляем весь контейнер
+            if (this.backButton.parentContainer) {
+                this.backButton.parentContainer.destroy();
+            } else {
+                this.backButton.destroy();
+            }
         }
+        
+        // Удаляем фоновые эффекты
+        this.backgroundEffects.forEach(effect => {
+            if (effect && effect.active) {
+                effect.destroy();
+            }
+        });
+        this.backgroundEffects = [];
     }
     
     /**

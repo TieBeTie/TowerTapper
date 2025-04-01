@@ -35,7 +35,7 @@ export class PermanentShopNavigation {
     private createCategoryTitle(): void {
         const { width, height } = this.screenManager.getScreenSize();
         const center = this.screenManager.getScreenCenter();
-        const categoryFontSize = this.screenManager.getResponsiveFontSize(36);
+        const categoryFontSize = this.screenManager.getResponsiveFontSize(28);
         
         this.categoryTitleText = this.screenManager.createText(
             center.x,
@@ -46,9 +46,22 @@ export class PermanentShopNavigation {
             {
                 fontFamily: 'pixelFont',
                 stroke: '#000000',
-                strokeThickness: 3
+                strokeThickness: 2,
+                shadow: { color: '#000000', blur: 3, offsetX: 1, offsetY: 1, fill: true }
             }
         );
+        
+        // Добавляем визуальный эффект при создании
+        this.categoryTitleText.setAlpha(0);
+        this.categoryTitleText.setScale(0.8);
+        
+        this.scene.tweens.add({
+            targets: this.categoryTitleText,
+            alpha: 1,
+            scale: 1,
+            duration: 300,
+            ease: 'Back.easeOut'
+        });
     }
     
     private createNavigationButtons(x: number, y: number): void {
@@ -83,8 +96,8 @@ export class PermanentShopNavigation {
     }
     
     private createNavigationButton(x: number, y: number, text: string, callback: Function): Phaser.GameObjects.Container {
-        const buttonWidth = this.screenManager.getResponsivePadding(50);
-        const buttonHeight = this.screenManager.getResponsivePadding(40);
+        const buttonWidth = this.screenManager.getResponsivePadding(45);
+        const buttonHeight = this.screenManager.getResponsivePadding(36);
         
         const button = this.scene.add.container(x, y);
         
@@ -98,18 +111,40 @@ export class PermanentShopNavigation {
             text, 
             {
                 fontFamily: 'pixelFont',
-                fontSize: `${this.screenManager.getMediumFontSize() * 0.9}px`,
+                fontSize: `${this.screenManager.getMediumFontSize() * 0.8}px`,
                 color: '#ffffff'
             }
         ).setOrigin(0.5);
         button.add(textObj);
         
+        // Добавляем эффект пульсации для кнопок
+        this.scene.tweens.add({
+            targets: textObj,
+            scale: { from: 1, to: 1.2 },
+            duration: 800,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+        
         bg.setInteractive({ useHandCursor: true })
             .on('pointerover', () => {
                 bg.fillColor = 0x555555;
+                this.scene.tweens.add({
+                    targets: button,
+                    scale: 1.1,
+                    duration: 100,
+                    ease: 'Sine.easeOut'
+                });
             })
             .on('pointerout', () => {
                 bg.fillColor = 0x333333;
+                this.scene.tweens.add({
+                    targets: button,
+                    scale: 1,
+                    duration: 100,
+                    ease: 'Sine.easeIn'
+                });
             })
             .on('pointerdown', () => {
                 callback();
@@ -155,7 +190,24 @@ export class PermanentShopNavigation {
     
     private updateCategoryTitle(): void {
         if (this.categoryTitleText) {
-            this.categoryTitleText.setText(this.shopFilterService.getCurrentCategory());
+            // Анимация смены текста
+            this.scene.tweens.add({
+                targets: this.categoryTitleText,
+                scale: 0.8,
+                alpha: 0,
+                duration: 150,
+                ease: 'Power2.easeIn',
+                onComplete: () => {
+                    this.categoryTitleText.setText(this.shopFilterService.getCurrentCategory());
+                    this.scene.tweens.add({
+                        targets: this.categoryTitleText,
+                        scale: 1,
+                        alpha: 1,
+                        duration: 250,
+                        ease: 'Back.easeOut'
+                    });
+                }
+            });
         }
         this.updateNavigationButtonsState();
     }
@@ -166,7 +218,7 @@ export class PermanentShopNavigation {
         
         // Обновляем позицию и размер заголовка категории
         if (this.categoryTitleText) {
-            const categoryFontSize = this.screenManager.getResponsiveFontSize(36);
+            const categoryFontSize = this.screenManager.getResponsiveFontSize(28);
             this.categoryTitleText.setFontSize(categoryFontSize);
             this.categoryTitleText.setPosition(center.x, height * 0.18);
         }
