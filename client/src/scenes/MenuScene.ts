@@ -92,11 +92,42 @@ export default class MenuScene extends Phaser.Scene implements IScene {
 
             // Создаем кнопку "Играть" с использованием адаптивного шрифта
             const fontSize = this.screenManager.getResponsiveFontSize(64);
-            const playButton = this.add.text(center.x, height * 0.7, '►', {
+            const playButton = this.add.text(center.x, height * 0.6, '►', {
                 fontSize: `${fontSize}px`,
                 color: '#ffffff',
                 fontFamily: 'pixelFont'
             }).setOrigin(0.5);
+
+            // Добавляем кнопку для перехода в магазин постоянных улучшений
+            const upgradesButtonFontSize = this.screenManager.getResponsiveFontSize(32);
+            const upgradesButton = this.add.text(center.x, height * 0.75, 'Permanent Upgrades', {
+                fontSize: `${upgradesButtonFontSize}px`,
+                color: '#ffcc00',
+                fontFamily: 'pixelFont',
+                stroke: '#000000',
+                strokeThickness: 2
+            }).setOrigin(0.5);
+
+            // Добавляем интерактивность кнопке магазина улучшений
+            upgradesButton.setInteractive()
+                .on('pointerover', () => {
+                    upgradesButton.setScale(1.1);
+                })
+                .on('pointerout', () => {
+                    upgradesButton.setScale(1);
+                })
+                .on('pointerdown', () => {
+                    try {
+                        // Проигрываем звук нажатия при наличии
+                        if (this.audioManager.hasSoundCached('playButton')) {
+                            this.audioManager.playSound('playButton');
+                        }
+                    } catch (err) {
+                        console.error('Error playing audio on upgrades button click:', err);
+                    }
+                    
+                    this.openPermanentUpgradesShop();
+                });
 
             // Добавляем интерактивность кнопке
             playButton.setInteractive()
@@ -159,7 +190,22 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             playButton.setFontSize(fontSize);
             playButton.setPosition(
                 this.screenManager.getScreenCenter().x,
-                this.screenManager.getScreenSize().height * 0.7
+                this.screenManager.getScreenSize().height * 0.6
+            );
+        }
+
+        // Находим и обновляем размер кнопки для перехода в магазин постоянных улучшений
+        const upgradesButton = this.children.list.find(child => 
+            child instanceof Phaser.GameObjects.Text && 
+            (child as Phaser.GameObjects.Text).text === 'Permanent Upgrades'
+        ) as Phaser.GameObjects.Text;
+        
+        if (upgradesButton) {
+            const upgradesButtonFontSize = this.screenManager.getResponsiveFontSize(32);
+            upgradesButton.setFontSize(upgradesButtonFontSize);
+            upgradesButton.setPosition(
+                this.screenManager.getScreenCenter().x,
+                this.screenManager.getScreenSize().height * 0.75
             );
         }
     }
@@ -224,6 +270,28 @@ export default class MenuScene extends Phaser.Scene implements IScene {
                 }
             });
         }
+    }
+
+    private openPermanentUpgradesShop(): void {
+        // Создаем затемнение через ScreenManager
+        const fadeRect = this.screenManager.createFadeOverlay();
+        
+        // Store reference to scene for clean completion
+        const currentScene = this;
+
+        // Анимируем затемнение
+        this.tweens.add({
+            targets: fadeRect,
+            alpha: 1,
+            duration: 500,
+            ease: 'Power2',
+            onComplete: function() {
+                // Переходим в сцену магазина постоянных улучшений
+                currentScene.time.delayedCall(600, () => {
+                    currentScene.scene.start('PermanentUpgradesShopScene');
+                });
+            }
+        });
     }
 
     destroy(): void {

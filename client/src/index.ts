@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import BootScene from './scenes/BootScene';
 import MenuScene from './scenes/MenuScene';
 import GameScene from './scenes/GameScene';
+import PermanentUpgradesShopScene from './scenes/PermanentUpgradesShopScene';
 import { TelegramService } from './services/TelegramService';
 
 // Инициализируем Telegram сервис
@@ -48,7 +49,7 @@ const config: Phaser.Types.Core.GameConfig = {
             gravity: { x: 0, y: 0 }
         }
     },
-    scene: [BootScene, MenuScene, GameScene],
+    scene: [BootScene, MenuScene, GameScene, PermanentUpgradesShopScene],
     backgroundColor: '#ffffff',
     // Modify render settings to fix blurry text
     render: {
