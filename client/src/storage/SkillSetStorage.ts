@@ -14,8 +14,15 @@ export class SkillSetStorage {
         return SkillSetStorage.instance;
     }
     
+    // Метод для пересоздания инстанса хранилища
+    public static recreate(): SkillSetStorage {
+        SkillSetStorage.instance = new SkillSetStorage();
+        return SkillSetStorage.instance;
+    }
+    
     save(states: Map<SkillType, ISkillState>): void {
         this.states = new Map(states);
+        // Не сохраняем в localStorage, чтобы данные не сохранялись между сессиями
     }
     
     load(): Map<SkillType, ISkillState> {

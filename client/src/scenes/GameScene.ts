@@ -433,4 +433,63 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             this.uiManager.updateHealthDisplay(currentHP, maxHP);
         }
     }
+
+    // Очистка ресурсов при закрытии сцены
+    shutdown(): void {
+        console.log('GameScene shutdown started...');
+        
+        // Отписываемся от событий
+        this.events.off('screenResize');
+        this.events.off('ui-refresh-visibility');
+        this.events.off('gameSpeedChanged');
+        this.events.off('ui-refresh');
+        this.events.off('tower-force-attack-circle');
+        this.events.off('upgradeButtonsVisibility');
+        this.events.off('updateGold');
+        this.events.off('updateEmblems');
+        
+        // Уничтожаем менеджеры и UI
+        if (this.uiManager) {
+            this.uiManager.destroy();
+        }
+        
+        if (this.upgradeManager) {
+            this.upgradeManager.destroy();
+        }
+        
+        // Уничтожаем компоненты игрового процесса
+        if (this.waveIndicator) {
+            this.waveIndicator.destroy();
+        }
+        
+        if (this.waveClearEffect) {
+            // Если у WaveClearEffect нет метода destroy, 
+            // просто обнуляем ссылку на него
+            // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
+            this.waveClearEffect = null;
+        }
+        
+        if (this.enemyManager) {
+            // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
+            this.enemyManager = null;
+        }
+        
+        if (this.projectileManager) {
+            // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
+            this.projectileManager = null;
+        }
+        
+        if (this.collisionManager) {
+            // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
+            this.collisionManager = null;
+        }
+        
+        // Обнуляем ссылки на менеджеры
+        // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
+        this.uiManager = null;
+        // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
+        this.upgradeManager = null;
+        
+        console.log('GameScene shutdown complete');
+    }
 }

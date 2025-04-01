@@ -6,7 +6,7 @@ import { GameServerFactory } from '../api/GameServerFactory';
 export class PermanentSkillService {
     private static instance: PermanentSkillService;
     private server: GameServerGateway;
-    private skillStateManager: SkillStateManager;
+    private skillStateManager: SkillStateManager | null = null;
     private serverSkills: Map<SkillType, number> = new Map();
     private emblems: number = 0;
     private telegramId: string = '';
@@ -14,7 +14,6 @@ export class PermanentSkillService {
 
     private constructor() {
         this.server = GameServerFactory.createGameServer();
-        this.skillStateManager = SkillStateManager.getInstance();
         
         // Listen for game state updates from the server
         this.server.onGameStateUpdate((state) => {
@@ -26,6 +25,14 @@ export class PermanentSkillService {
                 this.serverSkills.set(skill.skillType as SkillType, skill.level);
             });
         });
+    }
+
+    // Lazy accessor for skillStateManager to avoid circular dependency
+    private getSkillStateManager(): SkillStateManager {
+        if (!this.skillStateManager) {
+            this.skillStateManager = SkillStateManager.getInstance();
+        }
+        return this.skillStateManager;
     }
 
     public static getInstance(): PermanentSkillService {

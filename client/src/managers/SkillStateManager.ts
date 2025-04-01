@@ -7,7 +7,7 @@ export class SkillStateManager {
     private static instance: SkillStateManager;
     private state: Map<SkillType, ISkillState>;
     private storage: SkillSetStorage;
-    private permanentSkillService: PermanentSkillService;
+    private permanentSkillService: PermanentSkillService | null = null;
     private permanentSkillTypes: Set<SkillType> = new Set([
         SkillType.EMBLEM_BONUS,
         // Add other permanent skills here as they are implemented
@@ -15,8 +15,15 @@ export class SkillStateManager {
     
     private constructor() {
         this.storage = SkillSetStorage.getInstance();
-        this.permanentSkillService = PermanentSkillService.getInstance();
         this.state = new Map();
+    }
+    
+    // Lazy accessor for permanentSkillService to avoid circular dependency
+    private getPermanentSkillService(): PermanentSkillService {
+        if (!this.permanentSkillService) {
+            this.permanentSkillService = PermanentSkillService.getInstance();
+        }
+        return this.permanentSkillService;
     }
     
     public static getInstance(): SkillStateManager {
@@ -28,7 +35,113 @@ export class SkillStateManager {
     
     // Инициализация при старте игры
     public initialize(): void {
-        this.state = this.storage.load();
+        // Пересоздаем хранилище в начале игры
+        this.storage = SkillSetStorage.recreate();
+        
+        // Инициализируем пустое состояние
+        this.state = new Map();
+        
+        // Пытаемся получить данные с сервера
+        const success = this.initializeFromServer();
+        
+        // Если не удалось получить данные с сервера, устанавливаем базовые уровни
+        if (!success) {
+            this.initializeDefaultLevels();
+        }
+        
+        // Сохраняем начальное состояние
+        this.storage.save(this.state);
+    }
+    
+    // Инициализация перманентных скиллов с сервера
+    public initializeFromServer(): boolean {
+        const permanentService = this.getPermanentSkillService();
+        if (permanentService.isConnected()) {
+            let hasAnySkills = false;
+            
+            this.permanentSkillTypes.forEach(skillType => {
+                const level = permanentService.getSkillLevel(skillType);
+                if (level > 0) {
+                    hasAnySkills = true;
+                    const value = level; // Простая формула для значения, можно настроить по необходимости
+                    this.state.set(skillType, {
+                        type: skillType,
+                        value,
+                        currentLevel: level,
+                        lastUpdated: new Date()
+                    });
+                }
+            });
+            
+            return hasAnySkills;
+        }
+        
+        return false;
+    }
+    
+    // Инициализация базовых уровней навыков
+    private initializeDefaultLevels(): void {
+        // Устанавливаем базовый уровень = 1 для всех перманентных навыков
+        this.permanentSkillTypes.forEach(skillType => {
+            const defaultLevel = 1;
+            const defaultValue = 1; // Можно настроить базовое значение по необходимости
+            
+            this.state.set(skillType, {
+                type: skillType,
+                value: defaultValue,
+                currentLevel: defaultLevel,
+                lastUpdated: new Date()
+            });
+        });
+    }
+    
+    // Сброс всех навыков кроме перманентных (вызывать при проигрыше)
+    public resetOnGameOver(): void {
+        // Пересоздаем хранилище для следующей игры
+        this.storage = SkillSetStorage.recreate();
+        
+        // Временное хранилище для перманентных навыков
+        const permanentSkills = new Map<SkillType, ISkillState>();
+        
+        // Сохраняем только перманентные навыки
+        this.permanentSkillTypes.forEach(skillType => {
+            const permanentService = this.getPermanentSkillService();
+            
+            if (permanentService.isConnected()) {
+                // Если подключены к серверу, берем уровень оттуда
+                const serverLevel = permanentService.getSkillLevel(skillType);
+                if (serverLevel > 0) {
+                    const value = serverLevel; // Простая формула для значения, можно настроить по необходимости
+                    permanentSkills.set(skillType, {
+                        type: skillType,
+                        value,
+                        currentLevel: serverLevel,
+                        lastUpdated: new Date()
+                    });
+                }
+            } else {
+                // Если нет соединения с сервером, устанавливаем базовый уровень 1
+                permanentSkills.set(skillType, {
+                    type: skillType,
+                    value: 1,
+                    currentLevel: 1,
+                    lastUpdated: new Date()
+                });
+            }
+        });
+        
+        // Очищаем все навыки
+        this.state.clear();
+        
+        // Восстанавливаем перманентные навыки
+        permanentSkills.forEach((skill, type) => {
+            this.state.set(type, skill);
+        });
+        
+        // Сохраняем состояние в новом хранилище
+        this.storage.save(this.state);
+        
+        console.log('Skill states reset on game over. Permanent skills preserved.');
     }
     
     // Сохранение состояния
@@ -49,16 +162,18 @@ export class SkillStateManager {
         
         // If this is a permanent skill and we're connected to the server,
         // update it there as well
-        if (this.isPermanentSkill(type) && this.permanentSkillService.isConnected()) {
-            this.permanentSkillService.updateSkill(type, currentLevel);
+        const permanentService = this.getPermanentSkillService();
+        if (this.isPermanentSkill(type) && permanentService.isConnected()) {
+            permanentService.updateSkill(type, currentLevel);
         }
     }
     
     // Получение состояния
     public getState(type: SkillType): number {
+        const permanentService = this.getPermanentSkillService();
         // For permanent skills, prefer server value if connected
-        if (this.isPermanentSkill(type) && this.permanentSkillService.isConnected()) {
-            return this.permanentSkillService.getSkillLevel(type);
+        if (this.isPermanentSkill(type) && permanentService.isConnected()) {
+            return permanentService.getSkillLevel(type);
         }
         
         // Otherwise fall back to local state
@@ -67,9 +182,10 @@ export class SkillStateManager {
     
     // Получение уровня навыка
     public getSkillLevel(type: SkillType): number {
+        const permanentService = this.getPermanentSkillService();
         // For permanent skills, prefer server value if connected
-        if (this.isPermanentSkill(type) && this.permanentSkillService.isConnected()) {
-            return this.permanentSkillService.getSkillLevel(type);
+        if (this.isPermanentSkill(type) && permanentService.isConnected()) {
+            return permanentService.getSkillLevel(type);
         }
         
         return this.state.get(type)?.currentLevel || 0;
@@ -79,10 +195,11 @@ export class SkillStateManager {
     public getAllStates(): Map<SkillType, ISkillState> {
         const result = new Map(this.state);
         
+        const permanentService = this.getPermanentSkillService();
         // If connected to server, update permanent skill values from there
-        if (this.permanentSkillService.isConnected()) {
+        if (permanentService.isConnected()) {
             this.permanentSkillTypes.forEach(skillType => {
-                const level = this.permanentSkillService.getSkillLevel(skillType);
+                const level = permanentService.getSkillLevel(skillType);
                 const existingState = result.get(skillType);
                 
                 if (existingState) {
@@ -115,16 +232,18 @@ export class SkillStateManager {
     
     // Get emblems from the server
     public getEmblems(): number {
-        if (this.permanentSkillService.isConnected()) {
-            return this.permanentSkillService.getEmblems();
+        const permanentService = this.getPermanentSkillService();
+        if (permanentService.isConnected()) {
+            return permanentService.getEmblems();
         }
         return 0;
     }
     
     // Add emblems
     public addEmblems(amount: number): void {
-        if (this.permanentSkillService.isConnected()) {
-            this.permanentSkillService.addEmblems(amount);
+        const permanentService = this.getPermanentSkillService();
+        if (permanentService.isConnected()) {
+            permanentService.addEmblems(amount);
         }
     }
 } 

@@ -355,6 +355,26 @@ export class UpgradeManager {
     getState(type: SkillType): number {
         return this.stateManager.getState(type);
     }
+
+    // Метод для полного сброса и переинициализации менеджера при начале новой игры
+    public reset(): void {
+        // Пересоздаем все внутренние данные
+        this.initializeSkills();
+        this.initializePrices();
+        
+        console.log('[UpgradeManager] Reset complete');
+    }
+
+    // Метод для очистки ресурсов
+    public destroy(): void {
+        // Сбрасываем ссылки на объекты
+        // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
+        this.scene = null;
+        this.skills.clear();
+        this.prices.clear();
+        
+        console.log('[UpgradeManager] Resources cleaned up');
+    }
 }
 
 export default UpgradeManager; 

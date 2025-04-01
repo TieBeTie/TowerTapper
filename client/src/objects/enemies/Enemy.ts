@@ -25,7 +25,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.health = 0;
         this.maxHealth = 0;
         this.cost = Number(cost);
-        this.baseSpeed = 100; // Увеличиваем базовую скорость с 50 до 100
+        this.baseSpeed = 1000; // Увеличиваем базовую скорость с 50 до 100
         this.speed = this.baseSpeed; // Initialize with base speed
         this.skillStateManager = SkillStateManager.getInstance();
 

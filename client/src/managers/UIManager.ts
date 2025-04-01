@@ -615,13 +615,53 @@ export class UIManager {
     }
 
     destroy(): void {
-        // Clean up event listeners
-        this.scene.events.off('screenResize', this.handleScreenResize, this);
-        this.scene.events.off('ui-refresh-visibility', this.forceAllButtonsVisible, this);
+        console.log('[UIManager] Destroying UI components...');
         
-        // Destroy UI components
-        this.statsView.destroy();
-        this.upgradePanel.destroy();
+        // Clean up event listeners (с проверкой существования сцены)
+        if (this.scene && this.scene.events) {
+            this.scene.events.off('screenResize', this.handleScreenResize, this);
+            this.scene.events.off('ui-refresh-visibility', this.forceAllButtonsVisible, this);
+            this.scene.events.off('updateEmblems', this.updateEmblemCount, this);
+            this.scene.events.off('update', this.onUpdate, this);
+            this.scene.events.off('upgradeButtonsVisibility');
+        }
+        
+        // Destroy StatsView (с проверкой существования)
+        if (this.statsView) {
+            try {
+                this.statsView.destroy();
+            } catch (e) {
+                console.warn('Error destroying StatsView:', e);
+            }
+        }
+        
+        // Destroy UpgradePanel (с проверкой существования)
+        if (this.upgradePanel) {
+            try {
+                this.upgradePanel.destroy();
+            } catch (e) {
+                console.warn('Error destroying UpgradePanel:', e);
+            }
+        }
+        
+        // Destroy gold and emblem display objects
+        if (this.goldIcon && this.goldIcon.scene) {
+            this.goldIcon.destroy();
+        }
+        
+        if (this.goldNumberText && this.goldNumberText.scene) {
+            this.goldNumberText.destroy();
+        }
+        
+        if (this.emblemIcon && this.emblemIcon.scene) {
+            this.emblemIcon.destroy();
+        }
+        
+        if (this.emblemNumberText && this.emblemNumberText.scene) {
+            this.emblemNumberText.destroy();
+        }
+        
+        console.log('[UIManager] UI components destroyed');
     }
 
     private updateEmblemCount(): void {
@@ -678,5 +718,20 @@ export class UIManager {
         if (this.statsView) {
             this.statsView.setHP(currentHP, maxHP);
         }
+    }
+
+    // Обновляет UI при новой игре, чтобы отразить изменения в навыках
+    public reset(): void {
+        // Обновляем панель улучшений с новыми данными
+        if (this.upgradePanel) {
+            // Пересоздаем панель кнопок улучшений для новой игры
+            this.upgradePanel.destroy();
+            this.initilizeUpgradePanel();
+        }
+        
+        // Обновляем счетчики золота и эмблем
+        this.updateCounts();
+        
+        console.log('[UIManager] Reset complete');
     }
 }

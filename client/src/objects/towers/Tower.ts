@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SkillType } from '../../types/SkillType';
 import { SkillSetStorage } from '../../storage/SkillSetStorage';
 import { ScreenManager } from '../../managers/ScreenManager';
+import { SkillStateManager } from '../../managers/SkillStateManager';
 
 class Tower extends Phaser.Physics.Arcade.Sprite {
     // Цветовые константы
@@ -299,6 +300,9 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             ease: 'Power2',
             onComplete: () => {
                 if (this.scene?.scene) {
+                    // Используем правильный способ перехода между сценами
+                    // с явной остановкой текущей сцены
+                    this.scene.scene.stop('GameScene');
                     this.scene.scene.start('MenuScene');
                 }
                 super.destroy();
