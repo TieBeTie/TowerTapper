@@ -99,6 +99,12 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     }
 
     upgrade(): void {
+        // Проверка наличия сцены перед обновлением
+        if (!this.scene) {
+            console.warn('Cannot upgrade tower: scene is undefined');
+            return;
+        }
+        
         const skills = this.skillStorage.load();
         this.maxHealth = skills.get(SkillType.MAX_HEALTH)?.value || this.maxHealth;
         this.defense = skills.get(SkillType.DEFENSE)?.value || this.defense;
@@ -108,7 +114,13 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE)?.value || 1;
         const { height } = this.screenManager.getScreenSize();
         this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
-        this.updateAttackRangeVisual();
+        
+        // Используем безопасный метод обновления визуализации
+        try {
+            this.safeUpdateAttackCircle();
+        } catch (e) {
+            console.error('Error updating attack range visual:', e);
+        }
         
         this.health = this.maxHealth;
 
@@ -120,7 +132,10 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     // Add a safe method that doesn't destroy and recreate the circle
     private safeUpdateAttackCircle(): void {
         // Only update if active and has a scene
-        if (!this.active || !this.scene) return;
+        if (!this.active || !this.scene) {
+            console.warn('Cannot update attack circle: inactive tower or missing scene');
+            return;
+        }
         
         // Make sure the circle exists
         if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {
@@ -143,6 +158,12 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
 
     // Обновляем визуальное отображение радиуса атаки - safer version that doesn't recreate
     public updateAttackRangeVisual(): void {
+        // Проверяем, существует ли сцена перед использованием
+        if (!this.scene) {
+            console.warn('Cannot update attack range visual: scene is undefined');
+            return;
+        }
+        
         // First, ensure the graphics object exists
         if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {
             this.attackRangeCircle = this.scene.add.graphics();
