@@ -110,8 +110,6 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         // Ensure the tower is properly positioned
         if (this.tower) {
             const center = this.screenManager.getGameViewCenter();
-            this.tower.setPosition(center.x, center.y);
-            // Use direct method call instead of event emission to avoid recursion
             this.tower.updateAttackRangeVisual();
         }
         

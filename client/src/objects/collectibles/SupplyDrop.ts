@@ -149,7 +149,7 @@ export class SupplyDrop extends Phaser.GameObjects.Sprite {
     }
     
     private onLifespanEnd(): void {
-        if (this.hasBeenCollected) return;
+        if (this.hasBeenCollected || !this.scene) return;
         
         this.hasBeenCollected = true;
         

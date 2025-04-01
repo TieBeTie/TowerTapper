@@ -24,7 +24,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private isDying: boolean = false;
     private skillStorage: SkillSetStorage;
     private screenManager: ScreenManager;
-    private attackRangeCircle: Phaser.GameObjects.Graphics;
+    private attackRangeCircle: Phaser.GameObjects.Graphics | null;
     private attackRange: number;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
@@ -81,7 +81,10 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.scene.events.on('screenResize', this.handleScreenResize, this);
         
         // Use the new specific event name to avoid recursion
-        this.scene.events.on('tower-force-attack-circle', this.safeUpdateAttackCircle, this);
+        this.scene.events.on('tower-force-attack-circle', () => {
+            console.log('Received tower-force-attack-circle event');
+            this.safeUpdateAttackCircle();
+        }, this);
     }
     
     private handleScreenResize(gameScale: number): void {
@@ -112,15 +115,14 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || this.regeneration;
         
         // Обновляем радиус атаки при улучшении
-        const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE)?.value || 1;
-        const { height } = this.screenManager.getScreenSize();
-        this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
-        
-        // Используем безопасный метод обновления визуализации
-        try {
+        const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE);
+        if (attackRangeSkill) {
+            const { height } = this.screenManager.getScreenSize();
+            // Используем значение навыка напрямую из хранилища
+            this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill.value;
+            
+            // Update the attack range circle using the safe method
             this.safeUpdateAttackCircle();
-        } catch (e) {
-            console.error('Error updating attack range visual:', e);
         }
         
         if (this.regeneration > 0) {
@@ -135,6 +137,17 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             console.warn('Cannot update attack circle: inactive tower or missing scene');
             return;
         }
+        
+        // Get the current attack range skill value
+        const skills = this.skillStorage.load();
+        const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE);
+        const { height } = this.screenManager.getScreenSize();
+        
+        // Use the skill value if it exists, otherwise use 1
+        const skillValue = attackRangeSkill?.value || 1;
+        this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * skillValue;
+        
+        console.log(`Updating attack range circle: skill value=${skillValue}, range=${this.attackRange}`);
         
         // Make sure the circle exists
         if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {
@@ -344,7 +357,10 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         // Check if scene still exists before trying to access it
         if (this.scene && this.scene.events) {
             this.scene.events.off('screenResize', this.handleScreenResize, this);
-            this.scene.events.off('tower-force-attack-circle', this.safeUpdateAttackCircle, this);
+            this.scene.events.off('tower-force-attack-circle', () => {
+                console.log('Received tower-force-attack-circle event');
+                this.safeUpdateAttackCircle();
+            }, this);
         }
         this.stopRegeneration();
         

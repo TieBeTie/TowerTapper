@@ -231,7 +231,6 @@ export class UpgradeButton extends UIComponent {
         try {
             // Safety check for scene existence
             if (!this.scene) {
-                console.warn('UpgradeButton: scene не существует');
                 return false;
             }
             
@@ -239,27 +238,17 @@ export class UpgradeButton extends UIComponent {
             
             // Check if the scene has a scene property and it's properly initialized
             if (!this.scene.scene || typeof this.scene.scene.get !== 'function') {
-                console.warn('UpgradeButton: scene.scene не существует или get не является функцией');
                 return false;
             }
             
             const gameScene = this.scene.scene.get('GameScene');
             if (!gameScene) {
-                console.warn('UpgradeButton: gameScene не существует');
                 return false;
             }
-            
-            const gold = (gameScene as any).goldManager?.gold_count || 0;
-            const canAfford = gold >= cost;
-            
-            console.log(`UpgradeButton: Проверка доступности для ${this.skillTypeValue}:
-                - Стоимость: ${cost}
-                - Монеты: ${gold}
-                - Доступно: ${canAfford}`);
-            
-            return canAfford;
+
+            const currentGold = (gameScene as any).goldManager.gold_count;
+            return currentGold >= cost;
         } catch (error) {
-            console.warn('Error in canAffordUpgrade:', error);
             return false;
         }
     }

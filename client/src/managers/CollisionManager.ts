@@ -12,7 +12,7 @@ class CollisionManager {
     private scene: IGameScene;
     private projectileEnemyCollider: Phaser.Physics.Arcade.Collider | null = null;
     private towerEnemyCollider: Phaser.Physics.Arcade.Collider | null = null;
-    private readonly PROJECTILE_CHECK_DISTANCE = 150;
+    private readonly PROJECTILE_CHECK_DISTANCE = 100;
     private readonly TOWER_CHECK_DISTANCE = 100;
     private skillStorage: SkillSetStorage;
 
@@ -52,6 +52,19 @@ class CollisionManager {
 
         if (!sprite1.active || !sprite2.active) return false;
 
+        // Use built-in physics body check if available
+        const body1 = sprite1.body as Phaser.Physics.Arcade.Body;
+        const body2 = sprite2.body as Phaser.Physics.Arcade.Body;
+        
+        if (body1 && body2) {
+            // Check if bodies overlap using physics
+            return Phaser.Geom.Intersects.CircleToCircle(
+                new Phaser.Geom.Circle(sprite1.x, sprite1.y, body1.radius || 20),
+                new Phaser.Geom.Circle(sprite2.x, sprite2.y, body2.radius || 20)
+            );
+        }
+
+        // Fallback to distance check
         const distance = Phaser.Math.Distance.Between(
             sprite1.x, sprite1.y,
             sprite2.x, sprite2.y

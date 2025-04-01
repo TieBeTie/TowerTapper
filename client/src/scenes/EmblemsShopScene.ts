@@ -24,6 +24,7 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
     private backgroundStars: Phaser.GameObjects.TileSprite | null = null;
     private glowEffect: Phaser.GameObjects.Sprite | null = null;
     private staticStars: Phaser.GameObjects.Group | null = null;
+    private blackBackground: Phaser.GameObjects.Graphics | null = null;
     
     // Define emblem packages
     private readonly emblemPackages: EmblemPackage[] = [
@@ -51,6 +52,13 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
     }
 
     create(): void {
+        // Immediately create a black background to prevent white flash
+        const { width, height } = this.scale;
+        this.blackBackground = this.add.graphics();
+        this.blackBackground.fillStyle(0x000000, 1);
+        this.blackBackground.fillRect(0, 0, width, height);
+        this.blackBackground.setDepth(-1);
+        
         // Initialize managers
         this.screenManager = new ScreenManager(this);
         this.audioManager = AudioManager.getInstance(this);
@@ -666,6 +674,14 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
         
         // Start fresh with a new layout
         this.children.removeAll();
+        
+        // Re-add the black background immediately to prevent flash
+        const { width, height } = this.scale;
+        this.blackBackground = this.add.graphics();
+        this.blackBackground.fillStyle(0x000000, 1);
+        this.blackBackground.fillRect(0, 0, width, height);
+        this.blackBackground.setDepth(-1);
+        
         this.createAnimatedBackground();
         this.setupUI();
     }
@@ -689,6 +705,11 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
         
         if (this.staticStars) {
             this.staticStars.clear(true, true);
+        }
+        
+        if (this.blackBackground) {
+            this.blackBackground.destroy();
+            this.blackBackground = null;
         }
     }
     

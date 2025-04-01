@@ -37,9 +37,6 @@ export class UpgradeManager {
         
         // Получаем определения навыков из статического класса
         this.skills = SkillDefinitions.getSkillDefinitions(currentLevels);
-        
-        // Для отладки
-        console.log('Инициализированы определения навыков');
     }
 
     // Добавим функцию Фибоначчи для расчета цены
@@ -68,13 +65,8 @@ export class UpgradeManager {
 
     // Initialize pricing information separately
     private initializePrices(): void {
-        console.log('Инициализация цен с последовательностью Фибоначчи');
-        
         // Получаем определения цен из статического класса
         this.prices = SkillDefinitions.getPriceDefinitions();
-        
-        // Для отладки
-        console.log('Инициализированы определения цен навыков');
     }
 
     // Getters for skill information
@@ -85,7 +77,6 @@ export class UpgradeManager {
 
     // Метод для обратной совместимости
     getUpgradeCost(type: SkillType, currencyType: CurrencyType = CurrencyType.GOLD): number {
-        console.log(`getUpgradeCost вызван для ${type}. Используйте getSkillCost вместо этого метода`);
         return this.getSkillCost(type, currencyType);
     }
 
@@ -98,19 +89,20 @@ export class UpgradeManager {
 
     getSkillCost(type: SkillType, currencyType: CurrencyType = CurrencyType.GOLD): number {
         const price = this.prices.get(type);
+        if (!price) return 0;
+
         const skill = this.skills.get(type);
-        if (!price || !skill) return 0;
-        
-        // Вычисляем цену по последовательности Фибоначчи
+        if (!skill) return 0;
+
+        const currentLevel = skill.currentLevel;
+        const maxLevel = skill.maxLevel;
+
+        if (currentLevel >= maxLevel) return 0;
+
         const cost = currencyType === CurrencyType.GOLD 
-            ? price.goldCost.calculateCost(skill.currentLevel)
-            : price.emblemsCost.calculateCost(skill.currentLevel);
-        
-        console.log(`[UpgradeManager] Расчет стоимости для ${type}:
-            - Уровень: ${skill.currentLevel}
-            - Валюта: ${currencyType}
-            - Стоимость (Фибоначчи): ${cost}`);
-        
+            ? price.goldCost.calculateCost(currentLevel)
+            : price.emblemsCost.calculateCost(currentLevel);
+
         return cost;
     }
 
@@ -158,7 +150,6 @@ export class UpgradeManager {
                 if ((gameScene as any).goldManager) {
                     (gameScene as any).goldManager.gold_count -= amount;
                     gameScene.events.emit('updateGold', (gameScene as any).goldManager.gold_count);
-                    console.log(`Вычтено ${amount} золота, осталось: ${(gameScene as any).goldManager.gold_count}`);
                 }
                 break;
             case CurrencyType.EMBLEMS:
@@ -309,7 +300,31 @@ export class UpgradeManager {
                 }
                 break;
             case SkillType.ATTACK_RANGE:
-                tower.upgrade();
+                // Update the skill value in storage
+                const currentSkills = this.skillStorage.load();
+                const attackRangeSkill = currentSkills.get(SkillType.ATTACK_RANGE);
+                if (attackRangeSkill) {
+                    // Update both value and level
+                    attackRangeSkill.value = newValue;
+                    attackRangeSkill.currentLevel = skill.currentLevel;
+                    attackRangeSkill.lastUpdated = new Date();
+                    this.skillStorage.save(currentSkills);
+                    console.log(`Updated attack range skill: value=${newValue}, level=${skill.currentLevel}`);
+                } else {
+                    // If skill doesn't exist in storage, create it
+                    currentSkills.set(SkillType.ATTACK_RANGE, {
+                        type: SkillType.ATTACK_RANGE,
+                        lastUpdated: new Date(),
+                        currentLevel: skill.currentLevel,
+                        value: newValue
+                    });
+                    this.skillStorage.save(currentSkills);
+                }
+                // Force the tower to update its attack range circle
+                if (gameScene) {
+                    console.log('Emitting tower-force-attack-circle event');
+                    gameScene.events.emit('tower-force-attack-circle');
+                }
                 break;
             case SkillType.KNOCKBACK:
                 // Value already saved to SkillStateManager

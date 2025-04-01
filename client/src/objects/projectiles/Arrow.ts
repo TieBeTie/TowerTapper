@@ -23,6 +23,16 @@ export class Arrow extends Projectile {
 
         // Set arrow size
         this.setScale(Arrow.ARROW_SCALE);
+        
+        // Set a circular hitbox for better collision detection
+        if (this.body) {
+            const circleRadius = Math.max(this.width, this.height);
+            (this.body as Phaser.Physics.Arcade.Body).setCircle(
+                circleRadius,
+                (this.width - circleRadius * 2) * 0.5,
+                (this.height - circleRadius * 2) * 0.5
+            );
+        }
 
         // Initialize movement properties
         this.speed = 0;

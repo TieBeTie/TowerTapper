@@ -38,8 +38,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.setCollideWorldBounds(true);
 
         if (this.body) {
-            this.body.setSize(this.width * Enemy.ENEMY_SCALE, this.height * Enemy.ENEMY_SCALE);
-            this.body.setOffset(this.width, this.height);
+            // Change from rectangular to circular hitbox
+            const circleRadius = Math.max(this.width, this.height) * Enemy.ENEMY_SCALE; // Increased radius
+            (this.body as Phaser.Physics.Arcade.Body).setCircle(
+                circleRadius,
+                (this.width - circleRadius * 2) * 0.5, // Changed from + to -
+                (this.height - circleRadius * 2) * 0.5  // Changed from + to -
+            );
         }
 
         this.anims.play('enemy_walk', true);
