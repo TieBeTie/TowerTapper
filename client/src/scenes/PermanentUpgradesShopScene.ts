@@ -601,12 +601,6 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
     }
     
     private returnToMenu(): void {
-        // Создаем затемнение для плавного перехода
-        const { width, height } = this.screenManager.getScreenSize();
-        const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 0);
-        fadeRect.setOrigin(0, 0);
-        fadeRect.setDepth(1000);
-        
         // Остановим звуки если необходимо
         if (this.audioManager) {
             try {
@@ -616,28 +610,21 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
             }
         }
         
-        // Плавно затемняем экран и затем переходим в главное меню
-        this.tweens.add({
-            targets: fadeRect,
-            alpha: 1,
-            duration: 300,
-            ease: 'Power2',
-            onComplete: () => {
-                // Переходим в меню только когда затемнение завершено
-                try {
-                    // Отсоединяем все обработчики событий
-                    this.events.off('screenResize', this.handleScreenResize, this);
-                    
-                    // Используем scene.switch вместо stop/start
-                    this.scene.switch('MainMenuScene');
-                } catch (err) {
-                    console.error('Error during scene transition:', err);
-                    
-                    // Если произошла ошибка, пробуем альтернативный способ
-                    this.scene.start('MainMenuScene');
-                }
-            }
-        });
+        // Отключаем все обработчики событий
+        this.events.off('screenResize', this.handleScreenResize, this);
+        
+        // Уничтожаем все кнопки и элементы интерфейса
+        this.upgradeButtons.forEach(button => button.destroy());
+        this.upgradeButtons = [];
+        
+        if (this.leftButton) this.leftButton.destroy();
+        if (this.rightButton) this.rightButton.destroy();
+        
+        // Сначала завершаем текущую сцену полностью
+        this.scene.stop('PermanentUpgradesShopScene');
+        
+        // Перезапускаем главное меню с правильным названием
+        this.scene.start('MenuScene');
     }
     
     shutdown(): void {
