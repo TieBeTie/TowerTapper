@@ -19,8 +19,8 @@ export class StatsView {
     // Layout constants
     private readonly ELEMENTS_SPACING_RATIO = 0.1; // 3% of screen width
     private readonly PADDING_RATIO = 0.08; // 3% of screen width
-    private readonly HP_BAR_WIDTH_RATIO = 0.3; // 12% of screen width
-    private readonly HP_BAR_HEIGHT_RATIO = 0.4; // 2% of screen height
+    private readonly HP_BAR_WIDTH_RATIO = 0.24; // Снижаем с 0.2 до 0.18
+    private readonly HP_BAR_HEIGHT_RATIO = 0.06; // Снижаем высоту с 0.4 до 0.02 (2% высоты экрана)
     private readonly HP_COLOR = 0x009900; // darker green
     private readonly HP_BACKGROUND_COLOR = 0x005500; // even darker green
 
@@ -41,7 +41,7 @@ export class StatsView {
 
         // Create main container
         this.container = this.scene.add.container(0, 0);
-        this.container.setDepth(900); // High depth to appear above most game elements but below UI panels
+        this.container.setDepth(1500); // Increased from 900 to 1500
         
         // Create semi-transparent background
         this.background = this.scene.add.graphics();
@@ -56,9 +56,13 @@ export class StatsView {
         this.hpContainer = this.scene.add.container(0, 0);
         this.contentContainer.add(this.hpContainer);
         
-        // Create progress bar (for HP display) - narrower
-        const progressBarWidth = width * this.HP_BAR_WIDTH_RATIO * gameScale;
-        const progressBarHeight = height * 0.02 * gameScale; // Reduced height
+        // Инициализируем currentWidth/Height для начального создания полоски HP
+        this.currentWidth = width;
+        this.currentHeight = height * 0.1; // Примерная высота StatsView (10% от высоты экрана)
+        
+        // Create progress bar (for HP display) - относительно размеров StatsView
+        const progressBarWidth = this.currentWidth * this.HP_BAR_WIDTH_RATIO * gameScale;
+        const progressBarHeight = this.currentHeight * this.HP_BAR_HEIGHT_RATIO * gameScale;
         
         this.progressBar = new ProgressBar(
             this.scene,
@@ -87,20 +91,26 @@ export class StatsView {
             align: 'center'
         }).setOrigin(0.5);
         
+        // Force higher depth on HP text to ensure visibility
+        this.hpText.setDepth(1600);
+        
         // Add text to HP container
         this.hpContainer.add(this.hpText);
         
         // Create currency container (right side)
         this.currencyContainer = this.scene.add.container(0, 0);
         this.contentContainer.add(this.currencyContainer);
+        
+        // Log creation for debugging
+        console.log('StatsView created with HP container at depth:', this.container.depth);
     }
 
     private handleScreenResize(gameScale: number): void {
         const { width, height } = this.screenManager.getScreenSize();
         
-        // Resize progress bar
-        const progressBarWidth = width * this.HP_BAR_WIDTH_RATIO * gameScale;
-        const progressBarHeight = height * 0.02 * gameScale;
+        // Resize progress bar - используем размеры StatsView, а не экрана
+        const progressBarWidth = this.currentWidth * this.HP_BAR_WIDTH_RATIO * gameScale;
+        const progressBarHeight = this.currentHeight * this.HP_BAR_HEIGHT_RATIO * gameScale;
         
         // Safely destroy existing objects before creating new ones
         try {
@@ -145,6 +155,9 @@ export class StatsView {
             this.hpContainer.add(this.hpText);
             
             this.distributeElements();
+            
+            // Ensure all elements are visible after resize
+            this.forceVisibility();
         } catch (error) {
             console.error('Error during screen resize handling:', error);
         }
@@ -180,12 +193,28 @@ export class StatsView {
         if (this.hpText && this.hpText.scene) {
             try {
                 this.hpText.setText(`${Math.floor(currentHP)}/${maxHP}`);
+                
+                // Ensure visibility and depth
+                this.hpText.setVisible(true);
+                this.hpText.setDepth(1600);
+                
+                // Log update for debugging
+                console.log(`HP updated: ${Math.floor(currentHP)}/${maxHP}, depth: ${this.hpText.depth}`);
             } catch (error) {
                 console.warn('Error updating HP text:', error);
                 // Recreate text if there was an error
                 this.recreateHPText();
             }
+        } else {
+            // If HP text doesn't exist, recreate it
+            console.warn('HP text missing or invalid, recreating...');
+            this.recreateHPText();
         }
+        
+        // Ensure parent containers are visible
+        this.hpContainer.setVisible(true);
+        this.contentContainer.setVisible(true);
+        this.container.setVisible(true);
     }
 
     // Method to safely recreate the HP text if it gets into a broken state
@@ -213,10 +242,16 @@ export class StatsView {
                 align: 'center'
             }).setOrigin(0.5);
             
+            // Force higher depth on recreated HP text
+            this.hpText.setDepth(1600);
+            
             this.hpContainer.add(this.hpText);
             
             // Position the text correctly
             this.distributeElements();
+            
+            // Log recreation for debugging
+            console.log('HP text recreated with depth:', this.hpText.depth);
         } catch (error) {
             console.error('Failed to recreate HP text:', error);
         }
@@ -310,13 +345,19 @@ export class StatsView {
         const leftCenterOfCenterX = this.currentWidth / 4;
         const beginOfCenterX = leftCenterOfCenterX - (this.progressBar.width / 2);
         
-        // Position HP container (left side)
+        // Position HP container (left side) - возвращаем оригинальную позицию
         if (this.hpContainer) {
+            // Корректируем позиционирование, сдвигая на половину высоты прогресс-бара
             this.hpContainer.setPosition(beginOfCenterX, centerY - (this.progressBar.height / 2));
             
             // Position HP text over the progress bar
             if (this.hpText && this.progressBar) {
-                this.hpText.setPosition(this.progressBar.width / 2, centerY - (this.progressBar.height / 2));
+                // Позиционируем текст точно по центру полоски HP
+                this.hpText.setPosition(this.progressBar.width / 2, this.progressBar.height / 2);
+                
+                // Убеждаемся, что текст видим поверх полоски
+                this.hpText.setDepth(1600);
+                this.hpText.setVisible(true);
             }
         }
 
@@ -363,6 +404,36 @@ export class StatsView {
 
     setVisible(visible: boolean): void {
         this.container.setVisible(visible);
+        
+        // If setting to visible, also ensure all child elements are visible
+        if (visible) {
+            this.forceVisibility();
+        }
+    }
+
+    // Force visibility on all elements
+    forceVisibility(): void {
+        // Make sure main containers are visible
+        this.container.setVisible(true);
+        this.contentContainer.setVisible(true);
+        this.hpContainer.setVisible(true);
+        
+        // Ensure HP bar elements are visible
+        if (this.progressBar && 'setVisible' in this.progressBar) {
+            (this.progressBar as any).setVisible(true);
+        }
+        
+        // Ensure HP text is visible with proper depth
+        if (this.hpText) {
+            this.hpText.setVisible(true);
+            this.hpText.setDepth(1600);
+            
+            // Force text refresh
+            this.hpText.setText(this.hpText.text);
+        }
+        
+        // Log visibility enforcement
+        console.log('Forced visibility on StatsView elements');
     }
 
     destroy(): void {

@@ -25,7 +25,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.health = 0;
         this.maxHealth = 0;
         this.cost = Number(cost);
-        this.baseSpeed = 50; // Store the base speed
+        this.baseSpeed = 100; // Увеличиваем базовую скорость с 50 до 100
         this.speed = this.baseSpeed; // Initialize with base speed
         this.skillStateManager = SkillStateManager.getInstance();
 
@@ -104,15 +104,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
         // Get the game scene to access gold reward multiplier
         const gameScene = this.scene.scene.get('GameScene');
-        const goldRewardMultiplier = (gameScene as any).getGoldRewardMultiplier?.() || 1;
+        const coinRewardMultiplier = (gameScene as any).getGoldRewardMultiplier?.() || 1;
 
         // Calculate final gold reward with multiplier
-        const finalReward = Math.floor(this.cost * goldRewardMultiplier);
+        const finalReward = Math.floor(this.cost * coinRewardMultiplier);
 
-        // Spawn gold with the multiplied reward
-        const goldManager = (gameScene as any).goldManager;
-        if (goldManager) {
-            goldManager.spawnGold(
+        // Spawn coins with the multiplied reward
+        const coinManager = (gameScene as any).coinManager;
+        if (coinManager) {
+            coinManager.spawnGold(
                 new Phaser.Math.Vector2(this.x, this.y),
                 this.tower
             );
