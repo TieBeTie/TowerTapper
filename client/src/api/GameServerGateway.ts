@@ -1,11 +1,11 @@
+export interface PlayerSkill {
+    skillType: string;
+    level: number;
+}
+
 export interface GameState {
-    castle: {
-        level: number;
-        health: number;
-        arrowSpeed: number;
-        arrowDamage: number;
-    };
-    gold: number;
+    emblems: number;
+    player_skills: PlayerSkill[];
 }
 
 export interface GameServerGateway {
@@ -14,19 +14,17 @@ export interface GameServerGateway {
 
     // Game events
     onGameStateUpdate(callback: (state: GameState) => void): void;
-    onClickConfirmed(callback: () => void): void;
-
-    // Player actions
-    sendClick(): void;
-    sendEnemyKilled(gold: number): void;
-    sendCastleDamaged(health: number): void;
+    
+    // Emblem and skill actions
+    updateEmblems(emblems: number): void;
+    addEmblems(amount: number): void;
+    updateSkill(skillType: string, level: number): void;
 }
 
 // WebSocket implementation
 export class WebSocketGameServer implements GameServerGateway {
     private ws: WebSocket | null = null;
     private gameStateCallback: ((state: GameState) => void) | null = null;
-    private clickConfirmedCallback: (() => void) | null = null;
 
     async connect(telegramId: string): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -46,12 +44,6 @@ export class WebSocketGameServer implements GameServerGateway {
                         case 'game_state':
                             if (this.gameStateCallback) {
                                 this.gameStateCallback(message.payload);
-                            }
-                            break;
-
-                        case 'click_confirmed':
-                            if (this.clickConfirmedCallback) {
-                                this.clickConfirmedCallback();
                             }
                             break;
                     }
@@ -78,33 +70,32 @@ export class WebSocketGameServer implements GameServerGateway {
         this.gameStateCallback = callback;
     }
 
-    onClickConfirmed(callback: () => void): void {
-        this.clickConfirmedCallback = callback;
-    }
-
-    sendClick(): void {
+    updateEmblems(emblems: number): void {
         if (this.ws) {
             this.ws.send(JSON.stringify({
-                type: 'click',
-                payload: null
+                type: 'update_emblems',
+                payload: emblems
             }));
         }
     }
 
-    sendEnemyKilled(gold: number): void {
+    addEmblems(amount: number): void {
         if (this.ws) {
             this.ws.send(JSON.stringify({
-                type: 'enemy_killed',
-                payload: gold
+                type: 'add_emblems',
+                payload: amount
             }));
         }
     }
 
-    sendCastleDamaged(health: number): void {
+    updateSkill(skillType: string, level: number): void {
         if (this.ws) {
             this.ws.send(JSON.stringify({
-                type: 'castle_damaged',
-                payload: health
+                type: 'update_skill',
+                payload: {
+                    skill_type: skillType,
+                    level: level
+                }
             }));
         }
     }
@@ -113,7 +104,8 @@ export class WebSocketGameServer implements GameServerGateway {
 // Mock implementation for testing
 export class MockGameServer implements GameServerGateway {
     private gameStateCallback: ((state: GameState) => void) | null = null;
-    private clickConfirmedCallback: (() => void) | null = null;
+    private playerSkills: PlayerSkill[] = [];
+    private emblems: number = 0;
 
     async connect(): Promise<void> {
         console.log('Connected to mock server');
@@ -128,33 +120,52 @@ export class MockGameServer implements GameServerGateway {
         // Send initial mock state
         if (this.gameStateCallback) {
             this.gameStateCallback({
-                castle: {
-                    level: 1,
-                    health: 100,
-                    arrowSpeed: 1.0,
-                    arrowDamage: 1
-                },
-                gold: 0
+                emblems: this.emblems,
+                player_skills: this.playerSkills
             });
         }
     }
 
-    onClickConfirmed(callback: () => void): void {
-        this.clickConfirmedCallback = callback;
-    }
+    updateEmblems(emblems: number): void {
+        console.log('Mock: Updating emblems to', emblems);
+        this.emblems = emblems;
 
-    sendClick(): void {
-        console.log('Mock: Click sent');
-        if (this.clickConfirmedCallback) {
-            this.clickConfirmedCallback();
+        if (this.gameStateCallback) {
+            this.gameStateCallback({
+                emblems: this.emblems,
+                player_skills: this.playerSkills
+            });
         }
     }
 
-    sendEnemyKilled(gold: number): void {
-        console.log('Mock: Enemy killed, gold:', gold);
+    addEmblems(amount: number): void {
+        console.log('Mock: Adding emblems', amount);
+        this.emblems += amount;
+
+        if (this.gameStateCallback) {
+            this.gameStateCallback({
+                emblems: this.emblems,
+                player_skills: this.playerSkills
+            });
+        }
     }
 
-    sendCastleDamaged(health: number): void {
-        console.log('Mock: Castle damaged, health:', health);
+    updateSkill(skillType: string, level: number): void {
+        console.log('Mock: Updating skill', skillType, 'to level', level);
+        
+        // Update existing skill or add new one
+        const existingSkillIndex = this.playerSkills.findIndex(s => s.skillType === skillType);
+        if (existingSkillIndex >= 0) {
+            this.playerSkills[existingSkillIndex].level = level;
+        } else {
+            this.playerSkills.push({ skillType, level });
+        }
+
+        if (this.gameStateCallback) {
+            this.gameStateCallback({
+                emblems: this.emblems,
+                player_skills: this.playerSkills
+            });
+        }
     }
 } 

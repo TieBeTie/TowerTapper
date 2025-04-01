@@ -8,14 +8,14 @@ import (
 
 type MockPlayerUseCase struct {
 	players map[int64]*domain.Player
-	castles map[int64]*domain.Castle
+	skills  map[int64][]*domain.PlayerSkill
 	mutex   sync.RWMutex
 }
 
 func NewMockPlayerUseCase() *PlayerUseCase {
 	mock := &MockPlayerUseCase{
 		players: make(map[int64]*domain.Player),
-		castles: make(map[int64]*domain.Castle),
+		skills:  make(map[int64][]*domain.PlayerSkill),
 	}
 	return &PlayerUseCase{repo: mock}
 }
@@ -47,37 +47,43 @@ func (m *MockPlayerUseCase) UpdatePlayer(player *domain.Player) error {
 	return nil
 }
 
-func (m *MockPlayerUseCase) CreateCastle(castle *domain.Castle) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	castle.ID = int64(len(m.castles) + 1)
-	m.castles[castle.PlayerID] = castle
-	return nil
-}
-
-func (m *MockPlayerUseCase) GetCastleByPlayerID(playerID int64) (*domain.Castle, error) {
+func (m *MockPlayerUseCase) GetPlayerSkills(playerID int64) ([]*domain.PlayerSkill, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	if castle, ok := m.castles[playerID]; ok {
-		return castle, nil
+	if skills, ok := m.skills[playerID]; ok {
+		return skills, nil
 	}
-
-	// В тестовом режиме всегда возвращаем базовый замок
-	return &domain.Castle{
-		PlayerID:    playerID,
-		Level:       1,
-		Health:      100,
-		ArrowSpeed:  1.0,
-		ArrowDamage: 1,
-	}, nil
+	return []*domain.PlayerSkill{}, nil
 }
 
-func (m *MockPlayerUseCase) UpdateCastle(castle *domain.Castle) error {
+func (m *MockPlayerUseCase) SavePlayerSkill(skill *domain.PlayerSkill) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	m.castles[castle.PlayerID] = castle
+	skills, ok := m.skills[skill.PlayerID]
+	if !ok {
+		skills = []*domain.PlayerSkill{}
+		m.skills[skill.PlayerID] = skills
+	}
+
+	// Find if the skill already exists
+	var found bool
+	for i, existingSkill := range skills {
+		if existingSkill.SkillType == skill.SkillType {
+			// Update existing skill
+			skills[i].Level = skill.Level
+			skills[i].UpdatedAt = skill.UpdatedAt
+			found = true
+			break
+		}
+	}
+
+	// Add new skill if not found
+	if !found {
+		skill.ID = int64(len(skills) + 1)
+		m.skills[skill.PlayerID] = append(m.skills[skill.PlayerID], skill)
+	}
+
 	return nil
 }

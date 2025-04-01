@@ -40,7 +40,7 @@ func CreateTables(db *sql.DB) error {
 			id BIGSERIAL PRIMARY KEY,
 			telegram_id BIGINT UNIQUE NOT NULL,
 			username VARCHAR(255) NOT NULL,
-			gold BIGINT NOT NULL DEFAULT 0,
+			emblems BIGINT NOT NULL DEFAULT 0,
 			created_at TIMESTAMP NOT NULL,
 			updated_at TIMESTAMP NOT NULL
 		)
@@ -49,19 +49,20 @@ func CreateTables(db *sql.DB) error {
 		return fmt.Errorf("error creating players table: %v", err)
 	}
 
-	// Создаем таблицу castles
+	// Создаем таблицу player_skills для постоянных навыков
 	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS castles (
+		CREATE TABLE IF NOT EXISTS player_skills (
 			id BIGSERIAL PRIMARY KEY,
 			player_id BIGINT NOT NULL REFERENCES players(id),
-			level INT NOT NULL DEFAULT 1,
-			health INT NOT NULL DEFAULT 100,
-			arrow_speed FLOAT NOT NULL DEFAULT 1.0,
-			arrow_damage INT NOT NULL DEFAULT 1
+			skill_type VARCHAR(50) NOT NULL,
+			level INT NOT NULL DEFAULT 0,
+			created_at TIMESTAMP NOT NULL,
+			updated_at TIMESTAMP NOT NULL,
+			UNIQUE(player_id, skill_type)
 		)
 	`)
 	if err != nil {
-		return fmt.Errorf("error creating castles table: %v", err)
+		return fmt.Errorf("error creating player_skills table: %v", err)
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -31,14 +32,14 @@ func NewHandler(playerUseCase *usecase.PlayerUseCase) *Handler {
 	}
 }
 
+type PlayerSkill struct {
+	SkillType string `json:"skill_type"`
+	Level     int    `json:"level"`
+}
+
 type GameState struct {
-	Castle struct {
-		Level       int     `json:"level"`
-		Health      int     `json:"health"`
-		ArrowSpeed  float64 `json:"arrow_speed"`
-		ArrowDamage int     `json:"arrow_damage"`
-	} `json:"castle"`
-	Gold int64 `json:"gold"`
+	Emblems      int64         `json:"emblems"`
+	PlayerSkills []PlayerSkill `json:"player_skills"`
 }
 
 type Message struct {
@@ -46,104 +47,202 @@ type Message struct {
 	Payload interface{} `json:"payload"`
 }
 
+// HandleWebSocket обрабатывает WebSocket соединения
 func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("Error upgrading to websocket: %v", err)
-		return
-	}
-
-	// Получаем telegram_id из query параметров
+	// Получаем Telegram ID из query параметра
 	telegramIDStr := r.URL.Query().Get("telegram_id")
 	if telegramIDStr == "" {
-		log.Printf("No telegram_id provided")
-		conn.Close()
+		http.Error(w, "Missing telegram_id parameter", http.StatusBadRequest)
 		return
 	}
 
 	telegramID, err := strconv.ParseInt(telegramIDStr, 10, 64)
 	if err != nil {
-		log.Printf("Invalid telegram_id: %v", err)
-		conn.Close()
+		http.Error(w, "Invalid telegram_id", http.StatusBadRequest)
 		return
 	}
 
-	// Получаем начальное состояние игры
-	player, castle, err := h.playerUseCase.GetPlayerData(telegramID)
+	// Устанавливаем WebSocket соединение
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("Error getting player data: %v", err)
-		conn.Close()
+		log.Println(err)
 		return
 	}
+	defer conn.Close()
 
-	// Отправляем начальное состояние
-	initialState := GameState{}
-	initialState.Castle.Level = castle.Level
-	initialState.Castle.Health = castle.Health
-	initialState.Castle.ArrowSpeed = castle.ArrowSpeed
-	initialState.Castle.ArrowDamage = castle.ArrowDamage
-	initialState.Gold = player.Gold
-
-	if err := conn.WriteJSON(Message{
-		Type:    "initial_state",
-		Payload: initialState,
-	}); err != nil {
-		log.Printf("Error sending initial state: %v", err)
-		conn.Close()
-		return
-	}
-
-	// Сохраняем соединение
+	// Регистрируем клиента
 	h.mutex.Lock()
 	h.clients[telegramID] = conn
 	h.mutex.Unlock()
 
-	// Очистка при закрытии соединения
 	defer func() {
 		h.mutex.Lock()
 		delete(h.clients, telegramID)
 		h.mutex.Unlock()
-		conn.Close()
 	}()
 
-	// Бесконечный цикл чтения сообщений
-	for {
-		var msg Message
-		err := conn.ReadJSON(&msg)
+	// Получаем данные игрока
+	player, err := h.playerUseCase.GetPlayerData(telegramID)
+	if err != nil {
+		log.Printf("Error getting player data: %v", err)
+		return
+	}
+
+	// Если игрок не существует, создаем его
+	if player == nil {
+		player, err = h.playerUseCase.RegisterPlayer(telegramID, "")
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("Error reading message: %v", err)
-			}
+			log.Printf("Error registering player: %v", err)
+			return
+		}
+	}
+
+	// Получаем навыки игрока
+	skillsData, err := h.playerUseCase.GetPlayerSkills(telegramID)
+	if err != nil {
+		log.Printf("Error getting player skills: %v", err)
+		return
+	}
+
+	// Преобразуем навыки в формат для отправки
+	playerSkills := make([]PlayerSkill, len(skillsData))
+	for i, skill := range skillsData {
+		playerSkills[i] = PlayerSkill{
+			SkillType: skill.SkillType,
+			Level:     skill.Level,
+		}
+	}
+
+	// Отправляем начальное состояние
+	initialState := GameState{
+		Emblems:      player.Emblems,
+		PlayerSkills: playerSkills,
+	}
+
+	err = conn.WriteJSON(Message{
+		Type:    "initial_state",
+		Payload: initialState,
+	})
+	if err != nil {
+		log.Printf("Error sending initial state: %v", err)
+		return
+	}
+
+	// Обрабатываем сообщения от клиента
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Printf("Error reading message: %v", err)
 			break
 		}
 
-		// Обработка различных типов сообщений
+		var msg Message
+		if err := json.Unmarshal(message, &msg); err != nil {
+			log.Printf("Error unmarshaling message: %v", err)
+			continue
+		}
+
+		// Обрабатываем разные типы сообщений
 		switch msg.Type {
-		case "click":
-			// Отправляем подтверждение клика
-			if err := conn.WriteJSON(Message{
-				Type: "click_confirmed",
-			}); err != nil {
-				log.Printf("Error sending click confirmation: %v", err)
+		case "update_emblems":
+			// Получаем новое значение эмблем
+			emblemsPayload, ok := msg.Payload.(float64)
+			if !ok {
+				log.Printf("Invalid emblems payload")
+				continue
+			}
+			emblems := int64(emblemsPayload)
+
+			// Обновляем количество эмблем у игрока
+			err = h.playerUseCase.UpdatePlayerEmblems(telegramID, emblems)
+			if err != nil {
+				log.Printf("Error updating emblems: %v", err)
 			}
 
-		case "enemy_killed":
-			// Обновляем монеты
-			if gold, ok := msg.Payload.(float64); ok {
-				err := h.playerUseCase.UpdatePlayerGold(telegramID, int64(gold))
-				if err != nil {
-					log.Printf("Error updating gold: %v", err)
+		case "add_emblems":
+			// Получаем количество эмблем для добавления
+			emblemsPayload, ok := msg.Payload.(float64)
+			if !ok {
+				log.Printf("Invalid emblems payload")
+				continue
+			}
+			emblems := int64(emblemsPayload)
+
+			// Добавляем эмблемы игроку
+			err = h.playerUseCase.AddPlayerEmblems(telegramID, emblems)
+			if err != nil {
+				log.Printf("Error adding emblems: %v", err)
+			}
+
+			// Получаем обновленные данные игрока
+			player, err = h.playerUseCase.GetPlayerData(telegramID)
+			if err != nil {
+				log.Printf("Error getting updated player data: %v", err)
+				continue
+			}
+
+			// Отправляем обновленное состояние
+			currentState := GameState{
+				Emblems:      player.Emblems,
+				PlayerSkills: playerSkills,
+			}
+
+			conn.WriteJSON(Message{
+				Type:    "game_state",
+				Payload: currentState,
+			})
+
+		case "update_skill":
+			// Парсим данные навыка
+			var skillData struct {
+				SkillType string `json:"skill_type"`
+				Level     int    `json:"level"`
+			}
+
+			payloadBytes, err := json.Marshal(msg.Payload)
+			if err != nil {
+				log.Printf("Error marshalling payload: %v", err)
+				continue
+			}
+
+			if err := json.Unmarshal(payloadBytes, &skillData); err != nil {
+				log.Printf("Error unmarshalling skill data: %v", err)
+				continue
+			}
+
+			// Сохраняем навык игрока
+			err = h.playerUseCase.SavePlayerSkill(telegramID, skillData.SkillType, skillData.Level)
+			if err != nil {
+				log.Printf("Error saving player skill: %v", err)
+				continue
+			}
+
+			// Получаем обновленные навыки
+			skillsData, err := h.playerUseCase.GetPlayerSkills(telegramID)
+			if err != nil {
+				log.Printf("Error getting updated player skills: %v", err)
+				continue
+			}
+
+			// Обновляем список навыков
+			playerSkills = make([]PlayerSkill, len(skillsData))
+			for i, skill := range skillsData {
+				playerSkills[i] = PlayerSkill{
+					SkillType: skill.SkillType,
+					Level:     skill.Level,
 				}
 			}
 
-		case "castle_damaged":
-			// Обновляем здоровье замка
-			if health, ok := msg.Payload.(float64); ok {
-				castle.Health = int(health)
-				if err := h.playerUseCase.UpdateCastle(castle); err != nil {
-					log.Printf("Error updating castle health: %v", err)
-				}
+			// Отправляем обновленное состояние
+			currentState := GameState{
+				Emblems:      player.Emblems,
+				PlayerSkills: playerSkills,
 			}
+
+			conn.WriteJSON(Message{
+				Type:    "game_state",
+				Payload: currentState,
+			})
 		}
 	}
 }

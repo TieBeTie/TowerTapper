@@ -100,7 +100,7 @@ func main() {
 
 		if update.Message.Command() == "start" {
 			// Регистрация игрока
-			_, err := playerUseCase.RegisterPlayer(
+			player, err := playerUseCase.RegisterPlayer(
 				update.Message.From.ID,
 				update.Message.From.UserName,
 			)
@@ -109,19 +109,19 @@ func main() {
 				continue
 			}
 
-			// Получение данных игрока и замка
-			_, castle, err := playerUseCase.GetPlayerData(update.Message.From.ID)
-			if err != nil {
-				log.Printf("Error getting player data: %v", err)
-				continue
-			}
-
 			welcomeMsg := "Welcome to Tower Tapper!\n\n"
-			welcomeMsg += "Your castle stats:\n"
-			welcomeMsg += fmt.Sprintf("Level: %d\n", castle.Level)
-			welcomeMsg += fmt.Sprintf("Health: %d\n", castle.Health)
-			welcomeMsg += fmt.Sprintf("Arrow Speed: %.1f\n", castle.ArrowSpeed)
-			welcomeMsg += fmt.Sprintf("Arrow Damage: %d\n", castle.ArrowDamage)
+			welcomeMsg += fmt.Sprintf("Emblems: %d\n", player.Emblems)
+
+			// Получаем навыки игрока, если они есть
+			skills, err := playerUseCase.GetPlayerSkills(update.Message.From.ID)
+			if err != nil {
+				log.Printf("Error getting player skills: %v", err)
+			} else if len(skills) > 0 {
+				welcomeMsg += "\nYour permanent skills:\n"
+				for _, skill := range skills {
+					welcomeMsg += fmt.Sprintf("%s: Level %d\n", skill.SkillType, skill.Level)
+				}
+			}
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, welcomeMsg)
 

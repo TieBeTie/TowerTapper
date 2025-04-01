@@ -29,7 +29,7 @@ func (uc *PlayerUseCase) RegisterPlayer(telegramID int64, username string) (*dom
 	player := &domain.Player{
 		TelegramID: telegramID,
 		Username:   username,
-		Gold:       0, // Начальное количество монет
+		Emblems:    0, // Начальное количество эмблем
 	}
 
 	err = uc.repo.CreatePlayer(player)
@@ -37,51 +37,70 @@ func (uc *PlayerUseCase) RegisterPlayer(telegramID int64, username string) (*dom
 		return nil, err
 	}
 
-	// Создаем начальный замок для игрока
-	castle := &domain.Castle{
-		PlayerID:    player.ID,
-		Level:       1,
-		Health:      100,
-		ArrowSpeed:  1.0,
-		ArrowDamage: 1,
-	}
+	return player, nil
+}
 
-	err = uc.repo.CreateCastle(castle)
+func (uc *PlayerUseCase) GetPlayerData(telegramID int64) (*domain.Player, error) {
+	player, err := uc.repo.GetPlayerByTelegramID(telegramID)
 	if err != nil {
 		return nil, err
+	}
+
+	if player == nil {
+		return nil, nil
 	}
 
 	return player, nil
 }
 
-func (uc *PlayerUseCase) GetPlayerData(telegramID int64) (*domain.Player, *domain.Castle, error) {
-	player, err := uc.repo.GetPlayerByTelegramID(telegramID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if player == nil {
-		return nil, nil, nil
-	}
-
-	castle, err := uc.repo.GetCastleByPlayerID(player.ID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return player, castle, nil
-}
-
-func (uc *PlayerUseCase) UpdatePlayerGold(playerID int64, gold int64) error {
+func (uc *PlayerUseCase) UpdatePlayerEmblems(playerID int64, emblems int64) error {
 	player, err := uc.repo.GetPlayerByTelegramID(playerID)
 	if err != nil {
 		return err
 	}
 
-	player.Gold = gold
+	player.Emblems = emblems
 	return uc.repo.UpdatePlayer(player)
 }
 
-func (uc *PlayerUseCase) UpdateCastle(castle *domain.Castle) error {
-	return uc.repo.UpdateCastle(castle)
+func (uc *PlayerUseCase) AddPlayerEmblems(playerID int64, amount int64) error {
+	player, err := uc.repo.GetPlayerByTelegramID(playerID)
+	if err != nil {
+		return err
+	}
+
+	player.Emblems += amount
+	return uc.repo.UpdatePlayer(player)
+}
+
+func (uc *PlayerUseCase) GetPlayerSkills(playerID int64) ([]*domain.PlayerSkill, error) {
+	player, err := uc.repo.GetPlayerByTelegramID(playerID)
+	if err != nil {
+		return nil, err
+	}
+
+	if player == nil {
+		return nil, nil
+	}
+
+	return uc.repo.GetPlayerSkills(player.ID)
+}
+
+func (uc *PlayerUseCase) SavePlayerSkill(telegramID int64, skillType string, level int) error {
+	player, err := uc.repo.GetPlayerByTelegramID(telegramID)
+	if err != nil {
+		return err
+	}
+
+	if player == nil {
+		return nil
+	}
+
+	skill := &domain.PlayerSkill{
+		PlayerID:  player.ID,
+		SkillType: skillType,
+		Level:     level,
+	}
+
+	return uc.repo.SavePlayerSkill(skill)
 }
