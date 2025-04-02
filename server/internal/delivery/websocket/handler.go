@@ -49,23 +49,33 @@ type Message struct {
 
 // HandleWebSocket обрабатывает WebSocket соединения
 func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+	// Получаем информацию о подключении
+	remoteAddr := r.RemoteAddr
+	userAgent := r.UserAgent()
+	origin := r.Header.Get("Origin")
+
 	// Получаем Telegram ID из query параметра
 	telegramIDStr := r.URL.Query().Get("telegram_id")
 	if telegramIDStr == "" {
+		log.Printf("=== ERROR === WebSocket connection attempt without telegram_id from %s (User-Agent: %s)", remoteAddr, userAgent)
 		http.Error(w, "Missing telegram_id parameter", http.StatusBadRequest)
 		return
 	}
 
 	telegramID, err := strconv.ParseInt(telegramIDStr, 10, 64)
 	if err != nil {
+		log.Printf("=== ERROR === Invalid telegram_id format: %s from %s (User-Agent: %s)", telegramIDStr, remoteAddr, userAgent)
 		http.Error(w, "Invalid telegram_id", http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("=== INFO === New WebSocket connection attempt from user ID: %d (IP: %s, Origin: %s, User-Agent: %s)",
+		telegramID, remoteAddr, origin, userAgent)
+
 	// Устанавливаем WebSocket соединение
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		log.Printf("=== ERROR === Failed to upgrade connection for user %d from %s: %v", telegramID, remoteAddr, err)
 		return
 	}
 	defer conn.Close()
@@ -74,25 +84,30 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	h.mutex.Lock()
 	h.clients[telegramID] = conn
 	h.mutex.Unlock()
+	log.Printf("=== INFO === User %d successfully connected from %s. Total active connections: %d",
+		telegramID, remoteAddr, len(h.clients))
 
 	defer func() {
 		h.mutex.Lock()
 		delete(h.clients, telegramID)
 		h.mutex.Unlock()
+		log.Printf("=== INFO === User %d disconnected from %s. Remaining connections: %d",
+			telegramID, remoteAddr, len(h.clients))
 	}()
 
 	// Получаем данные игрока
 	player, err := h.playerUseCase.GetPlayerData(telegramID)
 	if err != nil {
-		log.Printf("Error getting player data: %v", err)
+		log.Printf("=== ERROR === Failed to get player data for user %d: %v", telegramID, err)
 		return
 	}
 
 	// Если игрок не существует, создаем его
 	if player == nil {
+		log.Printf("=== INFO === New player registration for user ID: %d", telegramID)
 		player, err = h.playerUseCase.RegisterPlayer(telegramID, "")
 		if err != nil {
-			log.Printf("Error registering player: %v", err)
+			log.Printf("=== ERROR === Failed to register new player %d: %v", telegramID, err)
 			return
 		}
 
@@ -101,7 +116,9 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		for _, skillType := range defaultSkills {
 			err = h.playerUseCase.SavePlayerSkill(telegramID, skillType, 1)
 			if err != nil {
-				log.Printf("Error initializing default skill %s: %v", skillType, err)
+				log.Printf("=== ERROR === Failed to initialize default skill %s for user %d: %v", skillType, telegramID, err)
+			} else {
+				log.Printf("=== INFO === Initialized default skill %s for new user %d", skillType, telegramID)
 			}
 		}
 	}
@@ -109,7 +126,7 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Получаем навыки игрока
 	skillsData, err := h.playerUseCase.GetPlayerSkills(telegramID)
 	if err != nil {
-		log.Printf("Error getting player skills: %v", err)
+		log.Printf("=== ERROR === Failed to get player skills for user %d: %v", telegramID, err)
 		return
 	}
 
@@ -133,23 +150,26 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		Payload: initialState,
 	})
 	if err != nil {
-		log.Printf("Error sending initial state: %v", err)
+		log.Printf("=== ERROR === Failed to send initial state to user %d: %v", telegramID, err)
 		return
 	}
+	log.Printf("=== INFO === Sent initial state to user %d: %d emblems, %d skills", telegramID, player.Emblems, len(playerSkills))
 
 	// Обрабатываем сообщения от клиента
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
-			log.Printf("Error reading message: %v", err)
+			log.Printf("=== ERROR === Failed to read message from user %d: %v", telegramID, err)
 			break
 		}
 
 		var msg Message
 		if err := json.Unmarshal(message, &msg); err != nil {
-			log.Printf("Error unmarshaling message: %v", err)
+			log.Printf("=== ERROR === Failed to unmarshal message from user %d: %v", telegramID, err)
 			continue
 		}
+
+		log.Printf("=== INFO === Received message type '%s' from user %d", msg.Type, telegramID)
 
 		// Обрабатываем разные типы сообщений
 		switch msg.Type {
@@ -157,7 +177,7 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 			// Получаем новое значение эмблем
 			emblemsPayload, ok := msg.Payload.(float64)
 			if !ok {
-				log.Printf("Invalid emblems payload")
+				log.Printf("=== ERROR === Invalid emblems payload from user %d", telegramID)
 				continue
 			}
 			emblems := int64(emblemsPayload)
@@ -165,41 +185,51 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 			// Обновляем количество эмблем у игрока
 			err = h.playerUseCase.UpdatePlayerEmblems(telegramID, emblems)
 			if err != nil {
-				log.Printf("Error updating emblems: %v", err)
+				log.Printf("=== ERROR === Failed to update emblems for user %d: %v", telegramID, err)
+			} else {
+				log.Printf("=== INFO === Updated emblems for user %d to %d", telegramID, emblems)
 			}
 
 		case "add_emblems":
 			// Получаем количество эмблем для добавления
 			emblemsPayload, ok := msg.Payload.(float64)
 			if !ok {
-				log.Printf("Invalid emblems payload")
+				log.Printf("=== ERROR === Invalid emblems payload from user %d", telegramID)
 				continue
 			}
 			emblems := int64(emblemsPayload)
 
+			log.Printf("=== INFO === Adding %d emblems to user %d", emblems, telegramID)
+
 			// Добавляем эмблемы игроку
 			err = h.playerUseCase.AddPlayerEmblems(telegramID, emblems)
 			if err != nil {
-				log.Printf("Error adding emblems: %v", err)
-			}
+				log.Printf("=== ERROR === Failed to add emblems for user %d: %v", telegramID, err)
+			} else {
+				// Получаем обновленные данные игрока
+				player, err = h.playerUseCase.GetPlayerData(telegramID)
+				if err != nil {
+					log.Printf("=== ERROR === Failed to get updated player data for user %d: %v", telegramID, err)
+					continue
+				}
+				log.Printf("=== INFO === Successfully added %d emblems to user %d. New balance: %d", emblems, telegramID, player.Emblems)
 
-			// Получаем обновленные данные игрока
-			player, err = h.playerUseCase.GetPlayerData(telegramID)
-			if err != nil {
-				log.Printf("Error getting updated player data: %v", err)
-				continue
-			}
+				// Отправляем обновленное состояние
+				currentState := GameState{
+					Emblems:      player.Emblems,
+					PlayerSkills: playerSkills,
+				}
 
-			// Отправляем обновленное состояние
-			currentState := GameState{
-				Emblems:      player.Emblems,
-				PlayerSkills: playerSkills,
+				err = conn.WriteJSON(Message{
+					Type:    "game_state",
+					Payload: currentState,
+				})
+				if err != nil {
+					log.Printf("=== ERROR === Failed to send updated state to user %d: %v", telegramID, err)
+				} else {
+					log.Printf("=== INFO === Sent updated state to user %d after adding emblems", telegramID)
+				}
 			}
-
-			conn.WriteJSON(Message{
-				Type:    "game_state",
-				Payload: currentState,
-			})
 
 		case "update_skill":
 			// Парсим данные навыка
@@ -210,26 +240,28 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 			payloadBytes, err := json.Marshal(msg.Payload)
 			if err != nil {
-				log.Printf("Error marshalling payload: %v", err)
+				log.Printf("=== ERROR === Failed to marshal skill payload for user %d: %v", telegramID, err)
 				continue
 			}
 
 			if err := json.Unmarshal(payloadBytes, &skillData); err != nil {
-				log.Printf("Error unmarshalling skill data: %v", err)
+				log.Printf("=== ERROR === Failed to unmarshal skill data for user %d: %v", telegramID, err)
 				continue
 			}
+
+			log.Printf("=== INFO === Updating skill %s to level %d for user %d", skillData.SkillType, skillData.Level, telegramID)
 
 			// Сохраняем навык игрока
 			err = h.playerUseCase.SavePlayerSkill(telegramID, skillData.SkillType, skillData.Level)
 			if err != nil {
-				log.Printf("Error saving player skill: %v", err)
+				log.Printf("=== ERROR === Failed to save player skill for user %d: %v", telegramID, err)
 				continue
 			}
 
 			// Получаем обновленные навыки
 			skillsData, err := h.playerUseCase.GetPlayerSkills(telegramID)
 			if err != nil {
-				log.Printf("Error getting updated player skills: %v", err)
+				log.Printf("=== ERROR === Failed to get updated player skills for user %d: %v", telegramID, err)
 				continue
 			}
 
@@ -248,10 +280,15 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 				PlayerSkills: playerSkills,
 			}
 
-			conn.WriteJSON(Message{
+			err = conn.WriteJSON(Message{
 				Type:    "game_state",
 				Payload: currentState,
 			})
+			if err != nil {
+				log.Printf("=== ERROR === Failed to send updated state to user %d: %v", telegramID, err)
+			} else {
+				log.Printf("=== INFO === Successfully updated skill %s to level %d for user %d", skillData.SkillType, skillData.Level, telegramID)
+			}
 		}
 	}
 }

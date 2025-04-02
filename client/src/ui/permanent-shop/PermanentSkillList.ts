@@ -55,6 +55,16 @@ export class PermanentSkillList {
         }
     }
     
+    /**
+     * Updates the button states of all skill cards without recreating them
+     * Used when emblem count changes
+     */
+    public updateAllButtonStates(): void {
+        for (const card of this.skillCards) {
+            card.updateButtonState();
+        }
+    }
+    
     private handlePurchase(skillType: SkillType): void {
         // Покупаем улучшение
         const purchased = this.purchaseService.purchaseSkill(skillType);
@@ -66,6 +76,9 @@ export class PermanentSkillList {
             if (skillCard) {
                 // Обновляем только данную карточку
                 skillCard.updateAfterPurchase();
+                
+                // Обновляем состояние кнопок всех карточек, так как эмблемы изменились
+                this.updateAllButtonStates();
                 
                 // Обновляем счетчик эмблем в заголовке магазина
                 this.scene.events.emit('updateEmblems');

@@ -221,6 +221,9 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         // Добавляем слушатель события обновления эмблем
         this.events.on('updateEmblems', () => {
             this.shopHeader.updateEmblemCount();
+            
+            // Также обновляем состояние кнопок магазина при изменении количества эмблем
+            this.updateShopUIAfterEmblemChange();
         });
         
         // Создаем навигацию по категориям
@@ -246,6 +249,9 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         this.shopNavigation.setOnCategoryChangeCallback(() => {
             this.loadSkillsForCurrentCategory();
         });
+        
+        // Инициируем первоначальное обновление эмблем, чтобы кнопки правильно отобразились
+        this.events.emit('updateEmblems', this.emblemManager.getEmblemCount());
     }
     
     /**
@@ -260,6 +266,17 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         
         // Отображаем навыки
         this.skillList.create(filteredSkills);
+    }
+    
+    /**
+     * Обновляет UI магазина после изменения количества эмблем
+     * Используется для обновления состояния кнопок покупки
+     */
+    private updateShopUIAfterEmblemChange(): void {
+        // Вместо полного пересоздания списка просто обновляем состояние кнопок
+        if (this.skillList) {
+            this.skillList.updateAllButtonStates();
+        }
     }
     
     /**

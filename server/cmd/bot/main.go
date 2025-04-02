@@ -14,6 +14,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
 	"github.com/tiebetie/TowerTapper/internal/delivery/websocket"
+	"github.com/tiebetie/TowerTapper/internal/domain"
 	"github.com/tiebetie/TowerTapper/internal/repository/postgres"
 	"github.com/tiebetie/TowerTapper/internal/usecase"
 	"github.com/tiebetie/TowerTapper/pkg/database"
@@ -32,6 +33,9 @@ type InvoiceResponse struct {
 }
 
 func main() {
+	// Configure logging to output to stdout/stderr
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
+
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Error loading .env file: %v", err)
 	}
@@ -169,6 +173,26 @@ func main() {
 		update, err := bot.HandleUpdate(r)
 		if err != nil {
 			log.Printf("=== ERROR === Ошибка обработки webhook: %v", err)
+			return
+		}
+
+		// Обработка команды /start
+		if update.Message != nil && update.Message.IsCommand() && update.Message.Command() == "start" {
+			log.Printf("=== DEBUG === Получена команда /start от пользователя %s (ID: %d)",
+				update.Message.From.UserName, update.Message.From.ID)
+
+			// Проверяем наличие параметров для глубоких ссылок
+			startArgs := update.Message.CommandArguments()
+
+			// Если есть параметры (для покупки), обрабатываем их
+			if strings.HasPrefix(startArgs, "buy_emblems_") {
+				log.Printf("=== DEBUG === Получены параметры для покупки эмблем: %s", startArgs)
+				// Логика покупки эмблем обрабатывается в другом месте
+			} else {
+				// Если нет параметров, показываем статистику
+				handleStartCommand(bot, *update, playerUseCase)
+			}
+
 			return
 		}
 
@@ -377,27 +401,111 @@ func handleStartCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, playerUseC
 		return
 	}
 
-	welcomeMsg := "Welcome to Tower Tapper!\n\n"
-	welcomeMsg += fmt.Sprintf("Emblems: %d\n", player.Emblems)
+	// Карта соответствия типов навыков и эмодзи/имен
+	skillTypeMap := map[string]struct {
+		Name  string
+		Emoji string
+	}{
+		"MAX_HEALTH":       {"Прочность замка", "🏰"},
+		"DEFENSE":          {"Защита", "🛡️"},
+		"HEALTH_REGEN":     {"Регенерация", "💖"},
+		"DAMAGE":           {"Урон", "🔥"},
+		"COIN_REWARD":      {"Золотой бонус", "💰"},
+		"ATTACK_SPEED":     {"Скорость атаки", "⚡"},
+		"ATTACK_RANGE":     {"Дальность атаки", "🎯"},
+		"MULTISHOT":        {"Мультивыстрел", "🏹"},
+		"CRIT_CHANCE":      {"Шанс крита", "✨"},
+		"CRIT_MULTIPLIER":  {"Множитель крита", "💥"},
+		"KNOCKBACK":        {"Отбрасывание", "👊"},
+		"LIFESTEAL_CHANCE": {"Шанс вампиризма", "🧛"},
+		"LIFESTEAL_AMOUNT": {"Количество вампиризма", "💉"},
+		"DAILY_GOLD":       {"Ежедневное золото", "🪙"},
+		"EMBLEM_BONUS":     {"Бонус эмблем", "🎖️"},
+		"FREE_UPGRADE":     {"Шанс бесплатного улучшения", "🎁"},
+		"SUPPLY_DROP":      {"Шанс сундука", "📦"},
+		"GAME_SPEED":       {"Скорость игры", "⏩"},
+	}
+
+	welcomeMsg := "🎮 *Tower Tapper - Статистика игрока* 🎮\n\n"
+	welcomeMsg += fmt.Sprintf("👤 *Игрок:* %s\n", update.Message.From.UserName)
+	welcomeMsg += fmt.Sprintf("💎 *Эмблемы:* %d\n", player.Emblems)
 
 	// Получаем навыки игрока, если они есть
 	skills, err := playerUseCase.GetPlayerSkills(update.Message.From.ID)
 	if err != nil {
 		log.Printf("Error getting player skills: %v", err)
 	} else if len(skills) > 0 {
-		welcomeMsg += "\nYour permanent skills:\n"
+		welcomeMsg += "\n📊 *Постоянные навыки:*\n"
+
+		// Сортируем навыки по категориям
+		var attackSkills, defenseSkills, utilitySkills []*domain.PlayerSkill
+
 		for _, skill := range skills {
-			welcomeMsg += fmt.Sprintf("%s: Level %d\n", skill.SkillType, skill.Level)
+			skillType := skill.SkillType
+
+			switch skillType {
+			case "DAMAGE", "ATTACK_SPEED", "ATTACK_RANGE", "MULTISHOT", "CRIT_CHANCE", "CRIT_MULTIPLIER":
+				attackSkills = append(attackSkills, skill)
+			case "MAX_HEALTH", "DEFENSE", "HEALTH_REGEN", "KNOCKBACK", "LIFESTEAL_AMOUNT", "LIFESTEAL_CHANCE":
+				defenseSkills = append(defenseSkills, skill)
+			default:
+				utilitySkills = append(utilitySkills, skill)
+			}
 		}
+
+		// Отображаем навыки атаки
+		if len(attackSkills) > 0 {
+			welcomeMsg += "\n🗡️ *Навыки атаки:*\n"
+			for _, skill := range attackSkills {
+				info, exists := skillTypeMap[skill.SkillType]
+				if exists {
+					welcomeMsg += fmt.Sprintf("   %s %s: Ур. %d\n", info.Emoji, info.Name, skill.Level)
+				} else {
+					welcomeMsg += fmt.Sprintf("   %s: Ур. %d\n", skill.SkillType, skill.Level)
+				}
+			}
+		}
+
+		// Отображаем навыки защиты
+		if len(defenseSkills) > 0 {
+			welcomeMsg += "\n🛡️ *Навыки защиты:*\n"
+			for _, skill := range defenseSkills {
+				info, exists := skillTypeMap[skill.SkillType]
+				if exists {
+					welcomeMsg += fmt.Sprintf("   %s %s: Ур. %d\n", info.Emoji, info.Name, skill.Level)
+				} else {
+					welcomeMsg += fmt.Sprintf("   %s: Ур. %d\n", skill.SkillType, skill.Level)
+				}
+			}
+		}
+
+		// Отображаем полезные навыки
+		if len(utilitySkills) > 0 {
+			welcomeMsg += "\n🧩 *Полезные навыки:*\n"
+			for _, skill := range utilitySkills {
+				info, exists := skillTypeMap[skill.SkillType]
+				if exists {
+					welcomeMsg += fmt.Sprintf("   %s %s: Ур. %d\n", info.Emoji, info.Name, skill.Level)
+				} else {
+					welcomeMsg += fmt.Sprintf("   %s: Ур. %d\n", skill.SkillType, skill.Level)
+				}
+			}
+		}
+	} else {
+		welcomeMsg += "\n👉 У вас пока нет постоянных навыков. Играйте и улучшайте свои навыки!"
 	}
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, welcomeMsg)
+	msg.ParseMode = "Markdown"
 
 	clientURL := os.Getenv("CLIENT_URL")
 	fullGameURL := fmt.Sprintf("http://%s?telegram_id=%d", clientURL, update.Message.From.ID)
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("Play Tower Tapper", fullGameURL),
+			tgbotapi.NewInlineKeyboardButtonURL("🎮 Играть Tower Tapper", fullGameURL),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL("💎 Купить эмблемы", fullGameURL+"&shop=true"),
 		),
 	)
 

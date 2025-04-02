@@ -150,6 +150,53 @@ export class PermanentSkillCard {
         // Обновление состояния карточки (например, после покупки)
     }
     
+    public updateAfterPurchase(): void {
+        // Destroy existing objects
+        this.destroy();
+        
+        // Get updated skill info
+        this.skill = this.purchaseService.getUpdatedSkillList()
+            .find(skill => skill.type === this.skill.type) || this.skill;
+        
+        // Re-create the card
+        this.create();
+    }
+    
+    /**
+     * Обновляет состояние кнопки покупки без пересоздания карточки
+     * Используется при изменении количества эмблем
+     */
+    public updateButtonState(): void {
+        if (!this.emblemButtonBg) return;
+        
+        // Check if we can afford the upgrade
+        const canAfford = this.purchaseService.canAffordSkill(this.skill.type);
+        
+        // Update button appearance
+        this.emblemButtonBg.fillColor = canAfford ? 0x2196F3 : 0x757575;
+        this.emblemButtonBg.strokeColor = canAfford ? 0xB19CD9 : 0x555555;
+        
+        // Update interactivity
+        if (canAfford && !this.emblemButtonBg.input) {
+            this.emblemButtonBg.setInteractive({ useHandCursor: true })
+                .on('pointerdown', () => {
+                    this.onPurchase(this.skill.type);
+                })
+                .on('pointerover', () => {
+                    if (this.emblemButtonBg) {
+                        this.emblemButtonBg.fillColor = 0x64B5F6;
+                    }
+                })
+                .on('pointerout', () => {
+                    if (this.emblemButtonBg) {
+                        this.emblemButtonBg.fillColor = 0x2196F3;
+                    }
+                });
+        } else if (!canAfford && this.emblemButtonBg.input) {
+            this.emblemButtonBg.removeInteractive();
+        }
+    }
+    
     public getSkillType(): SkillType {
         return this.skill.type;
     }
@@ -159,27 +206,13 @@ export class PermanentSkillCard {
         this.y = y;
     }
     
-    public updateAfterPurchase(): void {
-        // Удаляем старые объекты интерфейса
-        this.destroy();
-        
-        // Обновляем информацию о скилле
-        this.skill = this.purchaseService.getUpdatedSkillList()
-            .find(s => s.type === this.skill.type) || this.skill;
-        
-        // Пересоздаем карточку с обновленной информацией
-        this.create();
-    }
-    
     public destroy(): void {
         this.gameObjects.forEach(obj => {
-            if (obj.active) {
-                if (obj === this.emblemButtonBg) {
-                    obj.removeAllListeners();
-                }
+            if (obj && obj.active) {
                 obj.destroy();
             }
         });
         this.gameObjects = [];
+        this.emblemButtonBg = null;
     }
 } 

@@ -123,8 +123,16 @@ export class UpgradeManager {
     }
 
     private getPlayerEmblems(): number {
-        const gameScene = this.scene.scene.get('GameScene');
-        return (gameScene as any).emblemManager?.getEmblemCount() || 0;
+        try {
+            const emblemManager = require('./EmblemManager').EmblemManager.getInstance();
+            if (emblemManager) {
+                return emblemManager.getEmblemCount();
+            }
+        } catch (error) {
+            console.warn('Failed to get emblems from EmblemManager:', error);
+        }
+        
+        return 0;
     }
 
     private getCurrencyAmount(currencyType: CurrencyType): number {
@@ -150,9 +158,14 @@ export class UpgradeManager {
                 }
                 break;
             case CurrencyType.EMBLEMS:
-                if ((gameScene as any).emblemManager) {
-                    (gameScene as any).emblemManager.deductEmblems(amount);
-                    gameScene.events.emit('updateEmblems', (gameScene as any).emblemManager.getEmblemCount());
+                try {
+                    const emblemManager = require('./EmblemManager').EmblemManager.getInstance();
+                    if (emblemManager) {
+                        emblemManager.deductEmblems(amount);
+                        gameScene.events.emit('updateEmblems', emblemManager.getEmblemCount());
+                    }
+                } catch (error) {
+                    console.warn('Failed to deduct emblems:', error);
                 }
                 break;
         }

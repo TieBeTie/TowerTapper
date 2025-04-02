@@ -10,7 +10,23 @@ export class SkillStateManager {
     private permanentSkillService: PermanentSkillService | null = null;
     private permanentSkillTypes: Set<SkillType> = new Set([
         SkillType.EMBLEM_BONUS,
-        // Add other permanent skills here as they are implemented
+        SkillType.DAMAGE,
+        SkillType.ATTACK_SPEED,
+        SkillType.ATTACK_RANGE,
+        SkillType.MULTISHOT,
+        SkillType.CRIT_CHANCE,
+        SkillType.CRIT_MULTIPLIER,
+        SkillType.MAX_HEALTH,
+        SkillType.DEFENSE,
+        SkillType.HEALTH_REGEN,
+        SkillType.KNOCKBACK,
+        SkillType.LIFESTEAL_AMOUNT,
+        SkillType.LIFESTEAL_CHANCE,
+        SkillType.COIN_REWARD,
+        SkillType.DAILY_GOLD,
+        SkillType.FREE_UPGRADE,
+        SkillType.SUPPLY_DROP,
+        SkillType.GAME_SPEED
     ]);
     
     private constructor() {
