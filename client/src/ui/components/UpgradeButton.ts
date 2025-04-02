@@ -360,11 +360,14 @@ export class UpgradeButton extends UIComponent {
             }
             
             // Get current upgrade info from the manager
-            const currentValue = this.upgradeManagerValue.getState(this.skillTypeValue);
+            const currentValue = this.upgradeManagerValue.getSkillValue(this.skillTypeValue);
             const cost = this.upgradeManagerValue.getSkillCost(this.skillTypeValue, CurrencyType.GOLD);
             
+            // Log values for debugging
+            console.log(`UpgradeButton.updateUI: skill=${this.skillTypeValue}, value=${currentValue}, cost=${cost}`);
+            
             // Обновляем текст уровня и стоимости
-            this.levelText.setText(`Amount ${currentValue}`);
+            this.levelText.setText(`Amount ${currentValue || 0}`);
             this.costText.setText(`${cost}`);
             
             // Обновляем цвет кнопки в зависимости от доступности улучшения

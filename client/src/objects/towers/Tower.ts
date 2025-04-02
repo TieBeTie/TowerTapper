@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { SkillType } from '../../types/SkillType';
-import { SkillSetStorage } from '../../storage/SkillSetStorage';
 import { ScreenManager } from '../../managers/ScreenManager';
 import { SkillStateManager } from '../../managers/SkillStateManager';
 
@@ -22,7 +21,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     regeneration: number;
     private regenerationTimer: Phaser.Time.TimerEvent | null;
     private isDying: boolean = false;
-    private skillStorage: SkillSetStorage;
+    private skillManager: SkillStateManager;
     private screenManager: ScreenManager;
     private attackRangeCircle: Phaser.GameObjects.Graphics | null;
     private attackRange: number;
@@ -35,19 +34,18 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         // Инициализируем ScreenManager
         this.screenManager = new ScreenManager(scene);
 
-        this.skillStorage = SkillSetStorage.getInstance();
-        const skills = this.skillStorage.load();
+        this.skillManager = SkillStateManager.getInstance();
 
-        // Initialize values from storage or use defaults if not found
-        this.health = skills.get(SkillType.MAX_HEALTH)?.value || 200;
+        // Initialize values from SkillStateManager or use defaults if not found
+        this.health = this.skillManager.getState(SkillType.MAX_HEALTH) || 200;
         this.maxHealth = this.health;
-        this.defense = skills.get(SkillType.DEFENSE)?.value || 0;
-        this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || 0;
+        this.defense = this.skillManager.getState(SkillType.DEFENSE) || 0;
+        this.regeneration = this.skillManager.getState(SkillType.HEALTH_REGEN) || 0;
         this.regenerationTimer = null;
         this.isDying = false;
 
         // Инициализируем радиус атаки
-        const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE)?.value || 1;
+        const attackRangeSkill = this.skillManager.getState(SkillType.ATTACK_RANGE) || 1;
         const { height } = this.screenManager.getScreenSize();
         this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
 
@@ -94,9 +92,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         
         // Обновляем радиус атаки при изменении размера экрана
         const { height } = this.screenManager.getScreenSize();
-        const skills = this.skillStorage.load();
-        const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE)?.value || 1;
-        this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
+        const skills = this.skillManager.getState(SkillType.ATTACK_RANGE) || 1;
+        this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * skills;
         
         // Use the safer method that doesn't recreate the graphics object
         this.safeUpdateAttackCircle();
@@ -109,17 +106,17 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             return;
         }
         
-        const skills = this.skillStorage.load();
-        this.maxHealth = skills.get(SkillType.MAX_HEALTH)?.value || this.maxHealth;
-        this.defense = skills.get(SkillType.DEFENSE)?.value || this.defense;
-        this.regeneration = skills.get(SkillType.HEALTH_REGEN)?.value || this.regeneration;
+        const skills = this.skillManager.getState(SkillType.MAX_HEALTH) || this.maxHealth;
+        this.maxHealth = skills;
+        this.defense = this.skillManager.getState(SkillType.DEFENSE) || this.defense;
+        this.regeneration = this.skillManager.getState(SkillType.HEALTH_REGEN) || this.regeneration;
         
         // Обновляем радиус атаки при улучшении
-        const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE);
+        const attackRangeSkill = this.skillManager.getState(SkillType.ATTACK_RANGE);
         if (attackRangeSkill) {
             const { height } = this.screenManager.getScreenSize();
             // Используем значение навыка напрямую из хранилища
-            this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill.value;
+            this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
             
             // Update the attack range circle using the safe method
             this.safeUpdateAttackCircle();
@@ -139,12 +136,11 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         }
         
         // Get the current attack range skill value
-        const skills = this.skillStorage.load();
-        const attackRangeSkill = skills.get(SkillType.ATTACK_RANGE);
+        const skills = this.skillManager.getState(SkillType.ATTACK_RANGE);
         const { height } = this.screenManager.getScreenSize();
         
         // Use the skill value if it exists, otherwise use 1
-        const skillValue = attackRangeSkill?.value || 1;
+        const skillValue = skills || 1;
         this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * skillValue;
         
         console.log(`Updating attack range circle: skill value=${skillValue}, range=${this.attackRange}`);

@@ -52,6 +52,9 @@ declare global {
             showProgress: (leaveActive?: boolean) => void;
             hideProgress: () => void;
         };
+        version: string;
+        platform: string;
+        initData: string;
     }
 
     interface Window {

@@ -286,11 +286,19 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     }
 
     private initializeWebSocket(): void {
-        const urlParams = new URLSearchParams(window.location.search);
-        const telegramId = urlParams.get('telegram_id');
+        // Check if we're in local mode
+        const localMode = sessionStorage.getItem('local_mode') === 'true';
+        
+        if (localMode) {
+            console.log('Running in local mode - WebSocket connection skipped');
+            return;
+        }
+        
+        // Get telegram_id from sessionStorage instead of URL parameters
+        const telegramId = sessionStorage.getItem('telegram_id');
 
         if (!telegramId) {
-            console.error('No telegram_id provided in URL');
+            console.error('No telegram_id found in sessionStorage. Authentication may not have completed in BootScene.');
             return;
         }
 
@@ -300,25 +308,66 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         // Если порт не указан в URL, используем порт из конфига или 8080
         const wsPort = port || (process.env.SERVER_PORT || '8080');
         const wsUrl = port ? `${protocol}://${host}:${wsPort}/ws` : `${protocol}://${host}/ws`;
+        
+        const fullUrl = `${wsUrl}?telegram_id=${telegramId}`;
+        console.log('Attempting to connect to WebSocket at:', fullUrl);
 
-        this.socket = new WebSocket(`${wsUrl}?telegram_id=${telegramId}`);
+        let connectionAttempts = 0;
+        const maxAttempts = 3;
+        const attemptConnection = () => {
+            if (connectionAttempts >= maxAttempts) {
+                console.error(`Failed to connect after ${maxAttempts} attempts. Giving up.`);
+                return;
+            }
+            
+            connectionAttempts++;
+            console.log(`WebSocket connection attempt ${connectionAttempts}/${maxAttempts}`);
+            
+            try {
+                this.socket = new WebSocket(fullUrl);
 
-        this.socket.onopen = () => {
-            console.log('Connected to game server');
+                this.socket.onopen = () => {
+                    console.log('Connected to game server successfully');
+                };
+
+                this.socket.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        this.handleServerMessage(message);
+                    } catch (err) {
+                        console.error('Error parsing WebSocket message:', err);
+                    }
+                };
+
+                this.socket.onclose = (event) => {
+                    console.log(`WebSocket connection closed. Code: ${event.code}, Reason: ${event.reason}`);
+                    
+                    // If this wasn't a normal closure and we haven't exceeded attempts, try again
+                    if (event.code !== 1000 && connectionAttempts < maxAttempts) {
+                        console.log(`Attempting to reconnect in 2 seconds...`);
+                        setTimeout(() => attemptConnection(), 2000);
+                    }
+                };
+
+                this.socket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    // Close the socket to trigger the onclose handler which will retry
+                    this.socket.close();
+                };
+            } catch (error) {
+                console.error('Error creating WebSocket connection:', error);
+                
+                // Try again after delay if not exceeded max attempts
+                if (connectionAttempts < maxAttempts) {
+                    console.log(`Attempting to reconnect in 2 seconds...`);
+                    setTimeout(() => attemptConnection(), 2000);
+                }
+            }
         };
-
-        this.socket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            this.handleServerMessage(message);
-        };
-
-        this.socket.onclose = () => {
-            // Connection closed
-        };
-
-        this.socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-        };
+        
+        // Initial delay before first connection attempt
+        // This gives time for the server to recognize the telegram_id
+        setTimeout(() => attemptConnection(), 1000);
     }
 
     handleServerMessage(message: any): void {
@@ -360,7 +409,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             
             // Update emblem count in UI
             if (this.emblemManager) {
-                this.events.emit('updateEmblems', this.emblemManager.getEmblemBonus());
+                this.events.emit('updateEmblems', this.emblemManager.getEmblemCount());
             }
             
             // Проверка на "зависшую" волну - только если нет врагов на экране и нет таймера спавна

@@ -3,9 +3,9 @@ import Tower from '../objects/towers/Tower';
 import { Projectile } from '../objects/projectiles/Projectile';
 import Enemy from '../objects/enemies/Enemy';
 import { DamageNumber } from '../ui/components/DamageNumber';
-import { SkillSetStorage } from '../storage/SkillSetStorage';
 import { SkillType } from '../types/SkillType';
 import { IGameScene } from '../types/IGameScene';
+import { SkillStateManager } from './SkillStateManager';
 
 // CollisionManager handles the logic for managing collisions between projectiles and enemies, as well as between the tower and enemies
 class CollisionManager {
@@ -14,11 +14,11 @@ class CollisionManager {
     private towerEnemyCollider: Phaser.Physics.Arcade.Collider | null = null;
     private readonly PROJECTILE_CHECK_DISTANCE = 100;
     private readonly TOWER_CHECK_DISTANCE = 100;
-    private skillStorage: SkillSetStorage;
+    private skillManager: SkillStateManager;
 
     constructor(scene: IGameScene) {
         this.scene = scene;
-        this.skillStorage = SkillSetStorage.getInstance();
+        this.skillManager = SkillStateManager.getInstance();
         this.setupColliders();
         this.scene.events.on('shutdown', this.cleanup);
     }
@@ -97,16 +97,15 @@ class CollisionManager {
 
         if (!projectile.active || !enemy.active) return;
 
-        // Get damage from storage
-        const skills = this.skillStorage.load();
-        const damage = skills.get(SkillType.DAMAGE)?.value || 20;
+        // Get damage from SkillStateManager
+        const damage = this.skillManager.getState(SkillType.DAMAGE) || 20;
         
-        // Get knockback value from storage
-        const knockbackForce = skills.get(SkillType.KNOCKBACK)?.value || 50;
+        // Get knockback value from SkillStateManager
+        const knockbackForce = this.skillManager.getState(SkillType.KNOCKBACK) || 50;
         
         // Get critical hit values
-        const critChance = skills.get(SkillType.CRIT_CHANCE)?.value || 0;
-        const critMultiplier = skills.get(SkillType.CRIT_MULTIPLIER)?.value || 0;
+        const critChance = this.skillManager.getState(SkillType.CRIT_CHANCE) || 0;
+        const critMultiplier = this.skillManager.getState(SkillType.CRIT_MULTIPLIER) || 0;
         
         // Calculate if this is a critical hit
         const isCriticalHit = Math.random() * 100 < critChance;
@@ -165,8 +164,8 @@ class CollisionManager {
         });
         
         // Проверяем, должен ли сработать Lifesteal
-        const lifestealChance = skills.get(SkillType.LIFESTEAL_CHANCE)?.value || 0;
-        const lifestealAmount = skills.get(SkillType.LIFESTEAL_AMOUNT)?.value || 0;
+        const lifestealChance = this.skillManager.getState(SkillType.LIFESTEAL_CHANCE) || 0;
+        const lifestealAmount = this.skillManager.getState(SkillType.LIFESTEAL_AMOUNT) || 0;
         
         if (lifestealAmount > 0 && Math.random() * 100 < lifestealChance) {
             // Lifesteal activated, heal the tower

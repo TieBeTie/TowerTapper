@@ -150,6 +150,27 @@ export class PermanentSkillCard {
         // Обновление состояния карточки (например, после покупки)
     }
     
+    public getSkillType(): SkillType {
+        return this.skill.type;
+    }
+    
+    public setPosition(x: number, y: number): void {
+        this.x = x;
+        this.y = y;
+    }
+    
+    public updateAfterPurchase(): void {
+        // Удаляем старые объекты интерфейса
+        this.destroy();
+        
+        // Обновляем информацию о скилле
+        this.skill = this.purchaseService.getUpdatedSkillList()
+            .find(s => s.type === this.skill.type) || this.skill;
+        
+        // Пересоздаем карточку с обновленной информацией
+        this.create();
+    }
+    
     public destroy(): void {
         this.gameObjects.forEach(obj => {
             if (obj.active) {

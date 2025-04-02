@@ -8,7 +8,6 @@ export class PermanentSkillService {
     private server: GameServerGateway;
     private skillStateManager: SkillStateManager | null = null;
     private serverSkills: Map<SkillType, number> = new Map();
-    private emblems: number = 0;
     private telegramId: string = '';
     private connected: boolean = false;
 
@@ -17,8 +16,6 @@ export class PermanentSkillService {
         
         // Listen for game state updates from the server
         this.server.onGameStateUpdate((state) => {
-            this.emblems = state.emblems;
-            
             // Update the permanent skills
             this.serverSkills.clear();
             state.player_skills.forEach((skill: PlayerSkill) => {
@@ -71,25 +68,6 @@ export class PermanentSkillService {
         
         this.server.disconnect();
         this.connected = false;
-    }
-
-    /**
-     * Get player's emblem count
-     */
-    public getEmblems(): number {
-        return this.emblems;
-    }
-
-    /**
-     * Add emblems to the player
-     */
-    public addEmblems(amount: number): void {
-        if (!this.connected) {
-            console.warn('Not connected to server, unable to add emblems');
-            return;
-        }
-        
-        this.server.addEmblems(amount);
     }
 
     /**

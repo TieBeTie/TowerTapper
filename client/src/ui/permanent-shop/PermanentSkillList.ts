@@ -61,10 +61,15 @@ export class PermanentSkillList {
         
         // Если успешно, обновляем интерфейс
         if (purchased) {
-            // Получаем текущую категорию и перезагружаем список навыков
-            const currentSkills = this.purchaseService.getUpdatedSkillList();
-            this.clearSkillCards();
-            this.create(currentSkills);
+            // Находим карточку, которую нужно обновить
+            const skillCard = this.skillCards.find(card => card.getSkillType() === skillType);
+            if (skillCard) {
+                // Обновляем только данную карточку
+                skillCard.updateAfterPurchase();
+                
+                // Обновляем счетчик эмблем в заголовке магазина
+                this.scene.events.emit('updateEmblems');
+            }
         }
     }
     
@@ -72,6 +77,39 @@ export class PermanentSkillList {
         // Пересоздаем список с текущими навыками
         // В реальном приложении необходимо сохранить текущий список навыков
         // и просто обновить его с новыми размерами
+        const { width, height } = this.screenManager.getScreenSize();
+        const padding = this.screenManager.getResponsivePadding(12);
+        const buttonHeight = this.screenManager.getResponsivePadding(70);
+        const startY = height * 0.25;
+        const spacing = buttonHeight + padding;
+        const center = this.screenManager.getScreenCenter();
+        
+        // Обновляем позиции существующих карточек
+        this.skillCards.forEach((card, index) => {
+            // Удаляем старые объекты
+            card.destroy();
+            
+            // Обновляем координаты
+            card.setPosition(center.x, startY + (index * spacing));
+            
+            // Пересоздаем карточку на новой позиции
+            card.create();
+        });
+        
+        // Обновляем сообщение о пустой категории, если оно есть
+        if (this.noSkillsText && this.noSkillsText.active) {
+            this.noSkillsText.destroy();
+            this.noSkillsText = this.screenManager.createText(
+                center.x,
+                startY + spacing * 2,
+                'No upgrades available in this category',
+                this.screenManager.getMediumFontSize(),
+                '#aaaaaa',
+                {
+                    fontFamily: 'pixelFont'
+                }
+            );
+        }
     }
     
     private clearSkillCards(): void {

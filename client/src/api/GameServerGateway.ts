@@ -29,31 +29,72 @@ export class WebSocketGameServer implements GameServerGateway {
     async connect(telegramId: string): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                this.ws = new WebSocket(`ws://localhost:8080/ws?telegram_id=${telegramId}`);
+                // Build WebSocket URL based on the current window location
+                const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+                const host = window.location.hostname;
+                const wsUrl = `${protocol}://${host}/ws`;
+                
+                console.log(`Attempting to connect to WebSocket at: ${wsUrl}?telegram_id=${telegramId}`);
+                
+                this.ws = new WebSocket(`${wsUrl}?telegram_id=${telegramId}`);
 
+                let connectedHandled = false;
+                
                 this.ws.onopen = () => {
-                    console.log('Connected to game server');
+                    console.log('WebSocket connection opened successfully');
+                    connectedHandled = true;
                     resolve();
                 };
 
                 this.ws.onmessage = (event) => {
-                    const message = JSON.parse(event.data);
+                    try {
+                        const message = JSON.parse(event.data);
+                        console.log('Received WebSocket message:', message);
 
-                    switch (message.type) {
-                        case 'initial_state':
-                        case 'game_state':
-                            if (this.gameStateCallback) {
-                                this.gameStateCallback(message.payload);
-                            }
-                            break;
+                        switch (message.type) {
+                            case 'initial_state':
+                            case 'game_state':
+                                if (this.gameStateCallback) {
+                                    this.gameStateCallback(message.payload);
+                                }
+                                break;
+                            default:
+                                console.log(`Unhandled message type: ${message.type}`);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing WebSocket message:', error);
                     }
                 };
 
                 this.ws.onerror = (error) => {
                     console.error('WebSocket error:', error);
-                    reject(error);
+                    if (!connectedHandled) {
+                        connectedHandled = true;
+                        reject(new Error('WebSocket connection error'));
+                    }
                 };
+                
+                this.ws.onclose = (event) => {
+                    console.log(`WebSocket connection closed: Code=${event.code}, Reason=${event.reason || 'None provided'}`);
+                    if (!connectedHandled) {
+                        connectedHandled = true;
+                        reject(new Error(`Connection closed: ${event.reason || 'Unknown reason'}`));
+                    }
+                };
+                
+                // Set a timeout in case the connection hangs
+                setTimeout(() => {
+                    if (!connectedHandled) {
+                        connectedHandled = true;
+                        if (this.ws) {
+                            this.ws.close();
+                        }
+                        reject(new Error('WebSocket connection timeout'));
+                    }
+                }, 10000); // 10 seconds timeout
+                
             } catch (error) {
+                console.error('Error creating WebSocket:', error);
                 reject(error);
             }
         });

@@ -95,6 +95,15 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Error registering player: %v", err)
 			return
 		}
+
+		// Инициализируем базовые навыки для нового игрока
+		defaultSkills := []string{"EMBLEM_BONUS"} // Add other default skills here
+		for _, skillType := range defaultSkills {
+			err = h.playerUseCase.SavePlayerSkill(telegramID, skillType, 1)
+			if err != nil {
+				log.Printf("Error initializing default skill %s: %v", skillType, err)
+			}
+		}
 	}
 
 	// Получаем навыки игрока

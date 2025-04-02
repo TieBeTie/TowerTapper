@@ -2,9 +2,16 @@
 import Phaser from 'phaser';
 import { ScreenManager } from '../managers/ScreenManager';
 import { IScene } from '../types/IScene';
+import { TelegramService } from '../services/TelegramService';
+import { PermanentSkillService } from '../services/PermanentSkillService';
+import { EmblemStorage } from '../storage/EmblemStorage';
 
 class BootScene extends Phaser.Scene implements IScene {
     public screenManager!: ScreenManager;
+    private telegramService!: TelegramService;
+    private permanentSkillService!: PermanentSkillService;
+    private emblemStorage!: EmblemStorage;
+    private telegramId: string | null = null;
 
     constructor() {
         super({ key: 'BootScene' });
@@ -21,8 +28,13 @@ class BootScene extends Phaser.Scene implements IScene {
             });
         }
 
-        // Load WebFont loader
+        // Load WebFont loader with a properly set callback
         this.load.script('webfont', 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js');
+        
+        // Ensure the script is loaded before proceeding
+        this.load.on('filecomplete-script-webfont', () => {
+            console.log('WebFont script loaded successfully');
+        });
 
         // Load audio assets with MP3 fallback for iOS
         this.load.audio('gameMusic', [
@@ -80,6 +92,11 @@ class BootScene extends Phaser.Scene implements IScene {
         // Initialize ScreenManager first
         this.screenManager = new ScreenManager(this);
         
+        // Initialize services
+        this.telegramService = TelegramService.getInstance();
+        this.permanentSkillService = PermanentSkillService.getInstance();
+        this.emblemStorage = EmblemStorage.getInstance();
+        
         // Создаем черный прямоугольник на весь экран
         const { width, height } = this.screenManager.getScreenSize();
         const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 1);
@@ -101,6 +118,169 @@ class BootScene extends Phaser.Scene implements IScene {
 
         // Подписываемся на изменение размера экрана
         this.events.on('screenResize', this.handleScreenResize, this);
+        
+        // Get telegram_id from URL and authenticate
+        this.authenticateUser();
+    }
+    
+    private authenticateUser(): void {
+        // Simple check for telegram_id from either Telegram WebApp or URL
+        let telegramId = null;
+        
+        // Option 1: Try to get from Telegram WebApp if available
+        if (this.telegramService.isTelegramWebApp()) {
+            const userData = this.telegramService.getUserData();
+            if (userData && userData.id) {
+                telegramId = userData.id.toString();
+                console.log('SUCCESS: Got telegram_id from Telegram WebApp:', telegramId);
+            } else {
+                console.log('INFO: Running in Telegram WebApp but could not get user ID');
+            }
+        } else {
+            console.log('INFO: Not running in Telegram WebApp environment');
+        }
+        
+        // Option 2: Try to get from URL parameters if not already found
+        if (!telegramId) {
+            const urlParams = new URLSearchParams(window.location.search);
+            telegramId = urlParams.get('telegram_id');
+            
+            if (telegramId) {
+                console.log('SUCCESS: Got telegram_id from URL:', telegramId);
+            } else {
+                console.log('ERROR: No telegram_id found in URL parameters');
+            }
+        }
+        
+        // Final check and proceed regardless
+        if (telegramId) {
+            // Store for use in the game
+            this.telegramId = telegramId;
+            sessionStorage.setItem('telegram_id', telegramId);
+            
+            // Show status
+            const { width, height } = this.screenManager.getScreenSize();
+            const statusText = this.add.text(
+                width / 2,
+                height / 2 - 80,
+                'Telegram ID: ' + telegramId,
+                {
+                    fontSize: '16px',
+                    color: '#00ff00',
+                    align: 'center'
+                }
+            );
+            statusText.setOrigin(0.5);
+            
+            // Try to connect but don't block game start
+            const loadingText = this.add.text(
+                width / 2,
+                height / 2 - 40,
+                'Connecting to server...',
+                {
+                    fontSize: '18px',
+                    color: '#ffffff',
+                    align: 'center'
+                }
+            );
+            loadingText.setOrigin(0.5);
+            
+            // Add start game button that's always enabled
+            this.showGameStartButton(false, loadingText);
+            
+            // Try to connect to server in background
+            Promise.all([
+                this.permanentSkillService.connect(telegramId),
+                this.emblemStorage.connect(telegramId)
+            ])
+                .then(() => {
+                    console.log('Connected to server successfully');
+                    loadingText.setText('Connected to server!');
+                    loadingText.setColor('#00ff00');
+                    // Game already has a start button, so user can proceed when ready
+                })
+                .catch(error => {
+                    console.error('Server connection failed:', error);
+                    loadingText.setText('Warning: Playing without server connection.\nProgress will not be saved.');
+                    loadingText.setColor('#ffaa00');
+                    // Game can still be played, but progress won't be saved
+                    sessionStorage.setItem('local_mode', 'true');
+                });
+        } else {
+            // No telegram_id found from any source - still allow playing locally
+            const { width, height } = this.screenManager.getScreenSize();
+            const warningText = this.add.text(
+                width / 2,
+                height / 2 - 80,
+                'No Telegram ID found.\nPlaying in local mode (progress will not be saved).',
+                {
+                    fontSize: '16px',
+                    color: '#ffaa00',
+                    align: 'center'
+                }
+            );
+            warningText.setOrigin(0.5);
+            
+            // Set local mode flag
+            sessionStorage.setItem('local_mode', 'true');
+            
+            // Show start button
+            this.showGameStartButton(true);
+        }
+    }
+    
+    private showGameStartButton(isLocalMode: boolean, loadingText?: Phaser.GameObjects.Text): void {
+        const { width, height } = this.screenManager.getScreenSize();
+        
+        // Create start game button
+        const startButton = this.add.text(
+            width / 2,
+            height / 2 + 50,
+            'Start Game',
+            {
+                fontSize: '24px',
+                color: '#ffffff',
+                backgroundColor: '#4a6fe3',
+                padding: {
+                    left: 20,
+                    right: 20,
+                    top: 10,
+                    bottom: 10
+                }
+            }
+        );
+        startButton.setOrigin(0.5);
+        startButton.setInteractive({ useHandCursor: true });
+        
+        // Add hover effect
+        startButton.on('pointerover', () => {
+            startButton.setScale(1.1);
+        });
+        startButton.on('pointerout', () => {
+            startButton.setScale(1.0);
+        });
+        
+        // Start game when clicked
+        startButton.on('pointerdown', () => {
+            if (loadingText) {
+                loadingText.destroy();
+            }
+            
+            // Create fancy transition effect
+            const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 0);
+            fadeRect.setOrigin(0);
+            
+            this.tweens.add({
+                targets: fadeRect,
+                alpha: 1,
+                duration: 500,
+                onComplete: () => {
+                    // Don't wait for font loading, just transition to game
+                    this.createAnimations();
+                    this.scene.start('MenuScene');
+                }
+            });
+        });
     }
 
     private setupBootView(): void {

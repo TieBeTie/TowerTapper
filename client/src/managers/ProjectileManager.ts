@@ -5,7 +5,6 @@ import { Enemy } from '../objects/enemies/Enemy';
 import EnemyManager from './EnemyManager';
 import GameScene from '../scenes/GameScene';
 import Tower from '../objects/towers/Tower';
-import { SkillSetStorage } from '../storage/SkillSetStorage';
 import { SkillType } from '../types/SkillType';
 import { IGameScene } from '../types/IGameScene';
 import { SkillStateManager } from '../managers/SkillStateManager';
@@ -18,14 +17,12 @@ class ProjectileManager {
     enemyManager: EnemyManager;
     private projectileMaxLifetime: number = 5000; // Максимальное время жизни стрелы в мс
     private lastFireTime: number = 0; // Last time a projectile was fired
-    private skillStorage: SkillSetStorage;
-    private skillStateManager: SkillStateManager;
+    private skillManager: SkillStateManager;
 
     constructor(scene: IGameScene, enemyManager: EnemyManager) {
         this.scene = scene;
         this.enemyManager = enemyManager;
-        this.skillStorage = SkillSetStorage.getInstance();
-        this.skillStateManager = SkillStateManager.getInstance();
+        this.skillManager = SkillStateManager.getInstance();
         this.projectiles = this.scene.physics.add.group({
             classType: Projectile,
             runChildUpdate: true
@@ -34,22 +31,19 @@ class ProjectileManager {
     }
 
     private getFireRate(): number {
-        const skills = this.skillStorage.load();
-        const attackSpeed = skills.get(SkillType.ATTACK_SPEED)?.value || 1;
+        const attackSpeed = this.skillManager.getState(SkillType.ATTACK_SPEED) || 1;
         // Apply game speed to fire rate (lower delay = faster fire rate)
-        const gameSpeed = this.skillStateManager.getGameSpeed();
+        const gameSpeed = this.skillManager.getGameSpeed();
         return (500 / attackSpeed) / gameSpeed; 
     }
 
     private getTowerDamage(): number {
-        const skills = this.skillStorage.load();
-        return skills.get(SkillType.DAMAGE)?.value || 20; // Return base damage of 20 if not found
+        return this.skillManager.getState(SkillType.DAMAGE) || 20; // Return base damage of 20 if not found
     }
 
     // Проверяет, должен ли сработать мультивыстрел
     private shouldTriggerMultishot(): boolean {
-        const skills = this.skillStorage.load();
-        const multishotChance = skills.get(SkillType.MULTISHOT)?.value || 0;
+        const multishotChance = this.skillManager.getState(SkillType.MULTISHOT) || 0;
         
         // Генерируем случайное число от 0 до 100
         const roll = Math.random() * 100;
@@ -95,7 +89,7 @@ class ProjectileManager {
 
     fireProjectile(speedMultiplier: number = 1): void {
         // Get game speed multiplier and combine with provided speedMultiplier
-        const gameSpeed = this.skillStateManager.getGameSpeed();
+        const gameSpeed = this.skillManager.getGameSpeed();
         const combinedSpeedMultiplier = speedMultiplier * gameSpeed;
         
         // Находим ближайшего врага в радиусе атаки

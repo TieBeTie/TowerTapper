@@ -1,6 +1,5 @@
 import { SkillType, SkillInfo, CurrencyType, SkillPrice } from '../types/SkillType';
 import { SkillStateManager } from './SkillStateManager';
-import { SkillSetStorage } from '../storage/SkillSetStorage';
 import { IScene } from '../types/IScene';
 import { IGameScene } from '../types/IGameScene';
 import { SkillDefinitions } from '../definitions/SkillDefinitions';
@@ -10,12 +9,10 @@ export class UpgradeManager {
     private skills: Map<SkillType, SkillInfo> = new Map();
     private prices: Map<SkillType, SkillPrice> = new Map();
     private stateManager: SkillStateManager;
-    private skillStorage: SkillSetStorage;
 
     constructor(scene: IScene) {
         this.scene = scene;
         this.stateManager = SkillStateManager.getInstance();
-        this.skillStorage = SkillSetStorage.getInstance();
         this.stateManager.initialize();
 
         // Initialize skill definitions and prices
@@ -25,7 +22,7 @@ export class UpgradeManager {
 
     // Initialize skill information
     private initializeSkills(): void {
-        const skillsState = this.skillStorage.load();
+        const skillsState = this.stateManager.getAllStates();
         
         // Создаем Map с ключами SkillType и значениями number для текущих уровней
         const currentLevels = new Map<SkillType, number>();
@@ -301,24 +298,18 @@ export class UpgradeManager {
                 break;
             case SkillType.ATTACK_RANGE:
                 // Update the skill value in storage
-                const currentSkills = this.skillStorage.load();
+                const currentSkills = this.stateManager.getAllStates();
                 const attackRangeSkill = currentSkills.get(SkillType.ATTACK_RANGE);
                 if (attackRangeSkill) {
                     // Update both value and level
                     attackRangeSkill.value = newValue;
                     attackRangeSkill.currentLevel = skill.currentLevel;
                     attackRangeSkill.lastUpdated = new Date();
-                    this.skillStorage.save(currentSkills);
+                    this.stateManager.saveState(SkillType.ATTACK_RANGE, newValue, skill.currentLevel);
                     console.log(`Updated attack range skill: value=${newValue}, level=${skill.currentLevel}`);
                 } else {
                     // If skill doesn't exist in storage, create it
-                    currentSkills.set(SkillType.ATTACK_RANGE, {
-                        type: SkillType.ATTACK_RANGE,
-                        lastUpdated: new Date(),
-                        currentLevel: skill.currentLevel,
-                        value: newValue
-                    });
-                    this.skillStorage.save(currentSkills);
+                    this.stateManager.saveState(SkillType.ATTACK_RANGE, newValue, skill.currentLevel);
                 }
                 // Force the tower to update its attack range circle
                 if (gameScene) {

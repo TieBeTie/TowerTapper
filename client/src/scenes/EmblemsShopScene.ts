@@ -546,36 +546,93 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
     
     private async purchaseEmblems(pack: EmblemPackage): Promise<void> {
         // Prevent multiple purchases at once
-        if (this.isProcessingPayment) return;
+        if (this.isProcessingPayment) {
+            console.log("[DEBUG] 🔶 Покупка уже в процессе, предотвращаем повторную");
+            return;
+        }
         this.isProcessingPayment = true;
+        
+        console.log(`[DEBUG] 🔶 Начало покупки пакета: ${pack.amount} эмблем за ${pack.starsCost} звезд`);
+        console.log(`[DEBUG] 🔶 Отладочная информация WebApp:`);
+        console.log(`[DEBUG] 🔶 - Версия: ${this.telegramService.getWebAppVersion()}`);
+        console.log(`[DEBUG] 🔶 - Платформа: ${this.telegramService.getPlatform()}`);
+        console.log(`[DEBUG] 🔶 - Цветовая схема: ${this.telegramService.getColorScheme()}`);
         
         try {
             // Play button sound
             if (this.audioManager.hasSoundCached('playButton')) {
                 this.audioManager.playSound('playButton');
+                console.log("[DEBUG] 🔶 Проигран звук кнопки");
             }
             
             // Only proceed if running in Telegram
             if (!this.telegramService.isTelegramWebApp()) {
+                console.log("[DEBUG] 🔶 Не в Telegram WebApp - добавляем эмблемы для тестирования");
                 // If not in Telegram, just add emblems for testing
                 this.emblemManager.addEmblems(pack.amount);
                 this.showSuccessMessage(pack.amount);
+                this.showDebugMessage("Тестовая покупка: эмблемы добавлены без оплаты");
+                this.isProcessingPayment = false;
                 return;
             }
             
-            // Process payment through Telegram
-            const success = await this.telegramService.purchaseEmblems(pack.amount, pack.starsCost);
+            // Create loading indicator
+            const { width, height } = this.screenManager.getScreenSize();
+            const center = this.screenManager.getScreenCenter();
+            const loadingText = this.add.text(center.x, center.y, 'Обработка платежа...', {
+                fontFamily: 'pixelFont',
+                fontSize: this.screenManager.getResponsiveFontSize(24),
+                color: '#ffffff'
+            }).setOrigin(0.5).setDepth(100);
+            
+            console.log("[DEBUG] 🔶 Показан индикатор загрузки, начинаем обработку платежа");
+            this.showDebugMessage("Начало обработки Stars...");
+            
+            // Process payment through Telegram using direct Stars API
+            let success = false;
+            
+            try {
+                // Прямой вызов Stars API
+                console.log("[DEBUG] 🔶 Вызываем Stars API напрямую");
+                this.showDebugMessage("Запрос Stars API...");
+                success = await this.telegramService.purchaseEmblems(pack.amount, pack.starsCost);
+                console.log(`[DEBUG] 🔶 Результат Stars API: ${success ? "Успешно" : "Отклонено"}`);
+            } catch (error) {
+                console.error('[ERROR] ❌ Непредвиденная ошибка при покупке:', error);
+                const errorMsg = error instanceof Error ? error.message : String(error);
+                this.showDebugMessage(`Ошибка: ${errorMsg.substring(0, 30)}...`);
+                throw error;
+            } finally {
+                // Remove loading indicator
+                loadingText.destroy();
+                console.log("[DEBUG] 🔶 Индикатор загрузки удален");
+            }
             
             if (success) {
+                console.log(`[DEBUG] 🔶 Платеж успешен, добавляем ${pack.amount} эмблем`);
                 // Payment successful, add emblems
                 this.emblemManager.addEmblems(pack.amount);
+                
+                // Play purchase sound
+                if (this.audioManager.hasSoundCached('purchase_sound')) {
+                    this.audioManager.playSound('purchase_sound');
+                    console.log("[DEBUG] 🔶 Проигран звук успешной покупки");
+                }
+                
                 this.showSuccessMessage(pack.amount);
+                this.showDebugMessage("Покупка успешно завершена!");
+            } else {
+                console.log("[DEBUG] 🔶 Платеж отменен или не удался");
+                this.showDebugMessage("Покупка отменена или не удалась");
             }
         } catch (error) {
-            console.error('Error processing purchase:', error);
-            this.telegramService.showAlert('Error processing payment. Please try again later.');
+            console.error('[ERROR] ❌ Ошибка при обработке покупки:', error);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            this.telegramService.showAlert(`Ошибка при обработке платежа: ${errorMsg.substring(0, 50)}... Пожалуйста, попробуйте позже.`);
+            this.showDebugMessage(`ОШИБКА: ${errorMsg.substring(0, 30)}...`);
         } finally {
             this.isProcessingPayment = false;
+            console.log("[DEBUG] 🔶 Процесс покупки завершен, флаг isProcessingPayment сброшен");
         }
     }
     
@@ -747,5 +804,52 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
         star.setDepth(1);
         
         return star;
+    }
+
+    // Метод для показа отладочных сообщений на экране
+    private showDebugMessage(message: string): void {
+        console.log(`[DEBUG-UI] 📝 ${message}`);
+        
+        const center = this.screenManager.getScreenCenter();
+        const y = this.screenManager.getScreenSize().height - 50;
+        
+        // Создаем текст сообщения внизу экрана
+        const debugText = this.add.text(
+            center.x, 
+            y, 
+            message,
+            { 
+                fontFamily: 'Arial',
+                fontSize: this.screenManager.getResponsiveFontSize(16),
+                color: '#FFFF00',
+                backgroundColor: '#000000',
+                padding: {
+                    x: 10,
+                    y: 5
+                }
+            }
+        ).setOrigin(0.5).setDepth(1000).setAlpha(0);
+        
+        // Анимируем появление
+        this.tweens.add({
+            targets: debugText,
+            alpha: 1,
+            duration: 300,
+            ease: 'Power2',
+            onComplete: () => {
+                // Автоматически удаляем через 5 секунд
+                this.time.delayedCall(5000, () => {
+                    this.tweens.add({
+                        targets: debugText,
+                        alpha: 0,
+                        duration: 300,
+                        ease: 'Power2',
+                        onComplete: () => {
+                            debugText.destroy();
+                        }
+                    });
+                });
+            }
+        });
     }
 } 

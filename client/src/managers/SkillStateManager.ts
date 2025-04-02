@@ -171,9 +171,12 @@ export class SkillStateManager {
     // Получение состояния
     public getState(type: SkillType): number {
         const permanentService = this.getPermanentSkillService();
-        // For permanent skills, prefer server value if connected
+        // For permanent skills, prefer server value if connected, but only if it's greater than 0
         if (this.isPermanentSkill(type) && permanentService.isConnected()) {
-            return permanentService.getSkillLevel(type);
+            const serverValue = permanentService.getSkillLevel(type);
+            if (serverValue > 0) {
+                return serverValue;
+            }
         }
         
         // Otherwise fall back to local state
@@ -228,22 +231,5 @@ export class SkillStateManager {
     // Helper to check if skill is permanent
     private isPermanentSkill(type: SkillType): boolean {
         return this.permanentSkillTypes.has(type);
-    }
-    
-    // Get emblems from the server
-    public getEmblems(): number {
-        const permanentService = this.getPermanentSkillService();
-        if (permanentService.isConnected()) {
-            return permanentService.getEmblems();
-        }
-        return 0;
-    }
-    
-    // Add emblems
-    public addEmblems(amount: number): void {
-        const permanentService = this.getPermanentSkillService();
-        if (permanentService.isConnected()) {
-            permanentService.addEmblems(amount);
-        }
     }
 } 
