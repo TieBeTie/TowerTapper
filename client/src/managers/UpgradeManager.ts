@@ -370,13 +370,17 @@ export class UpgradeManager {
 
         switch (type) {
             case SkillType.MAX_HEALTH:
-                tower.maxHealth = newValue;
+                // Instead of setting tower.maxHealth directly, we'll save to SkillStateManager
+                // When tower needs maxHealth, it will get it from SkillStateManager
+                this.stateManager.saveState(SkillType.MAX_HEALTH, newValue, skill.currentLevel);
                 break;
             case SkillType.DEFENSE:
-                tower.defense = newValue;
+                // Instead of setting tower.defense directly, we'll save to SkillStateManager  
+                this.stateManager.saveState(SkillType.DEFENSE, newValue, skill.currentLevel);
                 break;
             case SkillType.HEALTH_REGEN:
-                tower.regeneration = newValue;
+                // Instead of setting tower.regeneration directly, we'll save to SkillStateManager
+                this.stateManager.saveState(SkillType.HEALTH_REGEN, newValue, skill.currentLevel);
                 break;
             case SkillType.DAMAGE:
                 // Using SkillStateManager, nothing to do here

@@ -34,6 +34,20 @@ type InvoiceResponse struct {
 	InvoiceLink string `json:"invoice_link"`
 }
 
+// RefundRequest represents a request to refund a payment
+type RefundRequest struct {
+	PaymentID    string `json:"payment_id"`
+	UserID       int64  `json:"user_id"`
+	RefundAmount int    `json:"refund_amount"`
+	RefundReason string `json:"refund_reason"`
+}
+
+// RefundResponse represents a response to a refund request
+type RefundResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
 func main() {
 	// Configure logging to output to stdout/stderr
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
@@ -178,34 +192,75 @@ func main() {
 			return
 		}
 
-		// Processing /start command
-		if update.Message != nil && update.Message.IsCommand() && update.Message.Command() == "start" {
-			log.Printf("=== DEBUG === Received /start command from user %s (ID: %d)",
-				update.Message.From.UserName, update.Message.From.ID)
+		// Обработка команды /start
+		if update.Message != nil && update.Message.IsCommand() {
+			cmdName := update.Message.Command()
 
-			// Check for deep link parameters
-			startArgs := update.Message.CommandArguments()
+			switch cmdName {
+			case "start":
+				log.Printf("=== DEBUG === Received /start command from user %s (ID: %d)",
+					update.Message.From.UserName, update.Message.From.ID)
 
-			// If there are parameters (for purchase), process them
-			if strings.HasPrefix(startArgs, "buy_emblems_") {
-				log.Printf("=== DEBUG === Received parameters for emblem purchase: %s", startArgs)
-				// Emblem purchase logic is handled elsewhere
-			} else {
-				// If no parameters, show statistics
-				handleStartCommand(bot, *update, playerUseCase)
+				// Check for deep link parameters
+				startArgs := update.Message.CommandArguments()
+
+				// If there are parameters (for purchase), process them
+				if strings.HasPrefix(startArgs, "buy_emblems_") {
+					log.Printf("=== DEBUG === Received parameters for emblem purchase: %s", startArgs)
+					// Emblem purchase logic is handled elsewhere
+				} else {
+					// If no parameters, show statistics
+					handleStartCommand(bot, *update, playerUseCase)
+				}
+			case "paysupport":
+				log.Printf("=== DEBUG === Received /paysupport command from user %s (ID: %d)",
+					update.Message.From.UserName, update.Message.From.ID)
+				handlePaySupportCommand(bot, *update)
+			}
+			return
+		}
+
+		// Обработка callback_query (кнопки в сообщениях)
+		if update.CallbackQuery != nil {
+			callbackData := update.CallbackQuery.Data
+			log.Printf("=== DEBUG === Received callback query: %s", callbackData)
+
+			// Обработка запроса на возврат средств
+			if strings.HasPrefix(callbackData, "refund_request_") {
+				// Извлекаем ID пользователя из callback data
+				parts := strings.Split(callbackData, "_")
+				if len(parts) == 3 {
+					userIDStr := parts[2]
+					userID, err := strconv.ParseInt(userIDStr, 10, 64)
+					if err != nil {
+						log.Printf("=== ERROR === Invalid user ID in callback: %s", userIDStr)
+					} else {
+						// Обрабатываем запрос на возврат средств
+						handleRefundRequest(bot, *update, userID)
+					}
+				}
+			}
+
+			// Отвечаем на callback query, чтобы убрать "часики" на кнопке
+			callback := tgbotapi.NewCallback(update.CallbackQuery.ID, "")
+			if _, err := bot.Request(callback); err != nil {
+				log.Printf("=== ERROR === Error answering callback query: %v", err)
 			}
 
 			return
 		}
 
-		// Processing pre-checkout request
+		// Обработка pre-checkout query
 		if update.PreCheckoutQuery != nil {
-			log.Printf("=== DEBUG === Received pre-checkout request: ID=%s", update.PreCheckoutQuery.ID)
+			log.Printf("=== DEBUG === Received pre-checkout query from user %d, invoice payload: %s",
+				update.PreCheckoutQuery.From.ID, update.PreCheckoutQuery.InvoicePayload)
 
+			// Always approve pre-checkout queries
 			preCheckoutConfig := tgbotapi.PreCheckoutConfig{
 				PreCheckoutQueryID: update.PreCheckoutQuery.ID,
 				OK:                 true,
 			}
+
 			if _, err := bot.Request(preCheckoutConfig); err != nil {
 				log.Printf("=== ERROR === Error approving pre-checkout request: %v", err)
 			} else {
@@ -284,7 +339,7 @@ func main() {
 
 	// Handler for processing purchases through Stars API
 	http.HandleFunc("/api/process-purchase", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("=== DEBUG === Received direct Stars purchase processing request: %s %s", r.Method, r.URL.String())
+		log.Printf("=== DEBUG === Received Stars API purchase request: %s %s", r.Method, r.URL.String())
 		log.Printf("=== DEBUG === Headers: %v", r.Header)
 
 		if r.Method != http.MethodPost && r.Method != http.MethodOptions {
@@ -319,7 +374,6 @@ func main() {
 			Success    bool   `json:"success"`
 			NewBalance int64  `json:"new_balance"`
 			Message    string `json:"message"`
-			ApiVersion string `json:"api_version"`
 		}
 
 		// Read request body
@@ -356,17 +410,8 @@ func main() {
 			return
 		}
 
-		// Определяем версию API на основе источника
-		apiVersion := "legacy"
-		if req.PurchaseSource == "stars_api_direct" {
-			apiVersion = "stars_api_v1"
-			log.Printf("=== DEBUG === Using modern Stars API (Version 1)")
-		} else {
-			log.Printf("=== DEBUG === Using legacy payment method")
-		}
-
 		// Adding emblems to the user
-		log.Printf("=== DEBUG === Adding %d emblems to user %d via %s", req.EmblemAmount, req.UserID, apiVersion)
+		log.Printf("=== DEBUG === Adding %d emblems to user %d via Stars API", req.EmblemAmount, req.UserID)
 
 		// Converting emblems to int64
 		emblemAmount := int64(req.EmblemAmount)
@@ -393,7 +438,6 @@ func main() {
 			Success:    true,
 			NewBalance: player.Emblems,
 			Message:    fmt.Sprintf("Successfully added %d emblems", req.EmblemAmount),
-			ApiVersion: apiVersion,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -404,6 +448,138 @@ func main() {
 		}
 
 		log.Printf("=== DEBUG === Response successfully sent to client: %+v", resp)
+	})
+
+	// Handler for refunding payments through Stars API
+	http.HandleFunc("/api/refund-payment", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("=== DEBUG === Received refund request: %s %s", r.Method, r.URL.String())
+		log.Printf("=== DEBUG === Headers: %v", r.Header)
+
+		if r.Method != http.MethodPost && r.Method != http.MethodOptions {
+			log.Printf("=== ERROR === Invalid request method: %s", r.Method)
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// CORS setup
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Processing OPTIONS request (preflight)
+		if r.Method == http.MethodOptions {
+			log.Printf("=== DEBUG === Processing preflight OPTIONS request")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Read request body
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("=== ERROR === Error reading request body: %v", err)
+			http.Error(w, "Error reading request", http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+		// Log raw request for debugging
+		log.Printf("=== DEBUG === Raw request body: %s", string(body))
+
+		// Reset body for json.NewDecoder
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
+
+		// Decoding JSON request
+		var req RefundRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			log.Printf("=== ERROR === Error decoding JSON: %v", err)
+			http.Error(w, "Invalid request format", http.StatusBadRequest)
+			return
+		}
+
+		log.Printf("=== DEBUG === Refund request data: PaymentID=%s, UserID=%d, RefundAmount=%d, Reason=%s",
+			req.PaymentID, req.UserID, req.RefundAmount, req.RefundReason)
+
+		// Проверка данных запроса
+		if req.PaymentID == "" || req.UserID <= 0 || req.RefundAmount <= 0 {
+			log.Printf("=== ERROR === Invalid refund parameters: PaymentID=%s, UserID=%d, RefundAmount=%d",
+				req.PaymentID, req.UserID, req.RefundAmount)
+			http.Error(w, "Invalid request parameters", http.StatusBadRequest)
+			return
+		}
+
+		// Здесь должна быть реализация вызова Telegram Bot API метода refundStarPayment
+		// https://core.telegram.org/bots/api#refundstarpayment
+
+		// Логируем попытку возврата средств
+		log.Printf("=== DEBUG === Attempting to refund %d stars for payment %s, user %d",
+			req.RefundAmount, req.PaymentID, req.UserID)
+
+		// Mock success response (в реальном коде здесь будет вызов API)
+		success := true
+		message := fmt.Sprintf("Successfully refunded %d stars for payment %s",
+			req.RefundAmount, req.PaymentID)
+
+		if req.RefundAmount > 1000 {
+			// Мок ошибки для больших сумм
+			success = false
+			message = "Refund amount exceeds allowed limit"
+		}
+
+		// Формируем и отправляем ответ
+		resp := RefundResponse{
+			Success: success,
+			Message: message,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			log.Printf("=== ERROR === Error encoding response: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("=== DEBUG === Refund response sent: %+v", resp)
+	})
+
+	// Handler for refund request in Telegram bot
+	http.HandleFunc("/api/refund-request", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("=== DEBUG === Received refund request for user %d", r.URL.Query().Get("user_id"))
+
+		// Здесь должна быть реализация вызова Telegram Bot API метода refundStarPayment
+		// https://core.telegram.org/bots/api#refundstarpayment
+
+		// Логируем попытку возврата средств
+		log.Printf("=== DEBUG === Attempting to refund stars for user %d", r.URL.Query().Get("user_id"))
+
+		// Mock success response (в реальном коде здесь будет вызов API)
+		success := true
+		message := fmt.Sprintf("Successfully refunded stars for user %d", r.URL.Query().Get("user_id"))
+
+		if r.URL.Query().Get("user_id") > "1000" {
+			// Мок ошибки для больших сумм
+			success = false
+			message = "Refund amount exceeds allowed limit"
+		}
+
+		log.Printf("=== DEBUG === Refund result: success=%t, message=%s", success, message)
+
+		// Отвечаем на запрос, чтобы убрать "часики" на кнопке
+		callback := tgbotapi.NewCallback(r.URL.Query().Get("callback_id"), message)
+		if _, err := bot.Request(callback); err != nil {
+			log.Printf("=== ERROR === Error answering callback query: %v", err)
+		}
+
+		// Отправляем ответ пользователю
+		chatIDStr := r.URL.Query().Get("chat_id")
+		chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
+		if err != nil {
+			log.Printf("=== ERROR === Invalid chat ID: %s", chatIDStr)
+			return
+		}
+		msg := tgbotapi.NewMessage(chatID, message)
+		if _, err := bot.Send(msg); err != nil {
+			log.Printf("=== ERROR === Error sending refund response: %v", err)
+		}
 	})
 
 	// Starting HTTP server
@@ -527,14 +703,9 @@ func handleStartCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, playerUseC
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, welcomeMsg)
 	msg.ParseMode = "Markdown"
 
-	clientURL := os.Getenv("CLIENT_URL")
-	fullGameURL := fmt.Sprintf("http://%s?telegram_id=%d", clientURL, update.Message.From.ID)
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("🎮 Play Tower Tapper", fullGameURL),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("💎 Buy Emblems", fullGameURL+"&shop=true"),
+			tgbotapi.NewInlineKeyboardButtonURL("🎮 Play Tower Tapper", fmt.Sprintf("https://t.me/%s/towertapper?startapp=from_bot_%d", bot.Self.UserName, update.Message.From.ID)),
 		),
 	)
 
@@ -542,5 +713,75 @@ func handleStartCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, playerUseC
 
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("Error sending message: %v", err)
+	}
+}
+
+// Handler for /paysupport command in Telegram bot
+func handlePaySupportCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	chatID := update.Message.Chat.ID
+	userID := update.Message.From.ID
+	username := update.Message.From.UserName
+
+	log.Printf("=== DEBUG === Processing /paysupport command for user %s (ID: %d)", username, userID)
+
+	// Формируем приветственное сообщение для поддержки платежей
+	supportMsg := "🛒 *Tower Tapper - Payment Support* 🛒\n\n"
+	supportMsg += "Welcome to our payment support. If you have any issues with your purchases, please describe the problem below.\n\n"
+	supportMsg += "Please include the following information:\n"
+	supportMsg += "- When did you make the purchase?\n"
+	supportMsg += "- How many Stars/Emblems were involved?\n"
+	supportMsg += "- What happened instead of the expected result?\n\n"
+	supportMsg += "Our support team will get back to you as soon as possible."
+
+	// Создаем и отправляем сообщение
+	msg := tgbotapi.NewMessage(chatID, supportMsg)
+	msg.ParseMode = "Markdown"
+
+	// Добавляем кнопку для возврата
+	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔄 Request Refund", fmt.Sprintf("refund_request_%d", userID)),
+		),
+	)
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("=== ERROR === Error sending payment support message: %v", err)
+	} else {
+		log.Printf("=== DEBUG === Payment support message sent successfully to user %d", userID)
+	}
+}
+
+// Handler for refund request in Telegram bot
+func handleRefundRequest(bot *tgbotapi.BotAPI, update tgbotapi.Update, userID int64) {
+	log.Printf("=== DEBUG === Received refund request for user %d", userID)
+
+	// Здесь должна быть реализация вызова Telegram Bot API метода refundStarPayment
+	// https://core.telegram.org/bots/api#refundstarpayment
+
+	// Логируем попытку возврата средств
+	log.Printf("=== DEBUG === Attempting to refund stars for user %d", userID)
+
+	// Mock success response (в реальном коде здесь будет вызов API)
+	success := true
+	message := fmt.Sprintf("Successfully refunded stars for user %d", userID)
+
+	if userID > 1000 {
+		// Мок ошибки для больших сумм
+		success = false
+		message = "Refund amount exceeds allowed limit"
+	}
+
+	log.Printf("=== DEBUG === Refund result: success=%t, message=%s", success, message)
+
+	// Отвечаем на запрос, чтобы убрать "часики" на кнопке
+	callback := tgbotapi.NewCallback(update.CallbackQuery.ID, message)
+	if _, err := bot.Request(callback); err != nil {
+		log.Printf("=== ERROR === Error answering callback query: %v", err)
+	}
+
+	// Отправляем ответ пользователю
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, message)
+	if _, err := bot.Send(msg); err != nil {
+		log.Printf("=== ERROR === Error sending refund response: %v", err)
 	}
 }

@@ -65,14 +65,97 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
         this.emblemManager = EmblemManager.getInstance();
         this.telegramService = TelegramService.getInstance();
         
+        // Расширенная диагностика WebApp API
+        const version = this.telegramService.getWebAppVersion();
+        const platform = this.telegramService.getPlatform();
+        const versionText = `TG: ${version} (${platform})`;
+        
+        // Проверка наличия Stars API и детали о нем
+        const webApp = window.Telegram?.WebApp;
+        const hasStarsApi = typeof webApp?.requestStars === 'function';
+        const apiStatus = hasStarsApi ? '✓' : '✗';
+        
+        // Детальный вывод методов WebApp в консоль
+        console.log('[DEBUG] 🔹 Версия WebApp:', version);
+        console.log('[DEBUG] 🔹 Платформа:', platform);
+        console.log('[DEBUG] 🔹 Stars API доступен:', hasStarsApi);
+        
+        if (webApp) {
+            console.log('[DEBUG] 🔹 Все свойства и методы WebApp:');
+            // Вывод всех свойств и методов с их типами
+            const methods: Record<string, string> = {};
+            for (const key in webApp) {
+                if (Object.prototype.hasOwnProperty.call(webApp, key)) {
+                    const propType = typeof (webApp as any)[key];
+                    methods[key] = propType;
+                    console.log(`[DEBUG] 🔹 - ${key}: ${propType}${propType === 'function' ? ' ✓' : ''}`);
+                    
+                    // Дополнительная проверка методов, связанных с платежами
+                    if (key.toLowerCase().includes('star') || key.toLowerCase().includes('payment') || key.toLowerCase().includes('buy')) {
+                        console.log(`[DEBUG] 🔹 -- Детали метода ${key}:`, (webApp as any)[key]);
+                    }
+                }
+            }
+            
+            // Проверка вложенных объектов
+            if (webApp.MainButton) {
+                console.log('[DEBUG] 🔹 MainButton методы:');
+                for (const key in webApp.MainButton) {
+                    if (Object.prototype.hasOwnProperty.call(webApp.MainButton, key)) {
+                        console.log(`[DEBUG] 🔹 -- ${key}: ${typeof (webApp.MainButton as any)[key]}`);
+                    }
+                }
+            }
+            
+            // Проверка requestStars подробнее
+            if (hasStarsApi && webApp.requestStars) {
+                try {
+                    console.log('[DEBUG] 🔹 requestStars сигнатура:', webApp.requestStars.toString().substring(0, 100) + '...');
+                } catch (e) {
+                    console.log('[DEBUG] 🔹 Не удалось получить сигнатуру requestStars:', e);
+                }
+            } else {
+                console.log('[DEBUG] 🔹 Ожидаемая сигнатура requestStars: (starCount: number, callback: (success: boolean) => void) => void');
+                console.log('[DEBUG] 🔹 Проверка наличия других методов для работы со Stars:');
+                const possibleStarsMethods = ['requestStars', 'buyStars', 'purchaseStars', 'getStars', 'showStars'];
+                possibleStarsMethods.forEach(method => {
+                    console.log(`[DEBUG] 🔹 -- ${method}: ${typeof (webApp as any)[method] === 'function' ? '✓' : '✗'}`);
+                });
+            }
+        }
+        
         // Create animated background
         this.createAnimatedBackground();
         
-        // Setup UI
+        // Setup UI elements
         this.setupUI();
         
         // Subscribe to resize events
         this.events.on('screenResize', this.handleScreenResize, this);
+        
+        // Добавляем информацию о версии и API в углу экрана
+        const apiInfoText = `${versionText} | Stars API: ${apiStatus}`;
+        this.add.text(
+            5, 
+            height - 15,
+            apiInfoText,
+            { fontFamily: 'Arial', fontSize: 10, color: '#777777' }
+        ).setOrigin(0, 0.5).setAlpha(0.7);
+        
+        // Добавляем текст с доступными методами в меньшем размере
+        if (webApp) {
+            const availableMethods = Object.keys(webApp)
+                .filter(key => typeof (webApp as any)[key] === 'function')
+                .slice(0, 10) // Ограничиваем до 10 методов
+                .join(', ');
+            
+            this.add.text(
+                5,
+                height - 30,
+                `Методы: ${availableMethods}${Object.keys(webApp).length > 10 ? '...' : ''}`,
+                { fontFamily: 'Arial', fontSize: 8, color: '#555555' }
+            ).setOrigin(0, 0.5).setAlpha(0.6);
+        }
     }
     
     private createAnimatedBackground(): void {
@@ -819,8 +902,8 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
             y, 
             message,
             { 
-                fontFamily: 'Arial',
-                fontSize: this.screenManager.getResponsiveFontSize(16),
+                fontFamily: 'pixelFont',
+                fontSize: this.screenManager.getResponsiveFontSize(8),
                 color: '#FFFF00',
                 backgroundColor: '#000000',
                 padding: {

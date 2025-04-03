@@ -34,7 +34,7 @@ class ProjectileManager {
         const attackSpeed = this.skillManager.getState(SkillType.ATTACK_SPEED) || 1;
         // Apply game speed to fire rate (lower delay = faster fire rate)
         const gameSpeed = this.skillManager.getGameSpeed();
-        return (500 / attackSpeed) / gameSpeed; 
+        return (1300 / attackSpeed) / gameSpeed; 
     }
 
     private getTowerDamage(): number {

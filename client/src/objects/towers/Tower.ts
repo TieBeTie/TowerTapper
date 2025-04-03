@@ -14,11 +14,20 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private static readonly TOWER_SCALE = 0.3;
     // Константа для базового радиуса атаки (в % от высоты экрана)
 
-    health: number;
-    maxHealth: number;
-    defense: number;
-    regeneration: number;
-    private regenerationTimer: Phaser.Time.TimerEvent | null;
+    // We'll keep these properties for compatibility, but they'll be wrappers
+    // around the centralized health system
+    get health(): number { return this.skillManager.getCurrentHealth(); }
+    set health(value: number) { /* Do nothing, use methods instead */ }
+    
+    get maxHealth(): number { return this.skillManager.getMaxHealth(); }
+    set maxHealth(value: number) { /* Do nothing, use methods instead */ }
+    
+    get defense(): number { return this.skillManager.getState(SkillType.DEFENSE) || 0; }
+    set defense(value: number) { /* Do nothing, use methods instead */ }
+    
+    get regeneration(): number { return this.skillManager.getState(SkillType.HEALTH_REGEN) || 0; }
+    set regeneration(value: number) { /* Do nothing, use methods instead */ }
+    
     private isDying: boolean = false;
     private skillManager: SkillStateManager;
     private screenManager: ScreenManager;
@@ -35,15 +44,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
 
         this.skillManager = SkillStateManager.getInstance();
 
-        // Initialize values from SkillStateManager or use defaults if not found
-        this.health = this.skillManager.getState(SkillType.MAX_HEALTH) || 200;
-        this.maxHealth = this.health;
-        this.defense = this.skillManager.getState(SkillType.DEFENSE) || 0;
-        this.regeneration = this.skillManager.getState(SkillType.HEALTH_REGEN) || 0;
-        this.regenerationTimer = null;
-        this.isDying = false;
-
-        // Инициализируем радиус атаки
+        // Initialize health through centralized system
+        this.skillManager.initializeHealth();
         this.attackRange = this.skillManager.getState(SkillType.ATTACK_RANGE);
 
         // Создаем графический объект для отображения радиуса атаки с нужной глубиной
@@ -66,10 +68,6 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             this.body.setSize(this.width * 0.6, this.height * 0.6);
             this.body.setOffset(this.width * 0.2, this.height * 0.2);
         }
-
-        if (this.regeneration > 0) {
-            this.startRegeneration();
-        }
         
         // Set tower to a high depth to ensure it's above the attack circle
         this.setDepth(10);
@@ -80,6 +78,18 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             console.log('Received tower-force-attack-circle event');
             this.safeUpdateAttackCircle();
         }, this);
+        
+        // Start update loop to handle regeneration properly
+        this.scene.events.on('update', this.onUpdate, this);
+    }
+    
+    // Method to handle continuous regeneration in the update loop
+    private onUpdate = (time: number, delta: number): void => {
+        // Process regeneration through the centralized system
+        this.skillManager.processRegeneration(delta);
+        
+        // Update health bar to reflect new health
+        this.updateHealthBar();
     }
     
     private handleScreenResize(gameScale: number): void {
@@ -199,22 +209,21 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         // Safety check for scene existence
         if (!this.scene) return;
         
-        // This method is called after upgrades are applied
-        // It might have been intended to update a health bar UI element
-        // For now we just make sure it exists to prevent the error
-        // If there's a health bar UI in the game scene, we would update it here
+        // Get current health values from the centralized system
+        const currentHealth = this.skillManager.getCurrentHealth();
+        const maxHealth = this.skillManager.getMaxHealth();
         
         // If a GameScene health bar needs to be updated
         if ('updateHealthBar' in this.scene) {
-            (this.scene as any).updateHealthBar(this.health, this.maxHealth);
+            (this.scene as any).updateHealthBar(currentHealth, maxHealth);
         }
     }
 
     takeDamage(amount: number): void {
         if (!this.active || this.isDying) return;
 
-        const reducedAmount = amount * (1 - (this.defense / 100));
-        this.health = Math.max(0, this.health - reducedAmount);
+        // Apply damage through the centralized system
+        this.skillManager.applyDamage(amount);
 
         // Safety check for scene existence before accessing it
         if (!this.scene) return;
@@ -295,36 +304,13 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         });
     }
 
-    private startRegeneration(): void {
-        if (this.regeneration > 0 && !this.regenerationTimer) {
-            this.regenerationTimer = this.scene.time.addEvent({
-                delay: 1000,
-                callback: this.regenerateHealth,
-                callbackScope: this,
-                loop: true
-            });
-        }
-    }
-
+    // Remove the regeneration timer and methods since we now handle it in update
     private stopRegeneration(): void {
-        if (this.regenerationTimer) {
-            // Only destroy the timer if it's valid
-            if (this.regenerationTimer.destroy) {
-                try {
-                    this.regenerationTimer.destroy();
-                } catch (e) {
-                    // Ignore errors if the timer can't be destroyed
-                    console.warn('Failed to destroy regeneration timer:', e);
-                }
-            }
-            this.regenerationTimer = null;
-        }
+        // Nothing to do here anymore since regeneration is handled in update
     }
-
-    private regenerateHealth = (): void => {
-        if (this.health < this.maxHealth) {
-            this.health = Math.min(this.health + this.regeneration, this.maxHealth);
-        }
+    
+    private startRegeneration(): void {
+        // Nothing to do here anymore since regeneration is handled in update
     }
 
     destroy(fromScene?: boolean): void {
@@ -335,8 +321,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
                 console.log('Received tower-force-attack-circle event');
                 this.safeUpdateAttackCircle();
             }, this);
+            this.scene.events.off('update', this.onUpdate, this);
         }
-        this.stopRegeneration();
         
         // Destroy the attack range circle
         if (this.attackRangeCircle) {

@@ -30,6 +30,10 @@ class EnemyFactory {
         if (waveManager) {
             const health = waveManager.getEnemyHealth();
             enemy.setHealth(health);
+            
+            // Set enemy damage based on wave
+            const damage = waveManager.getEnemyDamage();
+            enemy.setDamage(damage);
         }
         
         return enemy;

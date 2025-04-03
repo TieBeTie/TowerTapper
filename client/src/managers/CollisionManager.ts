@@ -170,11 +170,9 @@ class CollisionManager {
         if (lifestealAmount > 0 && Math.random() * 100 < lifestealChance) {
             // Lifesteal activated, heal the tower
             if (this.scene.tower && this.scene.tower.active) {
-                const prevHealth = this.scene.tower.health;
-                this.scene.tower.health = Math.min(
-                    this.scene.tower.health + lifestealAmount,
-                    this.scene.tower.maxHealth
-                );
+                const prevHealth = this.skillManager.getCurrentHealth();
+                // Use the centralized health system to heal
+                this.skillManager.healTower(lifestealAmount);
                 
                 // Update health bar if needed
                 this.scene.tower.updateHealthBar();
@@ -203,8 +201,11 @@ class CollisionManager {
 
         if (!tower.active || !enemy.active) return;
 
+        // Get damage from enemy or use default value if not set
+        const damage = enemy.damage || 100;
+        
         enemy.destroy();
-        tower.takeDamage(100);
+        tower.takeDamage(damage);
     }
 
     private cleanup = (): void => {

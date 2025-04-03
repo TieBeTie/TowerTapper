@@ -1,15 +1,32 @@
 export class TelegramService {
     private static instance: TelegramService;
     private webApp: TelegramWebApp | null = null;
-    private viewportChangeCallbacks: (() => void)[] = [];
+    private viewportChangeCallbacks: Array<() => void> = [];
+    private botUsername: string = '';
 
     private constructor() {
-        // Проверяем, доступен ли Telegram Web App
-        if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+        // Получаем экземпляр Telegram WebApp
+        if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
             this.webApp = window.Telegram.WebApp;
-            this.initialize();
+            
+            // Логируем информацию о WebApp для отладки
+            console.log(`[INFO] 📱 Telegram WebApp initialized, version: ${this.webApp.version}`);
+            console.log(`[INFO] 📱 Platform: ${this.webApp.platform}`);
+            
+            // Определяем имя бота из initDataUnsafe, если доступно
+            if (this.webApp.initDataUnsafe && this.webApp.initDataUnsafe.user && this.webApp.initDataUnsafe.user.username) {
+                // В большинстве случаев имя бота можно получить из initData, но это пример
+                // В реальном случае вы бы знали имя своего бота заранее
+                this.botUsername = 'TowerTapperBot'; // Задаем имя бота статически
+                console.log(`[INFO] 📱 Bot username set to: ${this.botUsername}`);
+            }
+            
+            // Добавляем обработчик изменения viewport
+            this.webApp.onEvent('viewportChanged', () => {
+                this.viewportChangeCallbacks.forEach(callback => callback());
+            });
         } else {
-            console.warn('Telegram Web App is not available');
+            console.warn('[WARNING] ⚠️ Telegram WebApp not available');
         }
     }
 
@@ -18,42 +35,6 @@ export class TelegramService {
             TelegramService.instance = new TelegramService();
         }
         return TelegramService.instance;
-    }
-
-    private initialize(): void {
-        if (!this.webApp) return;
-        
-        // Инициализация Telegram Web App
-        this.webApp.ready();
-        
-        // Устанавливаем основной цвет темы
-        this.webApp.setHeaderColor('#ffffff');
-        this.webApp.setBackgroundColor('#ffffff');
-
-        // Разворачиваем приложение на весь экран
-        this.expandWebApp();
-
-        // Check if running on iOS
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-        
-        if (isIOS) {
-            console.log('Running on iOS - applying special viewport handling');
-        }
-
-        // Use a debounced handler for iOS to prevent too many viewport updates
-        let timeout: any = null;
-        const debouncedCallback = () => {
-            if (timeout) clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                this.viewportChangeCallbacks.forEach(callback => callback());
-            }, isIOS ? 250 : 50); // Longer delay for iOS
-        };
-
-        // Подписываемся на изменения viewport
-        this.webApp.onEvent('viewportChanged', debouncedCallback);
-        
-        // Also listen for window resize events as a fallback
-        window.addEventListener('resize', debouncedCallback);
     }
 
     // Получить данные пользователя
@@ -115,36 +96,18 @@ export class TelegramService {
             console.log('[DEBUG] 🔹 Платформа:', this.webApp.platform || 'неизвестно');
             console.log('[DEBUG] 🔹 Цветовая схема:', this.webApp.colorScheme || 'неизвестно');
             
-            // Проверяем версию API
-            const versionString = this.webApp.version || '';
-            const versionParts = versionString.split('.');
-            const majorVersion = parseInt(versionParts[0] || '0', 10);
-            const minorVersion = parseInt(versionParts[1] || '0', 10);
-            
-            // Считаем API поддерживаемым, только если оно действительно доступно в объекте webApp
-            const hasStarsApi = typeof this.webApp.requestStars === 'function';
-            
-            // Вместо проверки версии 6.7+ просто проверяем доступность API
-            // Это позволит сразу использовать новую версию, если она доступна
-            const forceUseModernApi = true; // Форсируем использование современного API
-            
-            console.log(`[DEBUG] 🔹 Наличие Stars API: ${hasStarsApi}`);
-            console.log(`[DEBUG] 🔹 Версия: ${majorVersion}.${minorVersion}`);
-            
-            if (!hasStarsApi) {
+            // Проверяем наличие метода requestStars
+            if (typeof this.webApp.requestStars !== 'function') {
                 console.error('[ERROR] ❌ Метод requestStars не найден в WebApp API!');
                 console.log('[DEBUG] 🔹 Доступные методы WebApp:', Object.keys(this.webApp).join(', '));
-                
-                // Используем альтернативный метод - только если Stars API недоступен
-                this.showConfirmAndProcess(emblemAmount, starCost, userData, resolve, reject);
+                reject(new Error('Stars API is not supported in this Telegram version. Update your Telegram app.'));
                 return;
             }
 
             try {
-                // Прямой запрос Stars через Telegram API (новая версия)
-                console.log('[DEBUG] 🔹 Запрашиваем Stars напрямую через современный API...');
+                // Прямой запрос Stars через Telegram API
+                console.log('[DEBUG] 🔹 Запрашиваем Stars напрямую через API...');
                 
-                // Безопасный вызов с проверкой формата колбэка
                 this.webApp.requestStars(
                     starCost, 
                     (success: boolean) => {
@@ -180,74 +143,209 @@ export class TelegramService {
                 console.error('[ERROR] ❌ Ошибка API Stars:', error);
                 console.error('[ERROR] ❌ Тип ошибки:', typeof error);
                 console.error('[ERROR] ❌ Подробности:', error instanceof Error ? error.message : String(error));
-                
-                // Если произошла ошибка, пробуем альтернативный метод
-                console.log('[DEBUG] 🔹 Пробуем альтернативный метод оплаты...');
-                this.showConfirmAndProcess(emblemAmount, starCost, userData, resolve, reject);
+                reject(error);
             }
         });
     }
 
-    // Альтернативный метод для покупки через диалог подтверждения
-    private showConfirmAndProcess(
-        emblemAmount: number, 
-        starCost: number, 
-        userData: any, 
-        resolve: (value: boolean) => void, 
-        reject: (reason?: any) => void
-    ): void {
-        try {
-            console.log('[DEBUG] 🔹 Используем альтернативный метод оплаты через подтверждение');
-            
-            // Проверка наличия webApp и метода showConfirm
-            if (!this.webApp || typeof this.webApp.showConfirm !== 'function') {
-                console.error('[ERROR] ❌ Метод showConfirm не доступен');
-                this.showAlert('К сожалению, ваша версия Telegram не поддерживает покупку эмблем. Пожалуйста, обновите приложение.');
-                reject(new Error('showConfirm method not available'));
+    // Modern method to purchase emblems using Telegram invoice
+    public purchaseEmblemsWithInvoice(emblemAmount: number, starCost: number): Promise<boolean> {
+        console.log(`[DEBUG] 🔹 Начало процесса покупки ${emblemAmount} эмблем за ${starCost} звезд через Invoice API`);
+        return new Promise((resolve, reject) => {
+            if (!this.webApp) {
+                console.error('[ERROR] ❌ Telegram WebApp не доступен');
+                this.showAlert('Telegram WebApp не доступен. Пожалуйста, обновите приложение.');
+                reject(new Error('Telegram WebApp not available'));
                 return;
             }
+
+            // Получаем данные пользователя для логирования
+            const userData = this.getUserData();
+            console.log('[DEBUG] 🔹 Пользователь:', userData ? `ID: ${userData.id}, Username: ${userData.username || 'не указан'}` : 'не определен');
             
-            this.webApp.showConfirm(
-                `Вы хотите купить ${emblemAmount} эмблем за ${starCost} звезд?`,
-                (confirmed) => {
-                    if (!confirmed) {
-                        console.log('[DEBUG] 🔹 Пользователь отменил покупку');
-                        resolve(false);
+            // Проверяем наличие метода openInvoice
+            if (typeof this.webApp.openInvoice !== 'function') {
+                console.error('[ERROR] ❌ Метод openInvoice не найден в WebApp API!');
+                console.log('[DEBUG] 🔹 Пробуем использовать альтернативный метод requestStars...');
+                return this.purchaseEmblems(emblemAmount, starCost)
+                    .then(result => resolve(result))
+                    .catch(error => reject(error));
+            }
+
+            try {
+                // Формируем URL для запроса инвойса с сервера
+                const protocol = window.location.protocol;
+                const host = window.location.hostname;
+                const port = window.location.port ? `:${window.location.port}` : '';
+                const baseUrl = `${protocol}//${host}${port}`;
+                const apiUrl = `${baseUrl}/api/create-invoice`;
+                
+                console.log(`[DEBUG] 🔹 Запрашиваем создание инвойса по URL: ${apiUrl}`);
+
+                // Запрашиваем создание инвойса у сервера
+                fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: userData?.id || 0,
+                        emblem_amount: emblemAmount,
+                        star_cost: starCost
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(`[DEBUG] 🔹 Получен инвойс: ${data.invoice_link}`);
+                    
+                    // Проверяем, что WebApp все еще доступен
+                    if (!this.webApp) {
+                        console.error('[ERROR] ❌ Telegram WebApp больше не доступен');
+                        reject(new Error('Telegram WebApp not available'));
                         return;
                     }
                     
-                    console.log('[DEBUG] 🔹 Пользователь подтвердил покупку, имитируем успешную оплату');
-                    
-                    // Если пользователь подтвердил, считаем что оплата прошла успешно
-                    // (для тестирования и для версий, где нет прямой оплаты)
-                    if (userData && userData.id) {
-                        this.notifyServerAboutPurchase(userData.id, emblemAmount, starCost)
-                            .then(() => {
-                                console.log(`[DEBUG] ✅ Сервер успешно уведомлен о покупке (альт. метод)`);
+                    // Открываем инвойс через WebApp API
+                    this.webApp.openInvoice(data.invoice_link, (status) => {
+                        console.log(`[DEBUG] 🔹 Статус оплаты: ${status}`);
+                        
+                        if (status === 'paid') {
+                            console.log(`[DEBUG] ✅ Оплата успешно выполнена`);
+                            
+                            // Уведомляем сервер об успешной оплате
+                            if (userData && userData.id) {
+                                this.notifyServerAboutPurchase(userData.id, emblemAmount, starCost)
+                                    .then(() => {
+                                        console.log(`[DEBUG] ✅ Сервер успешно уведомлен о покупке`);
+                                        resolve(true);
+                                    })
+                                    .catch(error => {
+                                        console.error('[ERROR] ❌ Ошибка при обновлении данных на сервере:', error);
+                                        this.showAlert('Платеж успешен, но возникла проблема с начислением эмблем. Пожалуйста, обратитесь в поддержку (/paysupport).');
+                                        resolve(true);
+                                    });
+                            } else {
+                                console.log('[WARNING] ⚠️ Нет данных пользователя для уведомления сервера');
                                 resolve(true);
-                            })
-                            .catch(error => {
-                                console.error('[ERROR] ❌ Ошибка при обновлении данных на сервере (альт. метод):', error);
-                                this.showAlert('Возникла проблема с начислением эмблем. Пожалуйста, обратитесь в поддержку.');
-                                resolve(false);
-                            });
-                    } else {
-                        console.log('[WARNING] ⚠️ Нет данных пользователя (альт. метод)');
-                        resolve(true);
-                    }
-                }
-            );
-        } catch (error) {
-            console.error('[ERROR] ❌ Ошибка альтернативного метода:', error);
-            this.showAlert('Ошибка обработки платежа. Пожалуйста, попробуйте позже.');
-            reject(error);
+                            }
+                        } else if (status === 'cancelled') {
+                            console.log('[DEBUG] ⚠️ Оплата отменена пользователем');
+                            resolve(false);
+                        } else if (status === 'failed') {
+                            console.log('[ERROR] ❌ Ошибка при выполнении платежа');
+                            resolve(false);
+                        } else if (status === 'pending') {
+                            console.log('[DEBUG] ⏳ Платеж в обработке');
+                            // Пока платеж в статусе pending, мы не можем точно сказать, завершился он успешно или нет
+                            // Можно реализовать механизм проверки статуса платежа на сервере
+                            resolve(false);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('[ERROR] ❌ Ошибка при создании инвойса:', error);
+                    console.log('[DEBUG] 🔹 Пробуем использовать альтернативный метод requestStars...');
+                    // Если не удалось создать инвойс, пробуем использовать прямой метод
+                    return this.purchaseEmblems(emblemAmount, starCost)
+                        .then(result => resolve(result))
+                        .catch(error => reject(error));
+                });
+            } catch (error) {
+                console.error('[ERROR] ❌ Ошибка при использовании openInvoice:', error);
+                console.log('[DEBUG] 🔹 Пробуем использовать альтернативный метод requestStars...');
+                // Если произошла ошибка, пробуем использовать прямой метод
+                return this.purchaseEmblems(emblemAmount, starCost)
+                    .then(result => resolve(result))
+                    .catch(error => reject(error));
+            }
+        });
+    }
+
+    // Метод для запроса поддержки по платежам
+    public openPaymentSupport(): void {
+        if (!this.webApp) {
+            console.error('[ERROR] ❌ Telegram WebApp не доступен');
+            return;
+        }
+
+        // Используем безопасный метод для открытия ссылки
+        if (typeof this.webApp.openLink === 'function') {
+            // Отправляем команду /paysupport в бота
+            this.webApp.openLink('https://t.me/' + this.botUsername + '?start=paysupport');
+        } else {
+            console.error('[ERROR] ❌ Метод openLink не найден в WebApp API');
+            // Показываем сообщение с инструкцией
+            this.showAlert('Пожалуйста, отправьте команду /paysupport боту для получения поддержки по платежам.');
         }
     }
 
-    // Modern method to purchase emblems using Telegram invoice
-    public purchaseEmblemsWithInvoice(emblemAmount: number, starCost: number): Promise<boolean> {
-        console.log(`[DEBUG] 🔹 Предупреждение: Устаревший метод вызван! Перенаправляем на новый метод`);
-        return this.purchaseEmblems(emblemAmount, starCost);
+    // Метод для запроса возврата платежа
+    public requestRefund(paymentId: string, refundAmount: number, reason: string): Promise<boolean> {
+        console.log(`[DEBUG] 🔹 Запрос на возврат средств: платеж ${paymentId}, сумма ${refundAmount}, причина: ${reason}`);
+        
+        return new Promise((resolve, reject) => {
+            if (!this.webApp) {
+                console.error('[ERROR] ❌ Telegram WebApp не доступен');
+                reject(new Error('Telegram WebApp not available'));
+                return;
+            }
+
+            const userData = this.getUserData();
+            if (!userData || !userData.id) {
+                console.error('[ERROR] ❌ Нет данных пользователя для запроса возврата');
+                reject(new Error('User data not available'));
+                return;
+            }
+
+            // Формируем URL для запроса возврата с сервера
+            const protocol = window.location.protocol;
+            const host = window.location.hostname;
+            const port = window.location.port ? `:${window.location.port}` : '';
+            const baseUrl = `${protocol}//${host}${port}`;
+            const apiUrl = `${baseUrl}/api/refund-payment`;
+            
+            console.log(`[DEBUG] 🔹 Запрашиваем возврат средств по URL: ${apiUrl}`);
+
+            // Запрашиваем возврат у сервера
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    payment_id: paymentId,
+                    user_id: userData.id,
+                    refund_amount: refundAmount,
+                    refund_reason: reason
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(`[DEBUG] 🔹 Результат запроса на возврат: ${JSON.stringify(data)}`);
+                if (data.success) {
+                    this.showAlert(`Возврат успешно выполнен: ${data.message}`);
+                    resolve(true);
+                } else {
+                    this.showAlert(`Ошибка при выполнении возврата: ${data.message}`);
+                    resolve(false);
+                }
+            })
+            .catch(error => {
+                console.error('[ERROR] ❌ Ошибка при запросе возврата:', error);
+                this.showAlert('Произошла ошибка при запросе возврата. Пожалуйста, обратитесь в поддержку (/paysupport).');
+                reject(error);
+            });
+        });
     }
 
     // Show a popup message with buttons

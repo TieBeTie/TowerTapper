@@ -9,6 +9,8 @@ export class SkillStateManager {
     private state: Map<SkillType, ISkillState>;
     private storage: SkillSetStorage;
     private InitialSkillService: InitialSkillService | null = null;
+    private currentTowerHealth: number = 0;
+    private lastRegenerationTime: number = 0;
     private InitialSkillTypes: Set<SkillType> = new Set([
         SkillType.EMBLEM_BONUS,
         SkillType.DAMAGE,
@@ -220,5 +222,58 @@ export class SkillStateManager {
             console.log(`Синхронизация навыка ${type} уровня ${skillState.currentLevel} с сервером`);
             InitialService.updateSkill(type, skillState.currentLevel);
         }
+    }
+    
+    // Centralized Health Management Methods
+    
+    // Initialize tower health at the start of the game
+    public initializeHealth(): number {
+        const maxHealth = this.getState(SkillType.MAX_HEALTH) || 200;
+        this.currentTowerHealth = maxHealth;
+        return maxHealth;
+    }
+    
+    // Get current tower health
+    public getCurrentHealth(): number {
+        return this.currentTowerHealth;
+    }
+    
+    // Get max tower health
+    public getMaxHealth(): number {
+        return this.getState(SkillType.MAX_HEALTH) || 200;
+    }
+    
+    // Apply damage to tower, accounting for defense
+    public applyDamage(amount: number): number {
+        const defense = this.getState(SkillType.DEFENSE) || 0;
+        const reducedAmount = amount * (1 - (defense / 100));
+        this.currentTowerHealth = Math.max(0, this.currentTowerHealth - reducedAmount);
+        return this.currentTowerHealth;
+    }
+    
+    // Heal tower by amount (used for regeneration and lifesteal)
+    public healTower(amount: number): number {
+        const maxHealth = this.getMaxHealth();
+        this.currentTowerHealth = Math.min(this.currentTowerHealth + amount, maxHealth);
+        return this.currentTowerHealth;
+    }
+    
+    // Process health regeneration based on delta time and game speed
+    public processRegeneration(deltaTime: number): number {
+        const regenerationValue = this.getState(SkillType.HEALTH_REGEN) || 0;
+        if (regenerationValue <= 0) return this.currentTowerHealth;
+        
+        const gameSpeed = this.getGameSpeed();
+        // Apply regeneration based on time passed and game speed
+        // regenerationValue is per second, so we multiply by deltaTime in seconds and gameSpeed
+        const healAmount = regenerationValue * (deltaTime / 1000) * gameSpeed;
+        
+        return this.healTower(healAmount);
+    }
+    
+    // Reset health to max (for new game or respawn)
+    public resetHealthToMax(): number {
+        this.currentTowerHealth = this.getMaxHealth();
+        return this.currentTowerHealth;
     }
 } 

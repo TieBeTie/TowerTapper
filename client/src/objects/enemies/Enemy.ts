@@ -8,6 +8,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     health: number;
     maxHealth: number;
     cost: number;
+    damage: number = 0; // Enemy damage to tower
     tower: Phaser.Physics.Arcade.Sprite;
     projectileFactory: ProjectileFactory;
     isDying: boolean;
@@ -101,6 +102,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     setHealth(value: number): void {
         this.health = value;
         this.maxHealth = value; // Обновляем максимальное здоровье
+    }
+
+    setDamage(value: number): void {
+        this.damage = value;
     }
 
     die(): void {

@@ -35,6 +35,7 @@ declare global {
         showAlert: (message: string, callback?: () => void) => void;
         showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void;
         requestStars: (amount: number, callback: (success: boolean) => void) => void;
+        openLink: (url: string) => void;
         MainButton: {
             text: string;
             color: string;

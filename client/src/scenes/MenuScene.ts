@@ -221,7 +221,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         // Находим и обновляем размер кнопки
         const playButton = this.children.list.find(child => 
             child instanceof Phaser.GameObjects.Text && 
-            (child as Phaser.GameObjects.Text).text === 'Play'
+            (child as Phaser.GameObjects.Text).text === 'Play🎮'
         ) as Phaser.GameObjects.Text;
         
         if (playButton) {
@@ -308,7 +308,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         // Находим кнопку "Играть" и анимируем её
         const playButton = this.children.list.find(child => 
             child instanceof Phaser.GameObjects.Text && 
-            (child as Phaser.GameObjects.Text).text === 'Play'
+            (child as Phaser.GameObjects.Text).text === 'Play🎮'
         ) as Phaser.GameObjects.Text;
 
         if (playButton) {

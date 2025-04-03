@@ -28,7 +28,7 @@ export class SkillDefinitions {
     private static MAX_HEALTH_VALUES = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110];
     private static MAX_HEALTH_COSTS = [5, 12, 17, 23, 30, 35, 42, 49, 56, 63, 70, 77, 84];
     
-    private static HEALTH_REGEN_VALUES = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6];
+    private static HEALTH_REGEN_VALUES = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1];
     private static HEALTH_REGEN_COSTS = [5, 14, 24, 31, 39, 48, 57, 66, 75, 84, 93, 102];
     
     private static DEFENSE_VALUES = [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5];

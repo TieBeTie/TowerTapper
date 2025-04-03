@@ -17,6 +17,7 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     private isWaveActive: boolean = false;
     private enemiesRemaining: number = 0;
     private baseEnemyHealth: number = 1; // Базовое здоровье врага равно 1
+    private baseEnemyDamage: number = 3; // Базовый урон врага
     private autoStartNextWave: boolean = true; // Автоматически запускать следующую волну
     private waveDelay: number = 3000; // 3 seconds between waves
     private enemies: Phaser.GameObjects.Group;
@@ -139,6 +140,15 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     public getEnemyHealth(): number {
         const waveConfig = this.getCurrentWaveConfig();
         return this.baseEnemyHealth * waveConfig.enemyHealthMultiplier;
+    }
+
+    public getEnemyDamage(): number {
+        // Calculate damage based on wave tier
+        // Waves 1-9: 3 damage
+        // Waves 10-19: 6 damage
+        // Waves 20-29: 9 damage, etc.
+        const waveTier = Math.floor(this.currentWave / 10);
+        return this.baseEnemyDamage * (waveTier + 1);
     }
 
     public getCurrentWave(): number {

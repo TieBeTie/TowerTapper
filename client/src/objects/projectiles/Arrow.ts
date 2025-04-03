@@ -9,7 +9,6 @@ export class Arrow extends Projectile {
     private initialDelay: number;
     private elapsedTime: number;
     private direction: Phaser.Math.Vector2;
-    private speedMultiplier: number;
     private damage: number = 0;
     private skillManager: SkillStateManager;
     static readonly ARROW_SCALE = 0.2;
@@ -39,7 +38,6 @@ export class Arrow extends Projectile {
         this.initialDelay = 0;
         this.elapsedTime = 0;
         this.direction = new Phaser.Math.Vector2(0, 0);
-        this.speedMultiplier = 1;
     }
 
     setDamage(damage: number): void {
@@ -48,18 +46,16 @@ export class Arrow extends Projectile {
     }
 
     getDamage(): number {
-        console.log('Arrow getDamage called, returning:', this.damage); // Debug log
         return this.damage;
     }
 
-    fire(targetX: number, targetY: number, speedMultiplier: number = 1): void {
-        this.speedMultiplier = speedMultiplier;
+    fire(targetX: number, targetY: number): void {
         // Set the direction vector toward the target
         this.direction = new Phaser.Math.Vector2(targetX - this.x, targetY - this.y).normalize();
         // Set rotation to face the target
         this.rotation = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
         // Immediately set to max speed
-        this.speed = this.maxSpeed * this.speedMultiplier;
+        this.speed = this.maxSpeed;
     }
 
     update(time: number, delta: number) {
