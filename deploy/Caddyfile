@@ -1,44 +1,19 @@
-{
-    # Global options
-    admin off
-    auto_https off
-    servers {
-        protocol {
-            allow_h2c
-            experimental_http3
-        }
-    }
-}
-
 https://towertapper.org {
-    # Enable WebSocket support
-    handle /ws* {
-        reverse_proxy tower_tapper_server:8080 {
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
-        }
+    route /ws* {
+        reverse_proxy tower_tapper_server:8080
     }
 
-    # API routes
-    handle /api* {
+    route /api* {
         uri strip_prefix /api
-        reverse_proxy tower_tapper_server:8080 {
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
-        }
+        reverse_proxy tower_tapper_server:8080
+    }
+
+    route /webhook* {
+        reverse_proxy tower_tapper_server:8080
     }
     
-    # Client routes
-    handle * {
-        reverse_proxy tower_tapper_client:80 {
-            header_up Host {host}
-            header_up X-Real-IP {remote}
-            header_up X-Forwarded-For {remote}
-            header_up X-Forwarded-Proto {scheme}
-        }
+    
+    route * {
+        reverse_proxy tower_tapper_client:80
     }
 }

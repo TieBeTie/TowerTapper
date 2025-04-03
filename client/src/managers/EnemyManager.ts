@@ -46,8 +46,11 @@ class EnemyManager {
         this.clearSpawnTimer();
         
         // Extract wave config
-        const spawnInterval = waveConfig.spawnInterval || 2000;
         const enemyCount = waveConfig.enemyCount || 10;
+        
+        // Make each wave last exactly 20 seconds by calculating the appropriate spawn interval
+        const waveDuration = 20000; // 20 seconds in milliseconds
+        const spawnInterval = waveDuration / enemyCount;
         
         // Apply game speed to spawn interval
         const gameSpeed = this.skillStateManager.getGameSpeed();
@@ -56,7 +59,7 @@ class EnemyManager {
         // Create a spawn counter to track how many enemies need to be spawned
         let enemiesLeftToSpawn = enemyCount;
         
-        // Start a timer to spawn enemies at the configured interval
+        // Start a timer to spawn enemies at the calculated interval
         this.spawnTimer = this.scene.time.addEvent({
             delay: adjustedSpawnInterval,
             callback: () => {

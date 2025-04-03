@@ -1,7 +1,7 @@
 import { ScreenManager } from '../../managers/ScreenManager';
 import { EmblemManager } from '../../managers/EmblemManager';
 
-export class PermanentShopHeader {
+export class InitialShopHeader {
     private emblemCountText!: Phaser.GameObjects.Text;
     private emblemIcon!: Phaser.GameObjects.Image;
     private titleText!: Phaser.GameObjects.Text;
@@ -21,7 +21,7 @@ export class PermanentShopHeader {
         this.titleText = this.screenManager.createText(
             center.x, 
             height * 0.1, 
-            'Permanent Upgrades Shop', 
+            'Initial Upgrades Shop', 
             titleFontSize,
             '#f8d848',
             {

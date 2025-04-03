@@ -1,35 +1,35 @@
 import { SkillInfo, SkillType } from '../types/SkillType';
 
 // Категории улучшений
-export enum PermanentUpgradeCategory {
+export enum InitialUpgradeCategory {
     ALL = 'All Upgrades',
     ATTACK = 'Attack Upgrades',
     DEFENCE = 'Defence Upgrades',
     UTILITY = 'Utility Upgrades'
 }
 
-export class PermanentShopFilterService {
-    private currentCategory: PermanentUpgradeCategory;
-    private categories: PermanentUpgradeCategory[];
+export class InitialShopFilterService {
+    private currentCategory: InitialUpgradeCategory;
+    private categories: InitialUpgradeCategory[];
     
     constructor() {
         this.categories = [
-            PermanentUpgradeCategory.ATTACK,
-            PermanentUpgradeCategory.DEFENCE,
-            PermanentUpgradeCategory.UTILITY
+            InitialUpgradeCategory.ATTACK,
+            InitialUpgradeCategory.DEFENCE,
+            InitialUpgradeCategory.UTILITY
         ];
-        this.currentCategory = PermanentUpgradeCategory.ATTACK;
+        this.currentCategory = InitialUpgradeCategory.ATTACK;
     }
     
-    public getCurrentCategory(): PermanentUpgradeCategory {
+    public getCurrentCategory(): InitialUpgradeCategory {
         return this.currentCategory;
     }
     
-    public getCategories(): PermanentUpgradeCategory[] {
+    public getCategories(): InitialUpgradeCategory[] {
         return this.categories;
     }
     
-    public setCategory(category: PermanentUpgradeCategory): void {
+    public setCategory(category: InitialUpgradeCategory): void {
         this.currentCategory = category;
     }
     
@@ -61,13 +61,13 @@ export class PermanentShopFilterService {
         return currentIndex > 0;
     }
     
-    public filterSkillsByCategory(skills: SkillInfo[], category: PermanentUpgradeCategory): SkillInfo[] {
-        if (category === PermanentUpgradeCategory.ALL) {
+    public filterSkillsByCategory(skills: SkillInfo[], category: InitialUpgradeCategory): SkillInfo[] {
+        if (category === InitialUpgradeCategory.ALL) {
             return skills;
         }
         
         switch (category) {
-            case PermanentUpgradeCategory.ATTACK:
+            case InitialUpgradeCategory.ATTACK:
                 return skills.filter(skill => 
                     skill.type === SkillType.DAMAGE ||
                     skill.type === SkillType.ATTACK_SPEED ||
@@ -76,7 +76,7 @@ export class PermanentShopFilterService {
                     skill.type === SkillType.CRIT_CHANCE ||
                     skill.type === SkillType.CRIT_MULTIPLIER);
                 
-            case PermanentUpgradeCategory.DEFENCE:
+            case InitialUpgradeCategory.DEFENCE:
                 return skills.filter(skill => 
                     skill.type === SkillType.MAX_HEALTH ||
                     skill.type === SkillType.DEFENSE ||
@@ -85,7 +85,7 @@ export class PermanentShopFilterService {
                     skill.type === SkillType.LIFESTEAL_AMOUNT ||
                     skill.type === SkillType.LIFESTEAL_CHANCE);
                 
-            case PermanentUpgradeCategory.UTILITY:
+            case InitialUpgradeCategory.UTILITY:
                 return skills.filter(skill => 
                     skill.type === SkillType.COIN_REWARD ||
                     skill.type === SkillType.DAILY_GOLD ||

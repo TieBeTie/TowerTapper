@@ -16,7 +16,7 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     private waveConfigs: WaveConfig[] = [];
     private isWaveActive: boolean = false;
     private enemiesRemaining: number = 0;
-    private baseEnemyHealth: number = 10; // Базовое здоровье врага
+    private baseEnemyHealth: number = 1; // Базовое здоровье врага равно 1
     private autoStartNextWave: boolean = true; // Автоматически запускать следующую волну
     private waveDelay: number = 3000; // 3 seconds between waves
     private enemies: Phaser.GameObjects.Group;
@@ -38,9 +38,9 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         for (let i = 1; i <= 10; i++) {
             this.waveConfigs.push({
                 number: i,
-                enemyHealthMultiplier: 1 + (i - 1) * 0.2, // Увеличиваем здоровье на 20% с каждой волной
-                enemyCount: 5 + i * 2, // Увеличиваем количество врагов в волне
-                spawnInterval: 2000 // Интервал спавна в мс (увеличен для более равномерного распределения)
+                enemyHealthMultiplier: i, // Увеличиваем здоровье на 1 с каждой волной
+                enemyCount: 18 + i * 2, // Начинаем с 20 врагов и увеличиваем на 2 с каждой волной
+                spawnInterval: 1000 // Интервал спавна в мс
             });
         }
     }

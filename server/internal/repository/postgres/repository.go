@@ -136,3 +136,79 @@ func (r *postgresRepository) SavePlayerSkill(skill *domain.PlayerSkill) error {
 		skill.UpdatedAt,
 	).Scan(&skill.ID)
 }
+
+// Payment methods
+func (r *postgresRepository) CreatePayment(payment *domain.Payment) error {
+	query := `
+		INSERT INTO payments (player_id, amount, emblems_qty, status, invoice_url, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id`
+
+	now := time.Now()
+	if payment.CreatedAt.IsZero() {
+		payment.CreatedAt = now
+	}
+	if payment.UpdatedAt.IsZero() {
+		payment.UpdatedAt = now
+	}
+
+	return r.db.QueryRow(
+		query,
+		payment.PlayerID,
+		payment.Amount,
+		payment.EmblemsQty,
+		payment.Status,
+		payment.InvoiceURL,
+		payment.CreatedAt,
+		payment.UpdatedAt,
+	).Scan(&payment.ID)
+}
+
+func (r *postgresRepository) UpdatePayment(payment *domain.Payment) error {
+	query := `
+		UPDATE payments
+		SET player_id = $1, amount = $2, emblems_qty = $3, 
+		    status = $4, invoice_url = $5, updated_at = $6,
+		    completed_at = $7
+		WHERE id = $8`
+
+	payment.UpdatedAt = time.Now()
+
+	_, err := r.db.Exec(
+		query,
+		payment.PlayerID,
+		payment.Amount,
+		payment.EmblemsQty,
+		payment.Status,
+		payment.InvoiceURL,
+		payment.UpdatedAt,
+		payment.CompletedAt,
+		payment.ID,
+	)
+	return err
+}
+
+func (r *postgresRepository) GetPaymentByID(id int64) (*domain.Payment, error) {
+	payment := &domain.Payment{}
+	query := `
+		SELECT id, player_id, amount, emblems_qty, status, 
+		       invoice_url, created_at, updated_at, completed_at
+		FROM payments
+		WHERE id = $1`
+
+	err := r.db.QueryRow(query, id).Scan(
+		&payment.ID,
+		&payment.PlayerID,
+		&payment.Amount,
+		&payment.EmblemsQty,
+		&payment.Status,
+		&payment.InvoiceURL,
+		&payment.CreatedAt,
+		&payment.UpdatedAt,
+		&payment.CompletedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return payment, err
+}

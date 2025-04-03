@@ -3,13 +3,13 @@ import Phaser from 'phaser';
 import { ScreenManager } from '../managers/ScreenManager';
 import { IScene } from '../types/IScene';
 import { TelegramService } from '../services/TelegramService';
-import { PermanentSkillService } from '../services/PermanentSkillService';
+import { InitialSkillService } from '../services/InitialSkillService';
 import { EmblemStorage } from '../storage/EmblemStorage';
 
 class BootScene extends Phaser.Scene implements IScene {
     public screenManager!: ScreenManager;
     private telegramService!: TelegramService;
-    private permanentSkillService!: PermanentSkillService;
+    private InitialSkillService!: InitialSkillService;
     private emblemStorage!: EmblemStorage;
     private telegramId: string | null = null;
 
@@ -94,7 +94,7 @@ class BootScene extends Phaser.Scene implements IScene {
         
         // Initialize services
         this.telegramService = TelegramService.getInstance();
-        this.permanentSkillService = PermanentSkillService.getInstance();
+        this.InitialSkillService = InitialSkillService.getInstance();
         this.emblemStorage = EmblemStorage.getInstance();
         
         // Создаем черный прямоугольник на весь экран
@@ -190,7 +190,7 @@ class BootScene extends Phaser.Scene implements IScene {
             
             // Try to connect to server in background
             Promise.all([
-                this.permanentSkillService.connect(telegramId),
+                this.InitialSkillService.connect(telegramId),
                 this.emblemStorage.connect(telegramId)
             ])
                 .then(() => {

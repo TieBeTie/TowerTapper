@@ -22,6 +22,26 @@ type PlayerSkill struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// Payment представляет запись о платеже
+type Payment struct {
+	ID          int64      `json:"id"`
+	PlayerID    int64      `json:"player_id"`
+	Amount      int64      `json:"amount"`
+	EmblemsQty  int64      `json:"emblems_qty"`
+	Status      string     `json:"status"`
+	InvoiceURL  string     `json:"invoice_url"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
+}
+
+// CreatePaymentRequest представляет запрос на создание платежа
+type CreatePaymentRequest struct {
+	PlayerID   int64 `json:"player_id"`
+	Amount     int64 `json:"amount"`
+	EmblemsQty int64 `json:"emblems_qty"`
+}
+
 // Repository интерфейс определяет методы для работы с хранилищем
 type Repository interface {
 	// Player methods
@@ -32,4 +52,15 @@ type Repository interface {
 	// Skill methods
 	GetPlayerSkills(playerID int64) ([]*PlayerSkill, error)
 	SavePlayerSkill(skill *PlayerSkill) error
+
+	// Payment methods
+	CreatePayment(payment *Payment) error
+	UpdatePayment(payment *Payment) error
+	GetPaymentByID(id int64) (*Payment, error)
+}
+
+// PaymentService определяет методы для работы с платежами
+type PaymentService interface {
+	CreateInvoice(req *CreatePaymentRequest) (*Payment, error)
+	ProcessPayment(paymentID int64, status string) error
 }

@@ -1,16 +1,16 @@
 import { ScreenManager } from '../../managers/ScreenManager';
 import { SkillInfo, SkillType } from '../../types/SkillType';
-import { PermanentSkillCard } from './PermanentSkillCard';
-import { PermanentSkillPurchaseService } from '../../services/PermanentSkillPurchaseService';
+import { InitialSkillCard } from './InitialSkillCard';
+import { InitialSkillPurchaseService } from '../../services/InitialSkillPurchaseService';
 
-export class PermanentSkillList {
-    private skillCards: PermanentSkillCard[] = [];
+export class InitialSkillList {
+    private skillCards: InitialSkillCard[] = [];
     private noSkillsText: Phaser.GameObjects.Text | null = null;
     
     constructor(
         private scene: Phaser.Scene,
         private screenManager: ScreenManager,
-        private purchaseService: PermanentSkillPurchaseService
+        private purchaseService: InitialSkillPurchaseService
     ) {}
     
     public create(skills: SkillInfo[]): void {
@@ -40,7 +40,7 @@ export class PermanentSkillList {
         } else {
             // Создаем карточки для доступных улучшений
             for (let i = 0; i < skills.length; i++) {
-                const skillCard = new PermanentSkillCard(
+                const skillCard = new InitialSkillCard(
                     this.scene,
                     this.screenManager,
                     skills[i],

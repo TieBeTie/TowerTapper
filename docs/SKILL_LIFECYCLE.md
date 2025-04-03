@@ -61,7 +61,7 @@
 Следующие навыки считаются перманентными и сохраняются на сервере:
 
 - `SkillType.EMBLEM_BONUS`: Бонус к получаемым эмблемам
-- Другие перманентные навыки (добавляйте их в `permanentSkillTypes`)
+- Другие перманентные навыки (добавляйте их в `InitialSkillTypes`)
 
 ## Пример использования
 
@@ -75,8 +75,8 @@ class Game {
     
     async start(telegramId) {
         if (telegramId) {
-            const permanentService = PermanentSkillService.getInstance();
-            await permanentService.connect(telegramId);
+            const InitialService = InitialSkillService.getInstance();
+            await InitialService.connect(telegramId);
         }
     }
     

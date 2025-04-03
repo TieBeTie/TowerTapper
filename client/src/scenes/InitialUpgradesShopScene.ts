@@ -6,25 +6,27 @@ import { UIManager } from '../managers/UIManager';
 import { EmblemManager } from '../managers/EmblemManager';
 import { UpgradeManager } from '../managers/UpgradeManager';
 import { SkillType, SkillInfo } from '../types/SkillType';
-import { PermanentShopFilterService } from '../services/PermanentShopFilterService';
-import { PermanentSkillPurchaseService } from '../services/PermanentSkillPurchaseService';
-import { PermanentShopHeader } from '../ui/permanent-shop/PermanentShopHeader';
-import { PermanentShopNavigation } from '../ui/permanent-shop/PermanentShopNavigation';
-import { PermanentSkillList } from '../ui/permanent-shop/PermanentSkillList';
+import { InitialShopFilterService } from '../services/InitialShopFilterService';
+import { InitialSkillPurchaseService } from '../services/InitialSkillPurchaseService';
+import { InitialShopHeader } from '../ui/Initial-shop/InitialShopHeader';
+import { InitialShopNavigation } from '../ui/Initial-shop/InitialShopNavigation';
+import { InitialSkillList } from '../ui/Initial-shop/InitialSkillList';
+import { SkillStateManager } from '../managers/SkillStateManager';
 
-export default class PermanentUpgradesShopScene extends Phaser.Scene implements IScene {
+export default class InitialUpgradesShopScene extends Phaser.Scene implements IScene {
     private audioManager!: AudioManager;
     public screenManager!: ScreenManager;
     public uiManager!: UIManager;
     private emblemManager!: EmblemManager;
     private upgradeManager!: UpgradeManager;
-    private shopFilterService!: PermanentShopFilterService;
-    private skillPurchaseService!: PermanentSkillPurchaseService;
+    private shopFilterService!: InitialShopFilterService;
+    private skillPurchaseService!: InitialSkillPurchaseService;
+    private skillStateManager!: SkillStateManager;
     
     // UI компоненты
-    private shopHeader!: PermanentShopHeader;
-    private shopNavigation!: PermanentShopNavigation;
-    private skillList!: PermanentSkillList;
+    private shopHeader!: InitialShopHeader;
+    private shopNavigation!: InitialShopNavigation;
+    private skillList!: InitialSkillList;
     
     // Кнопка возврата
     private backButton!: Phaser.GameObjects.Text;
@@ -33,7 +35,7 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
     private backgroundEffects: Phaser.GameObjects.GameObject[] = [];
 
     constructor() {
-        super({ key: 'PermanentUpgradesShopScene' });
+        super({ key: 'InitialUpgradesShopScene' });
     }
 
     preload(): void {
@@ -72,6 +74,10 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         // Initialize ScreenManager
         this.screenManager = new ScreenManager(this);
         
+        // Initialize SkillStateManager
+        this.skillStateManager = SkillStateManager.getInstance();
+        this.skillStateManager.tryResetToTheServer(); // Сбрасываем и восстанавливаем с сервера, как в GameScene
+        
         // Получить менеджер эмблем
         this.emblemManager = EmblemManager.getInstance();
         
@@ -79,17 +85,17 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         this.upgradeManager = new UpgradeManager(this);
         
         // Инициализировать сервис фильтрации
-        this.shopFilterService = new PermanentShopFilterService();
+        this.shopFilterService = new InitialShopFilterService();
         
         try {
             // Initialize AudioManager
             this.audioManager = AudioManager.getInstance(this);
         } catch (err) {
-            console.error('Error setting up audio in PermanentUpgradesShopScene:', err);
+            console.error('Error setting up audio in InitialUpgradesShopScene:', err);
         }
         
         // Инициализировать сервис покупки навыков
-        this.skillPurchaseService = new PermanentSkillPurchaseService(
+        this.skillPurchaseService = new InitialSkillPurchaseService(
             this.upgradeManager,
             this.emblemManager,
             this.audioManager,
@@ -211,7 +217,7 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
      */
     private createUIComponents(): void {
         // Создаем заголовок магазина и счетчик эмблем
-        this.shopHeader = new PermanentShopHeader(
+        this.shopHeader = new InitialShopHeader(
             this,
             this.screenManager,
             this.emblemManager
@@ -227,7 +233,7 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         });
         
         // Создаем навигацию по категориям
-        this.shopNavigation = new PermanentShopNavigation(
+        this.shopNavigation = new InitialShopNavigation(
             this,
             this.screenManager,
             this.audioManager,
@@ -236,7 +242,7 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         this.shopNavigation.create();
         
         // Создаем список навыков
-        this.skillList = new PermanentSkillList(
+        this.skillList = new InitialSkillList(
             this,
             this.screenManager,
             this.skillPurchaseService
@@ -461,7 +467,7 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         this.destroyUIComponents();
         
         // Сначала завершаем текущую сцену полностью
-        this.scene.stop('PermanentUpgradesShopScene');
+        this.scene.stop('InitialUpgradesShopScene');
         
         // Перезапускаем главное меню с правильным названием
         this.scene.start('MenuScene');
@@ -516,6 +522,12 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         if (this.backButton) {
             this.backButton.removeAllListeners();
         }
+        
+        // Save SkillStateManager data before shutdown
+        if (this.skillStateManager) {
+            // Сбрасываем и восстанавливаем с сервера, как в GameScene
+            this.skillStateManager.tryResetToTheServer();
+        }
     }
     
     /**
@@ -527,5 +539,10 @@ export default class PermanentUpgradesShopScene extends Phaser.Scene implements 
         
         // Уничтожаем компоненты UI
         this.destroyUIComponents();
+        
+        // Cleanup SkillStateManager - сбрасываем и восстанавливаем с сервера, как в GameScene
+        if (this.skillStateManager) {
+            this.skillStateManager.tryResetToTheServer();
+        }
     }
 } 

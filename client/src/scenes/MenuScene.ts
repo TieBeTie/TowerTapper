@@ -110,7 +110,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             const upgradesButton = this.screenManager.createText(
                 center.x, 
                 height * 0.75, 
-                'Permanent Upgrades', 
+                'Initial Upgrades', 
                 upgradesButtonFontSize,
                 '#ffcc00'
             );
@@ -143,7 +143,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
                         console.error('Error playing audio on upgrades button click:', err);
                     }
                     
-                    this.openPermanentUpgradesShop();
+                    this.openInitialUpgradesShop();
                 });
 
             // Добавляем интерактивность кнопке пополнения эмблем
@@ -236,7 +236,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         // Находим и обновляем размер кнопки для перехода в магазин постоянных улучшений
         const upgradesButton = this.children.list.find(child => 
             child instanceof Phaser.GameObjects.Text && 
-            (child as Phaser.GameObjects.Text).text === 'Permanent Upgrades'
+            (child as Phaser.GameObjects.Text).text === 'Initial Upgrades'
         ) as Phaser.GameObjects.Text;
         
         if (upgradesButton) {
@@ -326,7 +326,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         }
     }
 
-    private openPermanentUpgradesShop(): void {
+    private openInitialUpgradesShop(): void {
         // Создаем затемнение через ScreenManager
         const fadeRect = this.screenManager.createFadeOverlay();
         
@@ -342,7 +342,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             onComplete: function() {
                 // Переходим в сцену магазина постоянных улучшений
                 currentScene.time.delayedCall(600, () => {
-                    currentScene.scene.start('PermanentUpgradesShopScene');
+                    currentScene.scene.start('InitialUpgradesShopScene');
                 });
             }
         });

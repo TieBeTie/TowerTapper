@@ -6,8 +6,6 @@ import { SkillDefinitions } from '../definitions/SkillDefinitions';
 
 export class UpgradeManager {
     private scene: IScene;
-    private skills: Map<SkillType, SkillInfo> = new Map();
-    private prices: Map<SkillType, SkillPrice> = new Map();
     private stateManager: SkillStateManager;
 
     constructor(scene: IScene) {
@@ -32,8 +30,8 @@ export class UpgradeManager {
             currentLevels.set(type, state.currentLevel);
         });
         
-        // Получаем определения навыков из статического класса
-        this.skills = SkillDefinitions.getSkillDefinitions(currentLevels);
+        // Получаем определения навыков из статического класса и обновляем состояние в stateManager
+        SkillDefinitions.getSkillDefinitions(currentLevels);
     }
 
     // Добавим функцию Фибоначчи для расчета цены
@@ -63,13 +61,20 @@ export class UpgradeManager {
     // Initialize pricing information separately
     private initializePrices(): void {
         // Получаем определения цен из статического класса
-        this.prices = SkillDefinitions.getPriceDefinitions();
+        SkillDefinitions.getPriceDefinitions();
     }
 
     // Getters for skill information
 
     getAvailableSkills(): SkillInfo[] {
-        return Array.from(this.skills.values());
+        const skillsState = this.stateManager.getAllStates();
+        const currentLevels = new Map<SkillType, number>();
+        
+        Array.from(skillsState.entries()).forEach(([type, state]) => {
+            currentLevels.set(type, state.currentLevel);
+        });
+        
+        return Array.from(SkillDefinitions.getSkillDefinitions(currentLevels).values());
     }
 
     // Метод для обратной совместимости
@@ -78,20 +83,42 @@ export class UpgradeManager {
     }
 
     getSkillsForCurrency(currencyType: CurrencyType): SkillInfo[] {
-        return Array.from(this.prices.entries())
+        const prices = SkillDefinitions.getPriceDefinitions();
+        const skillsState = this.stateManager.getAllStates();
+        const currentLevels = new Map<SkillType, number>();
+        
+        Array.from(skillsState.entries()).forEach(([type, state]) => {
+            currentLevels.set(type, state.currentLevel);
+        });
+        
+        const skills = SkillDefinitions.getSkillDefinitions(currentLevels);
+        
+        return Array.from(prices.entries())
             .filter(([_, price]) => price.goldCost.calculateCost(0) || price.emblemsCost.calculateCost(0))
-            .map(([type, _]) => this.skills.get(type)!)
+            .map(([type, _]) => skills.get(type)!)
             .filter(skill => skill !== undefined);
     }
 
     getSkillCost(type: SkillType, currencyType: CurrencyType = CurrencyType.GOLD): number {
-        const price = this.prices.get(type);
+        const prices = SkillDefinitions.getPriceDefinitions();
+        const price = prices.get(type);
         if (!price) return 0;
 
-        const skill = this.skills.get(type);
-        if (!skill) return 0;
+        const skillsState = this.stateManager.getAllStates();
+        const skillState = skillsState.get(type);
+        if (!skillState) return 0;
 
-        const currentLevel = skill.currentLevel;
+        const currentLevel = skillState.currentLevel;
+        const currentLevels = new Map<SkillType, number>();
+        
+        Array.from(skillsState.entries()).forEach(([t, state]) => {
+            currentLevels.set(t, state.currentLevel);
+        });
+        
+        const skills = SkillDefinitions.getSkillDefinitions(currentLevels);
+        const skill = skills.get(type);
+        if (!skill) return 0;
+        
         const maxLevel = skill.maxLevel;
 
         if (currentLevel >= maxLevel) return 0;
@@ -104,15 +131,28 @@ export class UpgradeManager {
     }
 
     getSkillValue(type: SkillType): number {
-        const skill = this.skills.get(type);
+        const skillsState = this.stateManager.getAllStates();
+        const skillState = skillsState.get(type);
+        if (!skillState) return 0;
+        
+        const currentLevels = new Map<SkillType, number>();
+        
+        Array.from(skillsState.entries()).forEach(([t, state]) => {
+            currentLevels.set(t, state.currentLevel);
+        });
+        
+        const skills = SkillDefinitions.getSkillDefinitions(currentLevels);
+        const skill = skills.get(type);
+        
         if (!skill) return 0;
-        return skill.calculateValue(skill.currentLevel);
+        return skill.calculateValue(skillState.currentLevel);
     }
 
     getSkillLevel(type: SkillType): number {
-        const skill = this.skills.get(type);
-        if (!skill) return 0;
-        return skill.currentLevel;
+        const skillsState = this.stateManager.getAllStates();
+        const skillState = skillsState.get(type);
+        if (!skillState) return 0;
+        return skillState.currentLevel;
     }
 
     // Currency management methods
@@ -174,10 +214,22 @@ export class UpgradeManager {
     // Purchase logic
 
     canAffordUpgrade(type: SkillType, currencyType: CurrencyType): boolean {
-        const skill = this.skills.get(type);
+        const skillsState = this.stateManager.getAllStates();
+        const skillState = skillsState.get(type);
+        if (!skillState) return false;
+        
+        const currentLevels = new Map<SkillType, number>();
+        
+        Array.from(skillsState.entries()).forEach(([t, state]) => {
+            currentLevels.set(t, state.currentLevel);
+        });
+        
+        const skills = SkillDefinitions.getSkillDefinitions(currentLevels);
+        const skill = skills.get(type);
+        
         if (!skill) return false;
 
-        if (skill.currentLevel >= skill.maxLevel) {
+        if (skillState.currentLevel >= skill.maxLevel) {
             return false;
         }
 
@@ -199,14 +251,29 @@ export class UpgradeManager {
     purchaseUpgrade(type: SkillType, currencyType: CurrencyType): boolean {
         console.log(`Попытка купить навык ${type} за валюту ${currencyType}`);
         
-        const skill = this.skills.get(type);
-        if (!skill) {
+        const skillsState = this.stateManager.getAllStates();
+        const skillState = skillsState.get(type);
+        if (!skillState) {
             console.log(`Навык ${type} не найден`);
+            return false;
+        }
+        
+        const currentLevels = new Map<SkillType, number>();
+        
+        Array.from(skillsState.entries()).forEach(([t, state]) => {
+            currentLevels.set(t, state.currentLevel);
+        });
+        
+        const skills = SkillDefinitions.getSkillDefinitions(currentLevels);
+        const skill = skills.get(type);
+        
+        if (!skill) {
+            console.log(`Навык ${type} не найден в определениях`);
             return false;
         }
 
         // Check if already at max level
-        if (skill.currentLevel >= skill.maxLevel) {
+        if (skillState.currentLevel >= skill.maxLevel) {
             console.log(`Навык ${type} уже на максимальном уровне ${skill.maxLevel}`);
             return false;
         }
@@ -235,15 +302,21 @@ export class UpgradeManager {
             }
 
             // Increment level
-            skill.currentLevel += 1;
-            console.log(`Уровень навыка ${type} повышен до ${skill.currentLevel}`);
+            skillState.currentLevel += 1;
+            console.log(`Уровень навыка ${type} повышен до ${skillState.currentLevel}`);
             
             // Calculate new value based on the level
-            const newValue = skill.calculateValue(skill.currentLevel);
+            const newValue = skill.calculateValue(skillState.currentLevel);
             console.log(`Новое значение навыка: ${newValue}`);
             
             // Save state to SkillStateManager with the current level
-            this.stateManager.saveState(type, newValue, skill.currentLevel);
+            this.stateManager.saveState(type, newValue, skillState.currentLevel);
+
+            // Sync with server if purchased with emblems
+            if (currencyType === CurrencyType.EMBLEMS) {
+                console.log(`Отправка навыка ${type} на сервер после покупки`);
+                this.stateManager.syncSkillWithServer(type);
+            }
 
             // Apply the effects of the upgrade
             this.applyUpgradeEffects(type);
@@ -277,7 +350,16 @@ export class UpgradeManager {
     // Apply upgrade effects
 
     private applyUpgradeEffects(type: SkillType): void {
-        const skill = this.skills.get(type);
+        const skillsState = this.stateManager.getAllStates();
+        const currentLevels = new Map<SkillType, number>();
+        
+        Array.from(skillsState.entries()).forEach(([t, state]) => {
+            currentLevels.set(t, state.currentLevel);
+        });
+        
+        const skills = SkillDefinitions.getSkillDefinitions(currentLevels);
+        const skill = skills.get(type);
+        
         if (!skill) return;
 
         const gameScene = this.scene.scene.get('GameScene') as IGameScene;
@@ -388,8 +470,6 @@ export class UpgradeManager {
         // Сбрасываем ссылки на объекты
         // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
         this.scene = null;
-        this.skills.clear();
-        this.prices.clear();
         
         console.log('[UpgradeManager] Resources cleaned up');
     }

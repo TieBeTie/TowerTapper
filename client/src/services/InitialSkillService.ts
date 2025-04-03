@@ -3,8 +3,8 @@ import { GameServerGateway, PlayerSkill } from '../api/GameServerGateway';
 import { SkillStateManager } from '../managers/SkillStateManager';
 import { GameServerFactory } from '../api/GameServerFactory';
 
-export class PermanentSkillService {
-    private static instance: PermanentSkillService;
+export class InitialSkillService {
+    private static instance: InitialSkillService;
     private server: GameServerGateway;
     private skillStateManager: SkillStateManager | null = null;
     private serverSkills: Map<SkillType, number> = new Map();
@@ -16,27 +16,52 @@ export class PermanentSkillService {
         
         // Listen for game state updates from the server
         this.server.onGameStateUpdate((state) => {
-            // Update the permanent skills
+            // Update the Initial skills
             this.serverSkills.clear();
-            state.player_skills.forEach((skill: PlayerSkill) => {
-                this.serverSkills.set(skill.skillType as SkillType, skill.level);
+            console.log('Game state update received:', state);
+            console.log('Player skills received:', state.player_skills);
+            console.log('First skill raw data:', state.player_skills[0]);
+            
+            state.player_skills.forEach((skill: any) => {
+                // Check for both skillType and skill_type properties
+                const skillTypeValue = skill.skillType || skill.skill_type;
+                const normalizedSkillType = this.normalizeSkillType(skillTypeValue);
+                console.log(`Setting skill: ${skillTypeValue} (normalized: ${normalizedSkillType}) to level ${skill.level}`);
+                this.serverSkills.set(normalizedSkillType as SkillType, skill.level);
             });
         });
     }
 
-    // Lazy accessor for skillStateManager to avoid circular dependency
-    private getSkillStateManager(): SkillStateManager {
-        if (!this.skillStateManager) {
-            this.skillStateManager = SkillStateManager.getInstance();
+    /**
+     * Normalize skill type to ensure it matches the SkillType enum
+     */
+    private normalizeSkillType(skillType: string): string {
+        // Check if skillType is null or undefined
+        if (!skillType) {
+            console.warn('Received undefined or null skill type from server');
+            return '';
         }
-        return this.skillStateManager;
+        
+        // Convert to uppercase to match enum values
+        const upperSkillType = skillType.toUpperCase();
+        
+        // Check if the skill type exists in the enum
+        const enumValues = Object.values(SkillType);
+        for (const value of enumValues) {
+            if (value.toUpperCase() === upperSkillType) {
+                return value;
+            }
+        }
+        
+        console.warn(`Unknown skill type received from server: ${skillType}`);
+        return skillType;
     }
 
-    public static getInstance(): PermanentSkillService {
-        if (!PermanentSkillService.instance) {
-            PermanentSkillService.instance = new PermanentSkillService();
+    public static getInstance(): InitialSkillService {
+        if (!InitialSkillService.instance) {
+            InitialSkillService.instance = new InitialSkillService();
         }
-        return PermanentSkillService.instance;
+        return InitialSkillService.instance;
     }
 
     /**
@@ -71,7 +96,7 @@ export class PermanentSkillService {
     }
 
     /**
-     * Update a permanent skill level on the server
+     * Update a Initial skill level on the server
      */
     public updateSkill(skillType: SkillType, level: number): void {
         if (!this.connected) {
@@ -83,7 +108,7 @@ export class PermanentSkillService {
     }
 
     /**
-     * Get the permanent level of a skill
+     * Get the Initial level of a skill
      */
     public getSkillLevel(skillType: SkillType): number {
         return this.serverSkills.get(skillType) || 0;

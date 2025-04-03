@@ -59,6 +59,9 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         // Store the game instance globally for access from other components
         (window as any).game = this.game;
         
+        // Initialize SkillStateManager properly by first resetting it
+        this.skillStateManager.tryResetToTheServer();
+        
         // Создаем черный прямоугольник на весь экран
         const { width, height } = this.screenManager.getScreenSize();
         const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 1);
@@ -502,6 +505,12 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         
         if (this.upgradeManager) {
             this.upgradeManager.destroy();
+        }
+        
+        // Clean up SkillStateManager properly
+        if (this.skillStateManager) {
+            // Reset any temporary game-specific state
+            this.skillStateManager.tryResetToTheServer();
         }
         
         // Уничтожаем компоненты игрового процесса

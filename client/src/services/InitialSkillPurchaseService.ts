@@ -3,7 +3,7 @@ import { EmblemManager } from '../managers/EmblemManager';
 import AudioManager from '../managers/AudioManager';
 import { SkillType, CurrencyType, SkillInfo } from '../types/SkillType';
 
-export class PermanentSkillPurchaseService {
+export class InitialSkillPurchaseService {
     constructor(
         private upgradeManager: UpgradeManager,
         private emblemManager: EmblemManager,

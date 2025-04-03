@@ -1,8 +1,8 @@
 import { ScreenManager } from '../../managers/ScreenManager';
 import { SkillInfo, SkillType, CurrencyType } from '../../types/SkillType';
-import { PermanentSkillPurchaseService } from '../../services/PermanentSkillPurchaseService';
+import { InitialSkillPurchaseService } from '../../services/InitialSkillPurchaseService';
 
-export class PermanentSkillCard {
+export class InitialSkillCard {
     private gameObjects: Phaser.GameObjects.GameObject[] = [];
     private emblemButtonBg: Phaser.GameObjects.Rectangle | null = null;
     
@@ -12,7 +12,7 @@ export class PermanentSkillCard {
         private skill: SkillInfo,
         private x: number,
         private y: number,
-        private purchaseService: PermanentSkillPurchaseService,
+        private purchaseService: InitialSkillPurchaseService,
         private onPurchase: (skillType: SkillType) => void
     ) {}
     

@@ -11,9 +11,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private static readonly COLOR_CIRCLE = 0xffffff; // Голубой цвет для круга
     
     // Константа масштаба башни
-    private static readonly TOWER_SCALE = 0.4;
+    private static readonly TOWER_SCALE = 0.3;
     // Константа для базового радиуса атаки (в % от высоты экрана)
-    private static readonly BASE_ATTACK_RANGE_PERCENT = 0.25;
 
     health: number;
     maxHealth: number;
@@ -45,9 +44,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.isDying = false;
 
         // Инициализируем радиус атаки
-        const attackRangeSkill = this.skillManager.getState(SkillType.ATTACK_RANGE) || 1;
-        const { height } = this.screenManager.getScreenSize();
-        this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
+        this.attackRange = this.skillManager.getState(SkillType.ATTACK_RANGE);
 
         // Создаем графический объект для отображения радиуса атаки с нужной глубиной
         this.attackRangeCircle = this.scene.add.graphics();
@@ -90,11 +87,6 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         const center = this.screenManager.getGameViewCenter();
         this.setPosition(center.x, center.y);
         
-        // Обновляем радиус атаки при изменении размера экрана
-        const { height } = this.screenManager.getScreenSize();
-        const skills = this.skillManager.getState(SkillType.ATTACK_RANGE) || 1;
-        this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * skills;
-        
         // Use the safer method that doesn't recreate the graphics object
         this.safeUpdateAttackCircle();
     }
@@ -112,15 +104,10 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.regeneration = this.skillManager.getState(SkillType.HEALTH_REGEN) || this.regeneration;
         
         // Обновляем радиус атаки при улучшении
-        const attackRangeSkill = this.skillManager.getState(SkillType.ATTACK_RANGE);
-        if (attackRangeSkill) {
-            const { height } = this.screenManager.getScreenSize();
-            // Используем значение навыка напрямую из хранилища
-            this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * attackRangeSkill;
-            
-            // Update the attack range circle using the safe method
-            this.safeUpdateAttackCircle();
-        }
+        this.attackRange = this.skillManager.getState(SkillType.ATTACK_RANGE);
+        
+        // Update the attack range circle using the safe method
+        this.safeUpdateAttackCircle();
         
         if (this.regeneration > 0) {
             this.startRegeneration();
@@ -135,15 +122,6 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             return;
         }
         
-        // Get the current attack range skill value
-        const skills = this.skillManager.getState(SkillType.ATTACK_RANGE);
-        const { height } = this.screenManager.getScreenSize();
-        
-        // Use the skill value if it exists, otherwise use 1
-        const skillValue = skills || 1;
-        this.attackRange = height * Tower.BASE_ATTACK_RANGE_PERCENT * skillValue;
-        
-        console.log(`Updating attack range circle: skill value=${skillValue}, range=${this.attackRange}`);
         
         // Make sure the circle exists
         if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {

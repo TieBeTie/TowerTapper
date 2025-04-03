@@ -1,8 +1,8 @@
 import { ScreenManager } from '../../managers/ScreenManager';
 import AudioManager from '../../managers/AudioManager';
-import { PermanentUpgradeCategory, PermanentShopFilterService } from '../../services/PermanentShopFilterService';
+import { InitialUpgradeCategory, InitialShopFilterService } from '../../services/InitialShopFilterService';
 
-export class PermanentShopNavigation {
+export class InitialShopNavigation {
     private categoryTitleText!: Phaser.GameObjects.Text;
     private leftButton!: Phaser.GameObjects.Container;
     private rightButton!: Phaser.GameObjects.Container;
@@ -14,7 +14,7 @@ export class PermanentShopNavigation {
         private scene: Phaser.Scene,
         private screenManager: ScreenManager,
         private audioManager: AudioManager,
-        private shopFilterService: PermanentShopFilterService
+        private shopFilterService: InitialShopFilterService
     ) {}
     
     public create(): void {

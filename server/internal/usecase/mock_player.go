@@ -2,20 +2,24 @@ package usecase
 
 import (
 	"sync"
+	"time"
 
 	"github.com/tiebetie/TowerTapper/internal/domain"
 )
 
 type MockPlayerUseCase struct {
-	players map[int64]*domain.Player
-	skills  map[int64][]*domain.PlayerSkill
-	mutex   sync.RWMutex
+	players  map[int64]*domain.Player
+	skills   map[int64][]*domain.PlayerSkill
+	payments map[int64]*domain.Payment
+	lastID   int64
+	mutex    sync.RWMutex
 }
 
 func NewMockPlayerUseCase() *PlayerUseCase {
 	mock := &MockPlayerUseCase{
-		players: make(map[int64]*domain.Player),
-		skills:  make(map[int64][]*domain.PlayerSkill),
+		players:  make(map[int64]*domain.Player),
+		skills:   make(map[int64][]*domain.PlayerSkill),
+		payments: make(map[int64]*domain.Payment),
 	}
 	return &PlayerUseCase{repo: mock}
 }
@@ -86,4 +90,46 @@ func (m *MockPlayerUseCase) SavePlayerSkill(skill *domain.PlayerSkill) error {
 	}
 
 	return nil
+}
+
+// Payment methods implementation
+func (m *MockPlayerUseCase) CreatePayment(payment *domain.Payment) error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.lastID++
+	payment.ID = m.lastID
+
+	if payment.CreatedAt.IsZero() {
+		payment.CreatedAt = time.Now()
+	}
+	if payment.UpdatedAt.IsZero() {
+		payment.UpdatedAt = time.Now()
+	}
+
+	m.payments[payment.ID] = payment
+	return nil
+}
+
+func (m *MockPlayerUseCase) UpdatePayment(payment *domain.Payment) error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if _, exists := m.payments[payment.ID]; !exists {
+		return nil // No error if payment doesn't exist for simplicity
+	}
+
+	payment.UpdatedAt = time.Now()
+	m.payments[payment.ID] = payment
+	return nil
+}
+
+func (m *MockPlayerUseCase) GetPaymentByID(id int64) (*domain.Payment, error) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	if payment, exists := m.payments[id]; exists {
+		return payment, nil
+	}
+	return nil, nil
 }
