@@ -369,7 +369,7 @@ export class UIManager {
         buttons.push(killGoldButton);
         
         // 3. Daily Gem Bonus – дополнительные гемы каждый день
-        const dailyGemButton = new UpgradeButton({
+        const emblemBonusButton = new UpgradeButton({
             scene: this.scene,
             skillType: SkillType.EMBLEM_BONUS,
             upgradeManager: this.upgradeManager,
@@ -379,7 +379,7 @@ export class UIManager {
             width: fontSize * 10,
             height: fontSize * 3
         });
-        buttons.push(dailyGemButton);
+        buttons.push(emblemBonusButton);
         
         // 4. Free Upgrade Chance – шанс получить бесплатное улучшение
         const freeUpgradeButton = new UpgradeButton({
@@ -419,20 +419,6 @@ export class UIManager {
             height: fontSize * 3
         });
         buttons.push(gameSpeedButton);
-        
-        // Emblem Bonus upgrade
-        const emblemBonusButton = new UpgradeButton({
-            scene: this.scene,
-            skillType: SkillType.EMBLEM_BONUS,
-            upgradeManager: this.upgradeManager,
-            fontSize: fontSize,
-            buttonText: 'Emblem\nBonus',
-            x: 0, y: 0,
-            width: fontSize * 10,
-            height: fontSize * 3
-        });
-        buttons.push(emblemBonusButton);
-        
         return buttons;
     }
 
