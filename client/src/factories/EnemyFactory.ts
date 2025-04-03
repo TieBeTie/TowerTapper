@@ -26,14 +26,19 @@ class EnemyFactory {
                 return null;
         }
         
-        // Если есть менеджер волн, устанавливаем здоровье в зависимости от волны
+        // Если есть менеджер волн, устанавливаем параметры в зависимости от волны
         if (waveManager) {
+            // Устанавливаем здоровье
             const health = waveManager.getEnemyHealth();
             enemy.setHealth(health);
             
-            // Set enemy damage based on wave
+            // Устанавливаем урон
             const damage = waveManager.getEnemyDamage();
             enemy.setDamage(damage);
+            
+            // Устанавливаем скорость
+            const speed = waveManager.getEnemySpeed();
+            enemy.setSpeed(speed);
         }
         
         return enemy;

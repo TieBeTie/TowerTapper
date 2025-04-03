@@ -26,8 +26,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.health = 0;
         this.maxHealth = 0;
         this.cost = Number(cost);
-        this.baseSpeed = 200; // Уменьшаем базовую скорость с 1000 до 200
-        this.speed = this.baseSpeed; // Initialize with base speed
+        this.baseSpeed = 100;
+        this.speed = this.baseSpeed;
         this.skillStateManager = SkillStateManager.getInstance();
 
         this.setScale(Enemy.ENEMY_SCALE);
@@ -127,6 +127,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
                 this.tower
             );
         }
+    }
+
+    setSpeed(value: number): void {
+        this.baseSpeed = value;
+        // Сразу же обновляем текущую скорость с учетом множителя скорости игры
+        const gameSpeed = this.skillStateManager.getGameSpeed();
+        this.speed = this.baseSpeed * gameSpeed;
     }
 }
 

@@ -7,6 +7,6 @@ export abstract class Projectile extends Phaser.GameObjects.Sprite {
         scene.physics.add.existing(this);
     }
 
-    abstract fire(targetX: number, targetY: number): void;
+    abstract fire(targetX: number, targetY: number, speedMultiplier?: number): void;
     abstract update(time: number, delta: number): void;
 }

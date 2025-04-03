@@ -4,6 +4,10 @@ import { SkillType } from '../../types/SkillType';
 import { SkillStateManager } from '../../managers/SkillStateManager';
 
 export class Arrow extends Projectile {
+    // Константы класса
+    static readonly ARROW_SCALE = 0.2; // Масштаб стрелы
+    private static readonly BASE_ARROW_SPEED = 300; // Базовая скорость стрелы
+    
     private speed: number;
     private maxSpeed: number;
     private initialDelay: number;
@@ -11,7 +15,7 @@ export class Arrow extends Projectile {
     private direction: Phaser.Math.Vector2;
     private damage: number = 0;
     private skillManager: SkillStateManager;
-    static readonly ARROW_SCALE = 0.2;
+    private speedMultiplier: number;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -34,10 +38,11 @@ export class Arrow extends Projectile {
 
         // Initialize movement properties
         this.speed = 0;
-        this.maxSpeed = 300; // Base speed
+        this.maxSpeed = Arrow.BASE_ARROW_SPEED; // Используем константу вместо жесткого значения
         this.initialDelay = 0;
         this.elapsedTime = 0;
         this.direction = new Phaser.Math.Vector2(0, 0);
+        this.speedMultiplier = 1;
     }
 
     setDamage(damage: number): void {
@@ -49,13 +54,15 @@ export class Arrow extends Projectile {
         return this.damage;
     }
 
-    fire(targetX: number, targetY: number): void {
+    fire(targetX: number, targetY: number, speedMultiplier: number = 1): void {
+        this.speedMultiplier = speedMultiplier;
         // Set the direction vector toward the target
         this.direction = new Phaser.Math.Vector2(targetX - this.x, targetY - this.y).normalize();
         // Set rotation to face the target
         this.rotation = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
-        // Immediately set to max speed
-        this.speed = this.maxSpeed;
+        // Immediately set to max speed with multiplier
+        // speedMultiplier combines both game speed and attack speed from ProjectileManager
+        this.speed = this.maxSpeed * this.speedMultiplier;
     }
 
     update(time: number, delta: number) {

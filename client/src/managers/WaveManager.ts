@@ -9,6 +9,7 @@ interface WaveConfig {
     enemyHealthMultiplier: number;
     enemyCount: number;
     spawnInterval: number;
+    enemySpeedMultiplier: number;
 }
 
 export class WaveManager extends Phaser.Events.EventEmitter {
@@ -18,6 +19,7 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     private enemiesRemaining: number = 0;
     private baseEnemyHealth: number = 1; // Базовое здоровье врага равно 1
     private baseEnemyDamage: number = 3; // Базовый урон врага
+    private baseEnemySpeed: number = 100; // Базовая скорость врага (уже уменьшена в 2 раза от стандартной 200)
     private autoStartNextWave: boolean = true; // Автоматически запускать следующую волну
     private waveDelay: number = 3000; // 3 seconds between waves
     private enemies: Phaser.GameObjects.Group;
@@ -37,11 +39,15 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     private initializeWaveConfigs(): void {
         // Конфигурация волн с одинаковой продолжительностью
         for (let i = 1; i <= 10; i++) {
+            // Рассчитываем множитель скорости: начинаем с 1 и увеличиваем на 3% с каждой волной
+            const speedMultiplier = 1 + (i - 1) * 0.03;
+            
             this.waveConfigs.push({
                 number: i,
                 enemyHealthMultiplier: i, // Увеличиваем здоровье на 1 с каждой волной
                 enemyCount: 18 + i * 2, // Начинаем с 20 врагов и увеличиваем на 2 с каждой волной
-                spawnInterval: 1000 // Интервал спавна в мс
+                spawnInterval: 1000, // Интервал спавна в мс
+                enemySpeedMultiplier: speedMultiplier // Увеличиваем скорость на 3% с каждой волной
             });
         }
     }
@@ -218,5 +224,10 @@ export class WaveManager extends Phaser.Events.EventEmitter {
                 }
             }
         }
+    }
+
+    public getEnemySpeed(): number {
+        const waveConfig = this.getCurrentWaveConfig();
+        return this.baseEnemySpeed * waveConfig.enemySpeedMultiplier;
     }
 } 

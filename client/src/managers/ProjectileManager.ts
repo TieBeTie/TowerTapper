@@ -11,11 +11,20 @@ import { SkillStateManager } from '../managers/SkillStateManager';
 
 // ProjectileManager handles the logic for managing and firing projectiles at enemies
 class ProjectileManager {
+    // Константы класса
+    private static readonly PROJECTILE_MAX_LIFETIME: number = 5000; // Максимальное время жизни стрелы в мс
+    private static readonly BASE_FIRE_INTERVAL: number = 1300; // Базовый интервал между выстрелами в мс
+    private static readonly ATTACK_SPEED_NORMALIZER: number = 4; // Базовое значение Attack Speed для нормализации
+    private static readonly DEFAULT_DAMAGE: number = 3; // Базовый урон стрелы
+    private static readonly MULTISHOT_DEVIATION_DEGREES: number = 10; // Угол отклонения для мультивыстрела в градусах
+    private static readonly MULTISHOT_OFFSET: number = 50; // Смещение для боковых стрел в мультивыстреле
+    private static readonly OUT_OF_BOUNDS_PADDING: number = 50; // Отступ для проверки выхода стрел за границы
+
     scene: IGameScene;
     projectiles: Phaser.Physics.Arcade.Group;
     projectileFactory: ProjectileFactory;
     enemyManager: EnemyManager;
-    private projectileMaxLifetime: number = 5000; // Максимальное время жизни стрелы в мс
+    private projectileMaxLifetime: number; // Максимальное время жизни стрелы в мс
     private lastFireTime: number = 0; // Last time a projectile was fired
     private skillManager: SkillStateManager;
 
@@ -28,17 +37,18 @@ class ProjectileManager {
             runChildUpdate: true
         });
         this.projectileFactory = new ProjectileFactory(this.scene);
+        this.projectileMaxLifetime = ProjectileManager.PROJECTILE_MAX_LIFETIME;
     }
 
     private getFireRate(): number {
         const attackSpeed = this.skillManager.getState(SkillType.ATTACK_SPEED) || 1;
         // Apply game speed to fire rate (lower delay = faster fire rate)
         const gameSpeed = this.skillManager.getGameSpeed();
-        return (1300 / attackSpeed) / gameSpeed; 
+        return (ProjectileManager.BASE_FIRE_INTERVAL / attackSpeed) / gameSpeed; 
     }
 
     private getTowerDamage(): number {
-        return this.skillManager.getState(SkillType.DAMAGE) || 20; // Return base damage of 20 if not found
+        return this.skillManager.getState(SkillType.DAMAGE) || ProjectileManager.DEFAULT_DAMAGE;
     }
 
     // Проверяет, должен ли сработать мультивыстрел
@@ -88,9 +98,16 @@ class ProjectileManager {
     }
 
     fireProjectile(speedMultiplier: number = 1): void {
-        // Get game speed multiplier and combine with provided speedMultiplier
+        // Get game speed multiplier and attack speed
         const gameSpeed = this.skillManager.getGameSpeed();
-        const combinedSpeedMultiplier = speedMultiplier * gameSpeed;
+        const attackSpeed = this.skillManager.getState(SkillType.ATTACK_SPEED) || 1;
+        
+        // Combine both game speed and attack speed for projectile speed
+        // We use a formula that makes arrows faster based on attack speed:
+        // 1. Baseline attack speed is 2.5, so we divide by 2.5 to normalize
+        // 2. With attackSpeed=2.5, the arrow has normal speed (multiplier=1)
+        // 3. With attackSpeed=5.0, the arrow flies twice as fast (multiplier=2)
+        const combinedSpeedMultiplier = speedMultiplier * gameSpeed * (attackSpeed / ProjectileManager.ATTACK_SPEED_NORMALIZER);
         
         // Находим ближайшего врага в радиусе атаки
         const targetEnemy = this.findNearestEnemyInRange();
@@ -153,7 +170,7 @@ class ProjectileManager {
         );
         
         // Угол отклонения (в радианах) для боковых стрел
-        const deviation = Phaser.Math.DegToRad(10); // 10 градусов
+        const deviation = Phaser.Math.DegToRad(ProjectileManager.MULTISHOT_DEVIATION_DEGREES);
         
         // Стреляем центральной стрелой (прямо в цель)
         this.fireSingleArrow(target, speedMultiplier);
@@ -161,13 +178,13 @@ class ProjectileManager {
         // Вычисляем позиции для боковых стрел
         // Левая стрела (угол - отклонение)
         const leftAngle = angle - deviation;
-        const leftX = target.x + Math.cos(leftAngle) * 50; // Небольшое смещение для визуального эффекта
-        const leftY = target.y + Math.sin(leftAngle) * 50;
+        const leftX = target.x + Math.cos(leftAngle) * ProjectileManager.MULTISHOT_OFFSET;
+        const leftY = target.y + Math.sin(leftAngle) * ProjectileManager.MULTISHOT_OFFSET;
         
         // Правая стрела (угол + отклонение)
         const rightAngle = angle + deviation;
-        const rightX = target.x + Math.cos(rightAngle) * 50;
-        const rightY = target.y + Math.sin(rightAngle) * 50;
+        const rightX = target.x + Math.cos(rightAngle) * ProjectileManager.MULTISHOT_OFFSET;
+        const rightY = target.y + Math.sin(rightAngle) * ProjectileManager.MULTISHOT_OFFSET;
         
         // Создаем левую стрелу
         const leftArrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
@@ -222,7 +239,7 @@ class ProjectileManager {
     // Проверка, не вышла ли стрела за пределы игрового поля
     isProjectileOutOfBounds(projectile: Projectile): boolean {
         const bounds = this.scene.physics.world.bounds;
-        const padding = 50; // Добавляем небольшой запас
+        const padding = ProjectileManager.OUT_OF_BOUNDS_PADDING;
         
         return (
             projectile.x < bounds.x - padding ||
