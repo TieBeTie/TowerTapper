@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 
+const gameVolume: number = 2;  
+
 class AudioManager {
     private static instance: AudioManager;
     private scene: Phaser.Scene;
@@ -11,6 +13,7 @@ class AudioManager {
         this.scene = scene;
         this.initialize();
     }
+
 
     public static getInstance(scene: Phaser.Scene): AudioManager {
         if (!AudioManager.instance) {
@@ -34,7 +37,7 @@ class AudioManager {
                     // Load and play background music with reduced volume
                     this.music = this.scene.sound.add('gameMusic', {
                         loop: true,
-                        volume: 0.05
+                        volume: 0.05 * gameVolume
                     });
                     
                     if (isIOS) {
@@ -56,19 +59,19 @@ class AudioManager {
                 soundKeys.forEach(key => {
                     if (this.scene.cache.audio.exists(key)) {
                         const volume = {
-                            'arrow': 0.3,
-                            'enemyDie': 0.07,
-                            'towerDie': 0.3,
-                            'waveCompleted': 0.07,
-                            'upgradeButton': 0.1,
-                            'towerDamage': 0.2,
-                            'playButton': 0.2,
-                            'crit': 0.25,
-                            'heal': 0.3,
-                            'supply_drop': 0.2,
-                            'gold_collect': 0.15,
-                            'purchase_sound': 0.2
-                        }[key] || 0.2;
+                            'arrow': 0.3 * gameVolume,
+                            'enemyDie': 0.07 * gameVolume,
+                            'towerDie': 0.3 * gameVolume,
+                            'waveCompleted': 0.07 * gameVolume,
+                            'upgradeButton': 0.1 * gameVolume,
+                            'towerDamage': 0.2 * gameVolume,
+                            'playButton': 0.2 * gameVolume,
+                            'crit': 0.25 * gameVolume,
+                            'heal': 0.3 * gameVolume,
+                            'supply_drop': 0.2 * gameVolume,
+                            'gold_collect': 0.15 * gameVolume,
+                            'purchase_sound': 0.2 * gameVolume
+                        }[key] || 0.2 * gameVolume;
                         
                         this.sounds.set(key, this.scene.sound.add(key, { volume }));
                     }
