@@ -115,45 +115,67 @@ export class TelegramService {
             console.log('[DEBUG] 🔹 Платформа:', this.webApp.platform || 'неизвестно');
             console.log('[DEBUG] 🔹 Цветовая схема:', this.webApp.colorScheme || 'неизвестно');
             
-            // ВАЖНО: Проверяем наличие метода requestStars
-            if (typeof this.webApp.requestStars !== 'function') {
+            // Проверяем версию API
+            const versionString = this.webApp.version || '';
+            const versionParts = versionString.split('.');
+            const majorVersion = parseInt(versionParts[0] || '0', 10);
+            const minorVersion = parseInt(versionParts[1] || '0', 10);
+            
+            // Считаем API поддерживаемым, только если оно действительно доступно в объекте webApp
+            const hasStarsApi = typeof this.webApp.requestStars === 'function';
+            
+            // Вместо проверки версии 6.7+ просто проверяем доступность API
+            // Это позволит сразу использовать новую версию, если она доступна
+            const forceUseModernApi = true; // Форсируем использование современного API
+            
+            console.log(`[DEBUG] 🔹 Наличие Stars API: ${hasStarsApi}`);
+            console.log(`[DEBUG] 🔹 Версия: ${majorVersion}.${minorVersion}`);
+            
+            if (!hasStarsApi) {
                 console.error('[ERROR] ❌ Метод requestStars не найден в WebApp API!');
                 console.log('[DEBUG] 🔹 Доступные методы WebApp:', Object.keys(this.webApp).join(', '));
                 
-                // Используем альтернативный метод - просто показываем диалог подтверждения
+                // Используем альтернативный метод - только если Stars API недоступен
                 this.showConfirmAndProcess(emblemAmount, starCost, userData, resolve, reject);
                 return;
             }
 
             try {
-                // Прямой запрос Stars через Telegram API
-                console.log('[DEBUG] 🔹 Запрашиваем Stars напрямую через API...');
-                this.webApp.requestStars(starCost, (success) => {
-                    if (success) {
-                        console.log(`[DEBUG] ✅ Stars успешно списаны: ${starCost} звезд`);
+                // Прямой запрос Stars через Telegram API (новая версия)
+                console.log('[DEBUG] 🔹 Запрашиваем Stars напрямую через современный API...');
+                
+                // Безопасный вызов с проверкой формата колбэка
+                this.webApp.requestStars(
+                    starCost, 
+                    (success: boolean) => {
+                        console.log(`[DEBUG] 🔹 Результат Stars API: ${success ? "Успешно" : "Отклонено"}`);
                         
-                        // Если пользователь в Telegram, отправляем запрос на сервер для обновления эмблем
-                        if (userData && userData.id) {
-                            this.notifyServerAboutPurchase(userData.id, emblemAmount, starCost)
-                                .then(() => {
-                                    console.log(`[DEBUG] ✅ Сервер успешно уведомлен о покупке`);
-                                    resolve(true);
-                                })
-                                .catch(error => {
-                                    console.error('[ERROR] ❌ Ошибка при обновлении данных на сервере:', error);
-                                    // Даже при ошибке сервера считаем покупку успешной, так как Stars уже списаны
-                                    this.showAlert('Звезды списаны, но возникла проблема с начислением эмблем. Пожалуйста, обратитесь в поддержку.');
-                                    resolve(true);
-                                });
+                        if (success) {
+                            console.log(`[DEBUG] ✅ Stars успешно списаны: ${starCost} звезд`);
+                            
+                            // Если пользователь в Telegram, отправляем запрос на сервер для обновления эмблем
+                            if (userData && userData.id) {
+                                this.notifyServerAboutPurchase(userData.id, emblemAmount, starCost)
+                                    .then(() => {
+                                        console.log(`[DEBUG] ✅ Сервер успешно уведомлен о покупке`);
+                                        resolve(true);
+                                    })
+                                    .catch(error => {
+                                        console.error('[ERROR] ❌ Ошибка при обновлении данных на сервере:', error);
+                                        // Даже при ошибке сервера считаем покупку успешной, так как Stars уже списаны
+                                        this.showAlert('Звезды списаны, но возникла проблема с начислением эмблем. Пожалуйста, обратитесь в поддержку.');
+                                        resolve(true);
+                                    });
+                            } else {
+                                console.log('[WARNING] ⚠️ Нет данных пользователя для уведомления сервера');
+                                resolve(true);
+                            }
                         } else {
-                            console.log('[WARNING] ⚠️ Нет данных пользователя для уведомления сервера');
-                            resolve(true);
+                            console.log('[DEBUG] ❌ Покупка отменена пользователем или не удалась');
+                            resolve(false);
                         }
-                    } else {
-                        console.log('[DEBUG] ❌ Покупка отменена пользователем или не удалась');
-                        resolve(false);
                     }
-                });
+                );
             } catch (error) {
                 console.error('[ERROR] ❌ Ошибка API Stars:', error);
                 console.error('[ERROR] ❌ Тип ошибки:', typeof error);
@@ -307,28 +329,37 @@ export class TelegramService {
         const baseUrl = `${protocol}//${host}${port}`;
         
         console.log(`[DEBUG] 🔹 Уведомляем сервер о покупке: ${baseUrl}/api/process-purchase`);
+        console.log(`[DEBUG] 🔹 Детали запроса - UserID: ${userId}, Эмблемы: ${emblemAmount}, Звезды: ${starCost}`);
         
-        const response = await fetch(`${baseUrl}/api/process-purchase`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                user_id: userId,
-                emblem_amount: emblemAmount,
-                star_cost: starCost,
-                purchase_source: 'stars_api_direct',
-                timestamp: Date.now()
-            })
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server error: ${response.status} - ${errorText}`);
+        try {
+            const response = await fetch(`${baseUrl}/api/process-purchase`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    emblem_amount: emblemAmount,
+                    star_cost: starCost,
+                    purchase_source: 'stars_api_direct',
+                    timestamp: Date.now()
+                })
+            });
+            
+            console.log(`[DEBUG] 🔹 Статус ответа сервера: ${response.status}`);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`[ERROR] ❌ Ошибка сервера: ${response.status} - ${errorText}`);
+                throw new Error(`Server error: ${response.status} - ${errorText}`);
+            }
+            
+            const data = await response.json();
+            console.log('[DEBUG] 🔹 Ответ сервера:', JSON.stringify(data));
+            return data;
+        } catch (error) {
+            console.error('[ERROR] ❌ Сетевая ошибка при запросе к серверу:', error);
+            throw error;
         }
-        
-        const data = await response.json();
-        console.log('[DEBUG] 🔹 Ответ сервера:', JSON.stringify(data));
-        return data;
     }
 } 

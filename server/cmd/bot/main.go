@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -283,8 +285,9 @@ func main() {
 	// Handler for processing purchases through Stars API
 	http.HandleFunc("/api/process-purchase", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("=== DEBUG === Received direct Stars purchase processing request: %s %s", r.Method, r.URL.String())
+		log.Printf("=== DEBUG === Headers: %v", r.Header)
 
-		if r.Method != http.MethodPost {
+		if r.Method != http.MethodPost && r.Method != http.MethodOptions {
 			log.Printf("=== ERROR === Invalid request method: %s", r.Method)
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -293,7 +296,7 @@ func main() {
 		// CORS setup
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		// Processing OPTIONS request (preflight)
 		if r.Method == http.MethodOptions {
@@ -316,7 +319,23 @@ func main() {
 			Success    bool   `json:"success"`
 			NewBalance int64  `json:"new_balance"`
 			Message    string `json:"message"`
+			ApiVersion string `json:"api_version"`
 		}
+
+		// Read request body
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("=== ERROR === Error reading request body: %v", err)
+			http.Error(w, "Error reading request", http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+		// Log raw request for debugging
+		log.Printf("=== DEBUG === Raw request body: %s", string(body))
+
+		// Reset body for json.NewDecoder
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 		// Decoding JSON request
 		var req PurchaseRequest
@@ -337,13 +356,22 @@ func main() {
 			return
 		}
 
+		// Определяем версию API на основе источника
+		apiVersion := "legacy"
+		if req.PurchaseSource == "stars_api_direct" {
+			apiVersion = "stars_api_v1"
+			log.Printf("=== DEBUG === Using modern Stars API (Version 1)")
+		} else {
+			log.Printf("=== DEBUG === Using legacy payment method")
+		}
+
 		// Adding emblems to the user
-		log.Printf("=== DEBUG === Adding %d emblems to user %d", req.EmblemAmount, req.UserID)
+		log.Printf("=== DEBUG === Adding %d emblems to user %d via %s", req.EmblemAmount, req.UserID, apiVersion)
 
 		// Converting emblems to int64
 		emblemAmount := int64(req.EmblemAmount)
 
-		err := playerUseCase.AddPlayerEmblems(req.UserID, emblemAmount)
+		err = playerUseCase.AddPlayerEmblems(req.UserID, emblemAmount)
 		if err != nil {
 			log.Printf("=== ERROR === Error adding emblems: %v", err)
 			http.Error(w, fmt.Sprintf("Failed to add emblems: %v", err), http.StatusInternalServerError)
@@ -365,6 +393,7 @@ func main() {
 			Success:    true,
 			NewBalance: player.Emblems,
 			Message:    fmt.Sprintf("Successfully added %d emblems", req.EmblemAmount),
+			ApiVersion: apiVersion,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -374,7 +403,7 @@ func main() {
 			return
 		}
 
-		log.Printf("=== DEBUG === Response successfully sent to client")
+		log.Printf("=== DEBUG === Response successfully sent to client: %+v", resp)
 	})
 
 	// Starting HTTP server
