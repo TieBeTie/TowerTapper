@@ -703,14 +703,6 @@ func handleStartCommand(bot *tgbotapi.BotAPI, update tgbotapi.Update, playerUseC
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, welcomeMsg)
 	msg.ParseMode = "Markdown"
 
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("🎮 Play Tower Tapper", fmt.Sprintf("https://t.me/%s/towertapper?startapp=from_bot_%d", bot.Self.UserName, update.Message.From.ID)),
-		),
-	)
-
-	msg.ReplyMarkup = keyboard
-
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("Error sending message: %v", err)
 	}

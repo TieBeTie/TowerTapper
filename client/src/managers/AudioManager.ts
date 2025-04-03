@@ -62,7 +62,7 @@ class AudioManager {
                             'arrow': 0.3 * gameVolume,
                             'enemyDie': 0.07 * gameVolume,
                             'towerDie': 0.3 * gameVolume,
-                            'waveCompleted': 0.07 * gameVolume,
+                            'waveCompleted': 0.04 * gameVolume,
                             'upgradeButton': 0.1 * gameVolume,
                             'towerDamage': 0.2 * gameVolume,
                             'playButton': 0.2 * gameVolume,

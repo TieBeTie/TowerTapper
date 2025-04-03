@@ -20,65 +20,11 @@ export class WaveClearEffect {
         const verticalOffset = this.screenManager.getResponsivePadding(50);
         const shadowSize = Math.max(3, Math.round(5 * gameScale));
         
-        // Создаем текст с улучшенным рендерингом
-        const text = this.scene.add.text(
-            this.tower.x,
-            this.tower.y - this.tower.height / 2 - verticalOffset,
-            `Wave ${waveNumber} Clear!`,
-            {
-                fontSize: `${fontSize}px`,
-                color: '#ffff00',
-                fontFamily: 'pixelFont',
-                stroke: '#000000',
-                strokeThickness: Math.max(2, Math.round(5 * gameScale)),
-                // Улучшаем качество отображения
-                resolution: 2, // Увеличиваем разрешение текста
-                align: 'center',
-                padding: { x: 1, y: 1 } // Небольшой паддинг для четкости
-            }
-        ).setOrigin(0.5);
-        
-        // Добавляем тень для эффекта
-        text.setShadow(shadowSize, shadowSize, '#111111', shadowSize, true, true);
-        
+         
         // Calculate animation distances based on screen size
         const moveUpDistance = this.screenManager.getResponsivePadding(30);
         
-        // Анимация появления
-        this.scene.tweens.add({
-            targets: text,
-            y: text.y - moveUpDistance, // Движение вверх
-            alpha: { from: 0, to: 1 },
-            scale: { from: 0.8, to: 1.2 * gameScale },
-            duration: 500,
-            ease: 'Back.easeOut',
-            onComplete: () => {
-                // Анимация мерцания
-                this.scene.tweens.add({
-                    targets: text,
-                    scale: 1.0 * gameScale,
-                    alpha: 0.8,
-                    duration: 1000,
-                    yoyo: true,
-                    repeat: 1,
-                    onComplete: () => {
-                        // Анимация исчезновения
-                        this.scene.tweens.add({
-                            targets: text,
-                            y: text.y - moveUpDistance * 0.67,
-                            alpha: 0,
-                            scale: 1.5 * gameScale,
-                            duration: 500,
-                            ease: 'Back.easeIn',
-                            onComplete: () => {
-                                text.destroy();
-                            }
-                        });
-                    }
-                });
-            }
-        });
-        
+
         // Calculate particle properties based on screen size
         const particleSize = gameScale * 0.5;
         const particleSpeed = {

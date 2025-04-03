@@ -263,6 +263,14 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.isDying = true;
         this.stopRegeneration();
 
+        // Reset gold to zero when tower dies
+        if (this.scene) {
+            const gameScene = this.scene.scene.get('GameScene');
+            if ((gameScene as any).goldManager) {
+                (gameScene as any).goldManager.updateGoldDirectly(0);
+            }
+        }
+
         // Play tower death sound if audioManager exists
         if (this.scene && 'audioManager' in this.scene) {
             (this.scene as any).audioManager?.playSound('towerDie');

@@ -28,10 +28,10 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
     
     // Define emblem packages
     private readonly emblemPackages: EmblemPackage[] = [
-        { amount: 10, starsCost: 5, description: "Small Pack" },
-        { amount: 25, starsCost: 10, description: "Medium Pack" }, 
-        { amount: 60, starsCost: 20, description: "Large Pack" },
-        { amount: 150, starsCost: 40, description: "Mega Pack" }
+        { amount: 200, starsCost: 5, description: "Small Pack" },
+        { amount: 500, starsCost: 10, description: "Medium Pack" }, 
+        { amount: 1000, starsCost: 20, description: "Large Pack" },
+        { amount: 2000, starsCost: 40, description: "Mega Pack" }
     ];
 
     constructor() {
