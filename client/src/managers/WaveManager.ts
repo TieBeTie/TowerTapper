@@ -38,9 +38,9 @@ export class WaveManager extends Phaser.Events.EventEmitter {
 
     private initializeWaveConfigs(): void {
         // Конфигурация волн с одинаковой продолжительностью
-        for (let i = 1; i <= 10; i++) {
-            // Рассчитываем множитель скорости: начинаем с 1 и увеличиваем на 3% с каждой волной
-            const speedMultiplier = 1 + (i - 1) * 0.03;
+        for (let i = 1; i <= 1000; i++) { // Увеличиваем до 100 волн
+            // Расчитываем множитель скорости: начинаем с 1 и увеличиваем на 3% с каждой волной
+            const speedMultiplier = Math.min(1 + (i - 1) * 0.03, 5);
             
             this.waveConfigs.push({
                 number: i,

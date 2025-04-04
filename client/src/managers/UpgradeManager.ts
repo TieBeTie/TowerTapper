@@ -277,9 +277,14 @@ export class UpgradeManager {
             console.log(`Навык ${type} уже на максимальном уровне ${skill.maxLevel}`);
             return false;
         }
-
+            
         const cost = this.getSkillCost(type, currencyType);
         const availableCurrency = this.getCurrencyAmount(currencyType);
+
+        if (availableCurrency < cost) {
+            console.log(`Недостаточно ${currencyType} для покупки навыка ${type}`);
+            return false;
+        }
         
         console.log(`Стоимость: ${cost}, Доступно: ${availableCurrency}`);
 
@@ -291,7 +296,7 @@ export class UpgradeManager {
             console.log(`Бесплатное улучшение! Шанс: ${freeUpgradeChance * 100}%`);
         }
 
-        if (availableCurrency >= cost || isFreeUpgrade) {
+        if (isFreeUpgrade) {
             // Deduct currency only if not a free upgrade
             if (!isFreeUpgrade) {
                 console.log(`Списание ${cost} ${currencyType}`);

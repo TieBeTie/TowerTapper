@@ -136,7 +136,7 @@ export class SkillDefinitions {
     }
     
     private static calculateEmblemBonusCost(level: number): number {
-        return Math.ceil(25 + Math.pow(level, 1.8) * 2);
+        return Math.ceil(25 + 50 * level);
     }
     
     private static calculateGameSpeedValue(level: number): number {
@@ -180,20 +180,8 @@ export class SkillDefinitions {
     }
     
     private static calculateCoinRewardCost(level: number): number {
-        if (level === 0) return 25;
-        if (level === 1) return 71;
-        if (level === 2) return 119;
-        if (level === 3) return 171;
-        if (level === 4) return 225;
-        if (level === 5) return 281;
-        if (level === 6) return 339;
-        if (level === 7) return 399;
-        if (level === 8) return 461;
-        if (level === 9) return 525;
-        if (level === 10) return 591;
-        if (level === 11) return 659;
         // For levels beyond the original array
-        return Math.ceil(25 + Math.pow(level, 2) * 5);
+        return Math.ceil(25 + 50 * level);
     }
     
     /**
