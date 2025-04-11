@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import Phaser from 'phaser';
-import GameScene from '../scenes/GameScene';
+import GameScene from '../services/scenes/GameScene';
 import { SkillType } from '../types/SkillType';
 import { SkillStateManager } from './SkillStateManager';
 
@@ -14,7 +14,7 @@ interface WaveConfig {
 
 export class WaveManager extends Phaser.Events.EventEmitter {
     private currentWave: number = 0;
-    private waveConfigs: WaveConfig[] = [];
+    private currentWaveConfig: WaveConfig | null = null;
     private isWaveActive: boolean = false;
     private enemiesRemaining: number = 0;
     private baseEnemyHealth: number = 1; // Базовое здоровье врага равно 1
@@ -32,24 +32,20 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         this.scene = scene;
         this.enemies = scene.add.group();
         this.skillStateManager = SkillStateManager.getInstance();
-        this.initializeWaveConfigs();
         this.setupEventListeners();
     }
 
-    private initializeWaveConfigs(): void {
-        // Конфигурация волн с одинаковой продолжительностью
-        for (let i = 1; i <= 10; i++) {
-            // Рассчитываем множитель скорости: начинаем с 1 и увеличиваем на 3% с каждой волной
-            const speedMultiplier = 1 + (i - 1) * 0.03;
-            
-            this.waveConfigs.push({
-                number: i,
-                enemyHealthMultiplier: i, // Увеличиваем здоровье на 1 с каждой волной
-                enemyCount: 18 + i * 2, // Начинаем с 20 врагов и увеличиваем на 2 с каждой волной
-                spawnInterval: 1000, // Интервал спавна в мс
-                enemySpeedMultiplier: speedMultiplier // Увеличиваем скорость на 3% с каждой волной
-            });
-        }
+    private generateWaveConfig(waveNumber: number): WaveConfig {
+        // Рассчитываем множитель скорости: начинаем с 1 и увеличиваем на 3% с каждой волной
+        const speedMultiplier = 1 + (waveNumber - 1) * 0.03;
+        
+        return {
+            number: waveNumber,
+            enemyHealthMultiplier: waveNumber, // Увеличиваем здоровье на 1 с каждой волной
+            enemyCount: 18 + waveNumber * 2, // Начинаем с 20 врагов и увеличиваем на 2 с каждой волной
+            spawnInterval: 1000, // Интервал спавна в мс
+            enemySpeedMultiplier: speedMultiplier // Увеличиваем скорость на 3% с каждой волной
+        };
     }
 
     public startNextWave(): void {
@@ -66,23 +62,23 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         // Apply emblem bonus at the beginning of each wave
         this.applyEmblemBonus();
         
-        // Получаем конфигурацию текущей волны
-        const waveConfig = this.getCurrentWaveConfig();
+        // Генерируем конфигурацию текущей волны
+        this.currentWaveConfig = this.generateWaveConfig(this.currentWave);
         
         // Убеждаемся, что всегда есть хотя бы один враг в волне
-        if (waveConfig.enemyCount <= 0) {
+        if (this.currentWaveConfig.enemyCount <= 0) {
             console.warn("Wave config has no enemies, setting to minimum of 1");
-            waveConfig.enemyCount = 1;
+            this.currentWaveConfig.enemyCount = 1;
         }
         
         // Устанавливаем количество врагов и активируем волну
-        this.enemiesRemaining = waveConfig.enemyCount;
+        this.enemiesRemaining = this.currentWaveConfig.enemyCount;
         this.isWaveActive = true;
         
         console.log(`Starting wave ${this.currentWave} with ${this.enemiesRemaining} enemies`);
         
         // Уведомляем подписчиков о начале новой волны
-        this.emit('waveStart', waveConfig);
+        this.emit('waveStart', this.currentWaveConfig);
     }
 
     public enemyDefeated(): void {
@@ -135,12 +131,11 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     }
 
     public getCurrentWaveConfig(): WaveConfig {
-        if (this.currentWave <= 0 || this.currentWave > this.waveConfigs.length) {
-            // Если запрашиваемая волна вне диапазона, возвращаем первую или последнюю
-            const waveIndex = Math.max(0, Math.min(this.currentWave - 1, this.waveConfigs.length - 1));
-            return this.waveConfigs[waveIndex];
+        if (!this.currentWaveConfig) {
+            // Generate config for current wave if it doesn't exist
+            this.currentWaveConfig = this.generateWaveConfig(Math.max(1, this.currentWave));
         }
-        return this.waveConfigs[this.currentWave - 1];
+        return this.currentWaveConfig;
     }
 
     public getEnemyHealth(): number {

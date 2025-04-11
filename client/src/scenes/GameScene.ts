@@ -1,20 +1,21 @@
 import Phaser from 'phaser';
-import Tower from '../objects/towers/Tower';
-import { UIManager } from '../managers/UIManager';
-import EnemyManager from '../managers/EnemyManager';
-import ProjectileManager from '../managers/ProjectileManager';
-import CollisionManager from '../managers/CollisionManager';
-import GoldManager from '../managers/GoldManager';
-import { UpgradeManager } from '../managers/UpgradeManager';
-import { WaveManager } from '../managers/WaveManager';
-import { WaveIndicator } from '../ui/components/WaveIndicator';
-import { WaveClearEffect } from '../ui/components/WaveClearEffect';
-import AudioManager from '../managers/AudioManager';
-import { IGameScene } from '../types/IGameScene';
-import { ScreenManager } from '../managers/ScreenManager';
-import { SupplyDropManager } from '../managers/SupplyDropManager';
-import { SkillStateManager } from '../managers/SkillStateManager';
-import { EmblemManager } from '../managers/EmblemManager';
+import Tower from '../../objects/towers/Tower';
+import { UIManager } from '../../managers/UIManager';
+import EnemyManager from '../../managers/EnemyManager';
+import ProjectileManager from '../../managers/ProjectileManager';
+import CollisionManager from '../../managers/CollisionManager';
+import GoldManager from '../../managers/GoldManager';
+import { UpgradeManager } from '../../managers/UpgradeManager';
+import { WaveManager } from '../../managers/WaveManager';
+import { WaveIndicator } from '../../ui/components/WaveIndicator';
+import { WaveClearEffect } from '../../ui/components/WaveClearEffect';
+import AudioManager from '../../managers/AudioManager';
+import { IGameScene } from '../../types/IGameScene';
+import { ScreenManager } from '../../managers/ScreenManager';
+import { SupplyDropManager } from '../../managers/SupplyDropManager';
+import { SkillStateManager } from '../../managers/SkillStateManager';
+import { EmblemManager } from '../../managers/EmblemManager';
+import { SkillType } from '../../types/SkillType';
 
 export default class GameScene extends Phaser.Scene implements IGameScene {
     // Game objects
@@ -34,7 +35,6 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     gold!: number;
     socket!: WebSocket;
     audioManager!: AudioManager;
-    private goldRewardMultiplier: number = 1;
     private gameSpeedMultiplier: number = 1;
     private skillStateManager: SkillStateManager;
 
@@ -219,6 +219,11 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             duration: 800,
             ease: 'Power2.out',
             onStart: () => {
+                // Воспроизведем звук появления башни
+                if (this.audioManager) {
+                    this.audioManager.playSound('tower_appearing');
+                }
+                
                 let amplitude = 8;
                 let direction = 1;
                 
@@ -461,7 +466,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     }
 
     getGoldRewardMultiplier(): number {
-        return this.goldRewardMultiplier;
+        return this.skillStateManager.getState(SkillType.COIN_REWARD) || 1;
     }
 
     // Method to get emblem bonus

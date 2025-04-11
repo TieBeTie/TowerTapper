@@ -7,7 +7,7 @@ export class InitialSkillService {
     private static instance: InitialSkillService;
     private server: GameServerGateway;
     private skillStateManager: SkillStateManager | null = null;
-    private serverSkills: Map<SkillType, number> = new Map();
+    private serverSkills: Map<SkillType, number> = new Map(); // На самом деле это initial_level
     private telegramId: string = '';
     private connected: boolean = false;
 
@@ -20,14 +20,15 @@ export class InitialSkillService {
             this.serverSkills.clear();
             console.log('Game state update received:', state);
             console.log('Player skills received:', state.player_skills);
-            console.log('First skill raw data:', state.player_skills[0]);
             
             state.player_skills.forEach((skill: any) => {
                 // Check for both skillType and skill_type properties
                 const skillTypeValue = skill.skillType || skill.skill_type;
                 const normalizedSkillType = this.normalizeSkillType(skillTypeValue);
-                console.log(`Setting skill: ${skillTypeValue} (normalized: ${normalizedSkillType}) to level ${skill.level}`);
-                this.serverSkills.set(normalizedSkillType as SkillType, skill.level);
+                const level = skill.level || 0;
+                
+                console.log(`Setting initial level for skill: ${skillTypeValue} (normalized: ${normalizedSkillType}) to ${level}`);
+                this.serverSkills.set(normalizedSkillType as SkillType, level);
             });
         });
     }
@@ -108,10 +109,18 @@ export class InitialSkillService {
     }
 
     /**
-     * Get the Initial level of a skill
+     * Get the initial level of a skill
+     */
+    public getInitialLevel(skillType: SkillType): number {
+        return this.serverSkills.get(skillType) || 0;
+    }
+
+    /**
+     * Get the skill level (для обратной совместимости)
+     * На самом деле возвращает initial_level
      */
     public getSkillLevel(skillType: SkillType): number {
-        return this.serverSkills.get(skillType) || 0;
+        return this.getInitialLevel(skillType);
     }
 
     /**

@@ -5,7 +5,7 @@ import GoldManager from './GoldManager';
 import { UIManager } from './UIManager';
 import { WaveManager } from './WaveManager';
 import Tower from '../objects/towers/Tower';
-import GameScene from '../scenes/GameScene';
+import GameScene from '../services/scenes/GameScene';
 import { SkillStateManager } from '../managers/SkillStateManager';
 
 // EnemyManager handles the logic for managing and spawning enemies

@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import BootScene from './scenes/BootScene';
-import MenuScene from './scenes/MenuScene';
-import GameScene from './scenes/GameScene';
-import InitialUpgradesShopScene from './scenes/InitialUpgradesShopScene';
-import EmblemsShopScene from './scenes/EmblemsShopScene';
+import BootScene from './services/scenes/BootScene';
+import MenuScene from './services/scenes/MenuScene';
+import GameScene from './services/scenes/GameScene';
+import InitialUpgradesShopScene from './services/scenes/InitialUpgradesShopScene';
+import EmblemsShopScene from './services/scenes/EmblemsShopScene';
 import { TelegramService } from './services/TelegramService';
 
 // Инициализируем Telegram сервис

@@ -36,10 +36,10 @@ export interface SkillInfo {
 export interface SkillPrice {
     skillType: SkillType;
     goldCost: {
-        calculateCost: (currentLevel: number) => number;
+        calculateCost: (currentLevel: number, initialLevel?: number) => number;
     };
     emblemsCost: {
-        calculateCost: (currentLevel: number) => number;
+        calculateCost: (currentLevel: number, initialLevel?: number) => number;
     };
 }
 

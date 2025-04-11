@@ -124,7 +124,7 @@ export class UpgradeManager {
         if (currentLevel >= maxLevel) return 0;
 
         const cost = currencyType === CurrencyType.GOLD 
-            ? price.goldCost.calculateCost(currentLevel)
+            ? price.goldCost.calculateCost(Math.max(currentLevel - this.stateManager.getInitialSkillLevel(type), 0))
             : price.emblemsCost.calculateCost(currentLevel);
 
         return cost;
@@ -386,9 +386,8 @@ export class UpgradeManager {
                 // Using SkillStateManager, nothing to do here
                 break;
             case SkillType.COIN_REWARD:
-                if (gameScene) {
-                    (gameScene as any).goldRewardMultiplier = newValue;
-                }
+                // Save to SkillStateManager only
+                this.stateManager.saveState(SkillType.COIN_REWARD, newValue, skill.currentLevel);
                 break;
             case SkillType.ATTACK_SPEED:
                 if (gameScene) {

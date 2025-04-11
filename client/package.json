@@ -5,6 +5,11 @@
   "scripts": {
     "start": "webpack serve --config webpack.config.js",
     "build": "webpack --config webpack.config.js",
+    "build:prod": "cross-env NODE_ENV=production webpack --config webpack.config.js",
+    "build:prod:obfuscate:none": "cross-env NODE_ENV=production OBFUSCATION_LEVEL=none webpack --config webpack.config.js",
+    "build:prod:obfuscate:basic": "cross-env NODE_ENV=production OBFUSCATION_LEVEL=basic webpack --config webpack.config.js",
+    "build:prod:obfuscate:advanced": "cross-env NODE_ENV=production OBFUSCATION_LEVEL=advanced webpack --config webpack.config.js",
+    "obfuscate": "node obfuscation-helper.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -33,9 +38,13 @@
   },
   "devDependencies": {
     "copy-webpack-plugin": "^12.0.2",
+    "cross-env": "^7.0.3",
     "esm": "^3.2.25",
+    "javascript-obfuscator": "^4.1.1",
     "phaser3-webfont-loader": "^1.0.0",
+    "terser-webpack-plugin": "^5.3.14",
     "ts-node": "^10.9.2",
-    "webpack-dev-server": "^5.1.0"
+    "webpack-dev-server": "^5.1.0",
+    "webpack-obfuscator": "^3.5.1"
   }
 }

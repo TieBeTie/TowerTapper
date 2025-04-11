@@ -1,6 +1,7 @@
 export interface PlayerSkill {
     skillType: string;
     level: number;
+    initialLevel?: number; // Начальный уровень навыка
 }
 
 export interface GameState {

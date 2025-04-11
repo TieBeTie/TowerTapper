@@ -80,14 +80,15 @@ export class SkillStateManager {
             let hasAnySkills = false;
             
             this.InitialSkillTypes.forEach(skillType => {
-                const level = InitialService.getSkillLevel(skillType);
-                if (level > 0) {
+                const initialLevel = InitialService.getSkillLevel(skillType); // Этот уровень теперь рассматриваем как initial_level
+                if (initialLevel > 0) {
                     hasAnySkills = true;
                 }
                 this.state.set(skillType, {
                     type: skillType,
-                    value: SkillDefinitions.getSkillDefinitions().get(skillType)?.calculateValue(level) || 0,
-                    currentLevel: level,
+                    value: SkillDefinitions.getSkillDefinitions().get(skillType)?.calculateValue(initialLevel) || 0,
+                    currentLevel: initialLevel, // Текущий уровень начинается с initialLevel
+                    initialLevel: initialLevel, // Явно указываем начальный уровень
                     lastUpdated: new Date()
                 });
             });
@@ -100,7 +101,7 @@ export class SkillStateManager {
     
     // Инициализация базовых уровней навыков
     private initializeDefaultLevels(): void {
-        // Устанавливаем базовый уровень = 1 для всех перманентных навыков
+        // Устанавливаем базовый уровень = 0 для всех перманентных навыков
         this.InitialSkillTypes.forEach(skillType => {
             const defaultLevel = 0;
             // Получаем определения скиллов из SkillDefinitions
@@ -110,7 +111,8 @@ export class SkillStateManager {
             this.state.set(skillType, {
                 type: skillType,
                 value: defaultValue,
-                currentLevel: defaultLevel,
+                currentLevel: defaultLevel, // Текущий уровень соответствует defaultLevel
+                initialLevel: defaultLevel,
                 lastUpdated: new Date()
             });
         });
@@ -129,12 +131,13 @@ export class SkillStateManager {
             const InitialService = this.getInitialSkillService();
             
             if (InitialService.isConnected()) {
-                // Если подключены к серверу, берем уровень оттуда
-                const serverLevel = InitialService.getSkillLevel(skillType);
+                // Если подключены к серверу, берем уровень оттуда как initial_level
+                const initialLevel = InitialService.getSkillLevel(skillType);
                 InitialSkills.set(skillType, {
                     type: skillType,
-                    value: SkillDefinitions.getSkillDefinitions().get(skillType)?.calculateValue(serverLevel) || 0,
-                    currentLevel: serverLevel,
+                    value: SkillDefinitions.getSkillDefinitions().get(skillType)?.calculateValue(initialLevel) || 0,
+                    currentLevel: initialLevel, // Текущий уровень начинается с initialLevel
+                    initialLevel: initialLevel, // Явно указываем начальный уровень
                     lastUpdated: new Date()
                 });
             } else {
@@ -142,6 +145,7 @@ export class SkillStateManager {
                     type: skillType,
                     value: SkillDefinitions.getSkillDefinitions().get(skillType)?.calculateValue(0) || 0,
                     currentLevel: 0,
+                    initialLevel: 0,
                     lastUpdated: new Date()
                 });
             }
@@ -275,5 +279,21 @@ export class SkillStateManager {
     public resetHealthToMax(): number {
         this.currentTowerHealth = this.getMaxHealth();
         return this.currentTowerHealth;
+    }
+    
+    // Получение эффективного уровня навыка (currentLevel + initialLevel)
+    public getEffectiveSkillLevel(type: SkillType): number {
+        const state = this.state.get(type);
+        if (!state) return 0;
+        
+        const currentLevel = state.currentLevel || 0;
+        const initialLevel = state.initialLevel || 0;
+        
+        return currentLevel + initialLevel;
+    }
+    
+    // Получение только начального уровня навыка
+    public getInitialSkillLevel(type: SkillType): number {
+        return this.state.get(type)?.initialLevel || 0;
     }
 } 
