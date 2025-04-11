@@ -11,7 +11,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private static readonly COLOR_CIRCLE = 0xffffff; // Голубой цвет для круга
     
     // Константа масштаба башни
-    private static readonly TOWER_SCALE = 0.3;
+    private static readonly TOWER_SCALE = 0.15;
     // Константа для базового радиуса атаки (в % от высоты экрана)
 
     // We'll keep these properties for compatibility, but they'll be wrappers
