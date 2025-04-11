@@ -219,9 +219,9 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             duration: 800,
             ease: 'Power2.out',
             onStart: () => {
-                // Воспроизведем звук появления башни
+                // Воспроизведем звук появления башни и строительства
                 if (this.audioManager) {
-                    this.audioManager.playSound('tower_appearing');
+                    this.audioManager.playSound('tower_building');
                 }
                 
                 let amplitude = 8;

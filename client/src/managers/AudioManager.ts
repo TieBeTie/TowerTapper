@@ -36,25 +36,25 @@ class AudioManager {
                 // Array of sound keys to add
                 const soundKeys = ['arrow', 'enemyDie', 'towerDie', 'waveCompleted', 
                                   'upgradeButton', 'towerDamage', 'usualButton', 'crit', 'heal',
-                                  'supply_drop', 'gold_collect', 'purchase_sound', 'tower_appearing'];
+                                  'supply_drop', 'gold_collect', 'purchase_sound', 'tower_building'];
                 
                 // Add each sound only if it exists in cache
                 soundKeys.forEach(key => {
                     if (this.scene.cache.audio.exists(key)) {
                         const volume = {
                             'arrow': 0.3 * gameVolume,
-                            'enemyDie': 0.03 * gameVolume,
+                            'enemyDie': 0.02 * gameVolume,
                             'towerDie': 0.3 * gameVolume,
                             'waveCompleted': 0.04 * gameVolume,
                             'upgradeButton': 0.1 * gameVolume,
-                            'towerDamage': 0.2 * gameVolume,
+                            'towerDamage': 0.1 * gameVolume,
                             'usualButton': 1 * gameVolume,
                             'crit': 0.25 * gameVolume,
                             'heal': 0.3 * gameVolume,
                             'supply_drop': 0.2 * gameVolume,
                             'gold_collect': 0.15 * gameVolume,
                             'purchase_sound': 0.2 * gameVolume,
-                            'tower_appearing': 0.25 * gameVolume
+                            'tower_building': 0.14 * gameVolume
                         }[key] || 0.2 * gameVolume;
                         
                         this.sounds.set(key, this.scene.sound.add(key, { volume }));
@@ -85,7 +85,7 @@ class AudioManager {
             // Проверяем, есть ли этот трек в кеше
             if (this.scene.cache.audio.exists(musicKey)) {
                 const volume = {
-                    'gameMusic': 0.05 * gameVolume,
+                    'gameMusic': 0.1 * gameVolume,
                     'emblem_shop': 0.08 * gameVolume,
                     'initial_upgrades_shop': 0.12 * gameVolume
                 }[musicKey] || 0.05 * gameVolume;

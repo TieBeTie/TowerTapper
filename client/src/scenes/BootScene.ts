@@ -1,0 +1,9 @@
+this.load.audio('towerDamage', 'assets/sounds/tower_damage.wav');
+this.load.audio('usualButton', 'assets/sounds/usual_button.wav');
+this.load.audio('crit', 'assets/sounds/crit.wav');
+this.load.audio('heal', 'assets/sounds/heal.wav');
+this.load.audio('supply_drop', 'assets/sounds/supply_drop.wav');
+this.load.audio('gold_collect', 'assets/sounds/gold_collect.wav');
+this.load.audio('purchase_sound', 'assets/sounds/upgrade_button.wav');
+this.load.audio('tower_appearing', 'assets/sounds/tower_appearing.mp3');
+this.load.audio('tower_building', 'assets/sounds/tower_building.wav'); 

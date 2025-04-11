@@ -136,7 +136,7 @@ export class SkillDefinitions {
     }
     
     private static calculateEmblemBonusCost(level: number): number {
-        return Math.ceil(25 + 50 * level);
+        return Math.ceil(25 + Math.pow(level, 1.8) * 2);
     }
     
     private static calculateGameSpeedValue(level: number): number {
