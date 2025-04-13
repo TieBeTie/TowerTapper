@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import { ScreenManager } from '../../managers/ScreenManager';
-import { IScene } from '../../types/IScene';
-import AudioManager from '../../managers/AudioManager';
-import { EmblemManager } from '../../managers/EmblemManager';
-import { TelegramService } from '../TelegramService';
+import { ScreenManager } from '../managers/ScreenManager';
+import { IScene } from '../types/IScene';
+import AudioManager from '../managers/AudioManager';
+import { EmblemManager } from '../managers/EmblemManager';
+import { TelegramService } from '../services/TelegramService';
 
 interface EmblemPackage {
     amount: number;

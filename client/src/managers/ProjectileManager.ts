@@ -3,7 +3,7 @@ import { Projectile } from '../objects/projectiles/Projectile';
 import { ProjectileFactory } from '../factories/ProjectileFactory';
 import { Enemy } from '../objects/enemies/Enemy';
 import EnemyManager from './EnemyManager';
-import GameScene from '../services/scenes/GameScene';
+import GameScene from '../scenes/GameScene';
 import Tower from '../objects/towers/Tower';
 import { SkillType } from '../types/SkillType';
 import { IGameScene } from '../types/IGameScene';

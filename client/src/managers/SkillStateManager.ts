@@ -175,6 +175,7 @@ export class SkillStateManager {
             type,
             value: SkillDefinitions.getSkillDefinitions().get(type)?.calculateValue(currentLevel) || 0,
             currentLevel,
+            initialLevel: existingState?.initialLevel || 0,
             lastUpdated: new Date()
         });
         

@@ -197,10 +197,7 @@ export class StatsView {
                 // Ensure visibility and depth
                 this.hpText.setVisible(true);
                 this.hpText.setDepth(1600);
-                
-                // Log update for debugging
-                console.log(`HP updated: ${Math.floor(currentHP)}/${maxHP}, depth: ${this.hpText.depth}`);
-            } catch (error) {
+                } catch (error) {
                 console.warn('Error updating HP text:', error);
                 // Recreate text if there was an error
                 this.recreateHPText();

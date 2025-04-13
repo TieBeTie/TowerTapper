@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import AudioManager from '../../managers/AudioManager';
-import { IScene } from '../../types/IScene';
-import { ScreenManager } from '../../managers/ScreenManager';
-import { UIManager } from '../../managers/UIManager';
-import { EmblemManager } from '../../managers/EmblemManager';
+import AudioManager from '../managers/AudioManager';
+import { IScene } from '../types/IScene';
+import { ScreenManager } from '../managers/ScreenManager';
+import { UIManager } from '../managers/UIManager';
+import { EmblemManager } from '../managers/EmblemManager';
 
 export default class MenuScene extends Phaser.Scene implements IScene {
     private audioManager!: AudioManager;
@@ -58,42 +58,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             const gameScale = this.screenManager.getGameScale();
             const center = this.screenManager.getScreenCenter();
 
-
-            // Создаем монстра в центре экрана, но с маленьким размером
-            try {
-                if (isIOS) console.log('Creating enemy sprite on iOS');
-                const monster = this.add.sprite(center.x, center.y, 'enemy');
-                monster.setScale(0.5 * gameScale); // Уменьшаем начальный размер
-                
-                // Verify the texture is available before playing animation
-                if (this.textures.exists('enemy')) {
-                    if (isIOS) console.log('Starting enemy_walk animation on iOS');
-                    monster.play('enemy_walk');
-                } else {
-                    console.error('Enemy texture not available!');
-                }
-
-                // Анимация появления монстра
-                this.tweens.add({
-                    targets: monster,
-                    scale: 0.8 * gameScale, // Уменьшаем финальный размер
-                    duration: 800,
-                    ease: 'Bounce.out',
-                    onComplete: () => {
-                        // После появления начинаем покачивание
-                        this.tweens.add({
-                            targets: monster,
-                            y: center.y + 5, // Уменьшаем амплитуду покачивания
-                            duration: 1000,
-                            yoyo: true,
-                            repeat: -1,
-                            ease: 'Sine.easeInOut'
-                        });
-                    }
-                });
-            } catch (err) {
-                console.error('Error creating monster sprite:', err);
-            }
+            // Удаляем монстра из меню
 
             // Создаем кнопку "Играть" с использованием адаптивного шрифта
             const fontSize = this.screenManager.getLargeFontSize();
@@ -207,16 +172,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     }
     
     private handleScreenResize(gameScale: number): void {
-        // Находим и обновляем размер монстра
-        const monster = this.children.list.find(child => 
-            child instanceof Phaser.GameObjects.Sprite && 
-            (child as Phaser.GameObjects.Sprite).texture.key === 'enemy'
-        ) as Phaser.GameObjects.Sprite;
-        
-        if (monster) {
-            monster.setScale(0.8 * gameScale); // Обновляем размер при ресайзе
-            monster.setPosition(this.screenManager.getScreenCenter().x, this.screenManager.getScreenCenter().y);
-        }
+        // Удалили обновление монстра при ресайзе
         
         // Находим и обновляем размер кнопки
         const usualButton = this.children.list.find(child => 
@@ -371,11 +327,28 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     }
 
     destroy(): void {
-        // Отписываемся от событий
-        this.events.off('screenResize', this.handleScreenResize, this);
-        
-        if (this.screenManager) {
-            this.screenManager.destroy();
+        // Clean up all resources
+        try {
+            // Handle mystical background cleanup if it exists
+            const mysticalBackground = this.data?.get('mysticalBackground');
+            if (mysticalBackground && typeof mysticalBackground.destroy === 'function') {
+                mysticalBackground.destroy();
+            }
+            
+            // Clean up screen manager
+            if (this.screenManager) {
+                this.screenManager.destroy();
+            }
+            
+            // Clean up audio manager events
+            if (this.audioManager) {
+                // Don't destroy the audio manager instance since it's shared
+                // Just remove any scene-specific events
+            }
+            
+            this.events.off('screenResize', this.handleScreenResize, this);
+        } catch (err) {
+            console.error('Error in MenuScene destroy:', err);
         }
     }
 }

@@ -13,7 +13,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     projectileFactory: ProjectileFactory;
     isDying: boolean;
     isUnderAttack: boolean = false;
-    static readonly ENEMY_SCALE = 0.35;
+    static readonly ENEMY_SCALE = 0.2;
     private skillStateManager: SkillStateManager;
     private baseSpeed: number;
 

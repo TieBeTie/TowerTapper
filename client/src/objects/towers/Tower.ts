@@ -11,7 +11,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private static readonly COLOR_CIRCLE = 0xffffff; // Голубой цвет для круга
     
     // Константа масштаба башни
-    private static readonly TOWER_SCALE = 0.15;
+    private static readonly TOWER_SCALE = 0.7;
+    private static readonly TOWER_ANGLE = -3;
     // Константа для базового радиуса атаки (в % от высоты экрана)
 
     // We'll keep these properties for compatibility, but they'll be wrappers
@@ -63,6 +64,9 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         // Масштаб с учетом коэффициента из ScreenManager
         const gameScale = this.screenManager.getGameScale();
         this.setScale(Tower.TOWER_SCALE * gameScale);
+        
+        // Слегка наклоняем башню влево
+        this.setAngle(Tower.TOWER_ANGLE);
 
         if (this.body) {
             this.body.setSize(this.width * 0.6, this.height * 0.6);
@@ -96,6 +100,9 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         this.setScale(Tower.TOWER_SCALE * gameScale);
         const center = this.screenManager.getGameViewCenter();
         this.setPosition(center.x, center.y);
+        
+        // Сохраняем небольшой наклон башни влево при изменении размера экрана
+        this.setAngle(Tower.TOWER_ANGLE);
         
         // Use the safer method that doesn't recreate the graphics object
         this.safeUpdateAttackCircle();

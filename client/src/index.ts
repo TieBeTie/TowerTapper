@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import BootScene from './services/scenes/BootScene';
-import MenuScene from './services/scenes/MenuScene';
-import GameScene from './services/scenes/GameScene';
-import InitialUpgradesShopScene from './services/scenes/InitialUpgradesShopScene';
-import EmblemsShopScene from './services/scenes/EmblemsShopScene';
+import BootScene from './scenes/BootScene';
+import MenuScene from './scenes/MenuScene';
+import GameScene from './scenes/GameScene';
+import InitialUpgradesShopScene from './scenes/InitialUpgradesShopScene';
+import EmblemsShopScene from './scenes/EmblemsShopScene';
 import { TelegramService } from './services/TelegramService';
 
 // Инициализируем Telegram сервис
@@ -16,8 +16,9 @@ if (telegramService.isTelegramWebApp()) {
 
 // Добавляем задержку перед инициализацией игры для Telegram
 const initGame = () => {
-    // Базовое соотношение сторон игры (9:16)
-    const ASPECT_RATIO = 9/16;
+    // Определяем базовое разрешение для pixel art режима (9:16)
+    const BASE_WIDTH = 512;
+    const BASE_HEIGHT = 912; // Более высокое разрешение для лучшей детализации
 
     // Определяем размеры игры на основе Telegram Web App viewport
     const viewportWidth = telegramService.getViewportWidth();
@@ -26,14 +27,14 @@ const initGame = () => {
     // Определяем размеры игры
     let gameWidth, gameHeight;
 
-    if (viewportWidth / viewportHeight > ASPECT_RATIO) {
+    if (viewportWidth / viewportHeight > 16/9) {
         // Широкий экран - подгоняем по высоте
         gameHeight = viewportHeight;
-        gameWidth = viewportHeight * ASPECT_RATIO;
+        gameWidth = viewportHeight * 16/9;
     } else {
         // Узкий экран - подгоняем по ширине
         gameWidth = viewportWidth;
-        gameHeight = viewportWidth / ASPECT_RATIO;
+        gameHeight = viewportWidth * 9/16;
     }
 
     // Прикрепляем элемент контейнера к body для исправления позиционирования
@@ -54,11 +55,11 @@ const initGame = () => {
     const config: Phaser.Types.Core.GameConfig = {
         type: Phaser.AUTO,
         scale: {
-            mode: Phaser.Scale.RESIZE,  // Используем RESIZE вместо FIT для Telegram Web App
+            mode: Phaser.Scale.RESIZE,  // Используем RESIZE для динамического изменения размера
             autoCenter: Phaser.Scale.CENTER_BOTH,
             parent: 'game-container',
-            width: gameWidth,
-            height: gameHeight,
+            width: BASE_WIDTH,
+            height: BASE_HEIGHT,
             // Add more detailed resize handling
             resizeInterval: 200,  // Check for resize less frequently to reduce performance impact
             min: {
@@ -74,10 +75,10 @@ const initGame = () => {
         },
         scene: [BootScene, MenuScene, GameScene, InitialUpgradesShopScene, EmblemsShopScene],
         backgroundColor: '#ffffff',
-        // Modify render settings to fix blurry text
+        // Modify render settings for pixel art
         render: {
-            pixelArt: true,  // Enable pixelArt to prevent anti-aliasing
-            antialias: false,  // Disable antialiasing for sharper text
+            pixelArt: true,  // Enable pixelArt for crisp pixel rendering
+            antialias: false,  // Disable antialiasing for pixel art
             roundPixels: true,  // Enable roundPixels for crisp rendering
             clearBeforeRender: true,
             powerPreference: 'high-performance',
@@ -104,7 +105,7 @@ const initGame = () => {
 
     // Instead, set canvas properties directly after the game is created
     if (gameInstance.canvas) {
-        // Set crisp rendering CSS properties
+        // Set crisp rendering CSS properties for pixel art
         gameInstance.canvas.style.imageRendering = 'pixelated';
         gameInstance.canvas.style.imageRendering = 'crisp-edges';
         
@@ -121,15 +122,36 @@ const initGame = () => {
         // Обновляем размеры игры с сохранением соотношения сторон
         let newGameWidth, newGameHeight;
         
-        if (newWidth / newHeight > ASPECT_RATIO) {
+        if (newWidth / newHeight > 16/9) {
             newGameHeight = newHeight;
-            newGameWidth = newHeight * ASPECT_RATIO;
+            newGameWidth = newHeight * 16/9;
         } else {
             newGameWidth = newWidth;
-            newGameHeight = newWidth / ASPECT_RATIO;
+            newGameHeight = newWidth * 9/16;
         }
         
+        // Целочисленное масштабирование для pixel art
+        const scale = Math.max(1, Math.floor(newGameWidth / BASE_WIDTH));
+        
+        // Обновляем размер игры
         gameInstance.scale.resize(newGameWidth, newGameHeight);
+        
+        // Принудительно привязываем к пиксельной сетке для всех сцен
+        gameInstance.scale.emit('pixel-art-resize', { width: newGameWidth, height: newGameHeight, scale: scale });
+    });
+    
+    // Добавляем глобальный обработчик для всех сцен для обеспечения pixel art
+    gameInstance.events.on('prestep', () => {
+        // Убедимся, что все объекты привязаны к целым пикселям
+        if (gameInstance.scene.scenes) {
+            gameInstance.scene.scenes.forEach(scene => {
+                if (scene.cameras && scene.cameras.main) {
+                    // Принудительно выравниваем координаты камеры по целым пикселям
+                    scene.cameras.main.scrollX = Math.round(scene.cameras.main.scrollX);
+                    scene.cameras.main.scrollY = Math.round(scene.cameras.main.scrollY);
+                }
+            });
+        }
     });
 };
 

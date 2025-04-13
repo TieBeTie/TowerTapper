@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import Phaser from 'phaser';
-import GameScene from '../services/scenes/GameScene';
+import GameScene from '../scenes/GameScene';
 import { SkillType } from '../types/SkillType';
 import { SkillStateManager } from './SkillStateManager';
 

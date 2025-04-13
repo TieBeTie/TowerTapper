@@ -1,21 +1,22 @@
 import Phaser from 'phaser';
-import Tower from '../../objects/towers/Tower';
-import { UIManager } from '../../managers/UIManager';
-import EnemyManager from '../../managers/EnemyManager';
-import ProjectileManager from '../../managers/ProjectileManager';
-import CollisionManager from '../../managers/CollisionManager';
-import GoldManager from '../../managers/GoldManager';
-import { UpgradeManager } from '../../managers/UpgradeManager';
-import { WaveManager } from '../../managers/WaveManager';
-import { WaveIndicator } from '../../ui/components/WaveIndicator';
-import { WaveClearEffect } from '../../ui/components/WaveClearEffect';
-import AudioManager from '../../managers/AudioManager';
-import { IGameScene } from '../../types/IGameScene';
-import { ScreenManager } from '../../managers/ScreenManager';
-import { SupplyDropManager } from '../../managers/SupplyDropManager';
-import { SkillStateManager } from '../../managers/SkillStateManager';
-import { EmblemManager } from '../../managers/EmblemManager';
-import { SkillType } from '../../types/SkillType';
+import Tower from '../objects/towers/Tower';
+import { UIManager } from '../managers/UIManager';
+import EnemyManager from '../managers/EnemyManager';
+import ProjectileManager from '../managers/ProjectileManager';
+import CollisionManager from '../managers/CollisionManager';
+import GoldManager from '../managers/GoldManager';
+import { UpgradeManager } from '../managers/UpgradeManager';
+import { WaveManager } from '../managers/WaveManager';
+import { WaveIndicator } from '../ui/components/WaveIndicator';
+import { WaveClearEffect } from '../ui/components/WaveClearEffect';
+import AudioManager from '../managers/AudioManager';
+import { IGameScene } from '../types/IGameScene';
+import { ScreenManager } from '../managers/ScreenManager';
+import { SupplyDropManager } from '../managers/SupplyDropManager';
+import { SkillStateManager } from '../managers/SkillStateManager';
+import { EmblemManager } from '../managers/EmblemManager';
+import { SkillType } from '../types/SkillType';
+import { MysticalBackground } from '../objects/backgrounds/MysticalBackground';
 
 export default class GameScene extends Phaser.Scene implements IGameScene {
     // Game objects
@@ -37,6 +38,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     audioManager!: AudioManager;
     private gameSpeedMultiplier: number = 1;
     private skillStateManager: SkillStateManager;
+    private mysticalBackground!: MysticalBackground;
 
     constructor() {
         super({ key: 'GameScene' });
@@ -61,6 +63,9 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         
         // Initialize SkillStateManager properly by first resetting it
         this.skillStateManager.tryResetToTheServer();
+        
+        // Создаем мистический фон вместо стандартного
+        this.mysticalBackground = new MysticalBackground(this);
         
         // Создаем черный прямоугольник на весь экран
         const { width, height } = this.screenManager.getScreenSize();
@@ -99,8 +104,8 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     }
 
     private handleScreenResize(gameScale: number): void {
-        // Обновляем фон
-        this.screenManager.setupBackground();
+        // Мистический фон обрабатывает изменение размера самостоятельно
+        // через подписку на события
         
         // Make sure all UI components are properly positioned and visible after resize
         const { width, height } = this.screenManager.getScreenSize();
@@ -200,8 +205,8 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     }
 
     private setupGameView(): void {
-        // Создаем фон через ScreenManager
-        this.screenManager.setupBackground();
+        // Мы больше не используем стандартный фон
+        // this.screenManager.setupBackground();
 
         // Получаем центр игровой области и масштаб
         const center = this.screenManager.getGameViewCenter();
@@ -219,9 +224,9 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             duration: 800,
             ease: 'Power2.out',
             onStart: () => {
-                // Воспроизведем звук появления башни
+                // Воспроизведем звук появления башни и строительства
                 if (this.audioManager) {
-                    this.audioManager.playSound('tower_appearing');
+                    this.audioManager.playSound('tower_building');
                 }
                 
                 let amplitude = 8;
@@ -399,6 +404,11 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             if (!this.waveManager || !this.enemyManager) {
                 return;
             }
+            
+            // Обновляем мистический фон
+            if (this.mysticalBackground) {
+                this.mysticalBackground.update();
+            }
 
             // Apply game speed multiplier to delta time
             const scaledDelta = delta * this.gameSpeedMultiplier;
@@ -492,6 +502,11 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     // Очистка ресурсов при закрытии сцены
     shutdown(): void {
         console.log('GameScene shutdown started...');
+        
+        // Уничтожаем мистический фон
+        if (this.mysticalBackground) {
+            this.mysticalBackground.destroy();
+        }
         
         // Отписываемся от событий
         this.events.off('screenResize');

@@ -157,7 +157,7 @@ export class WaveIndicator {
             
             // Устанавливаем текст только если объект существует и активен
             if (this.statusText && this.statusText.active) {
-                this.statusText.setText('Wave in progress...');
+                this.statusText.setText('in progress...');
                 this.statusText.setColor('#ffcc00');
             }
         } catch (error) {

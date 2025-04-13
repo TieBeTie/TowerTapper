@@ -1,17 +1,17 @@
 import Phaser from 'phaser';
-import AudioManager from '../../managers/AudioManager';
-import { IScene } from '../../types/IScene';
-import { ScreenManager } from '../../managers/ScreenManager';
-import { UIManager } from '../../managers/UIManager';
-import { EmblemManager } from '../../managers/EmblemManager';
-import { UpgradeManager } from '../../managers/UpgradeManager';
-import { SkillType, SkillInfo } from '../../types/SkillType';
-import { InitialShopFilterService } from '../InitialShopFilterService';
-import { InitialSkillPurchaseService } from '../InitialSkillPurchaseService';
-import { InitialShopHeader } from '../../ui/Initial-shop/InitialShopHeader';
-import { InitialShopNavigation } from '../../ui/Initial-shop/InitialShopNavigation';
-import { InitialSkillList } from '../../ui/Initial-shop/InitialSkillList';
-import { SkillStateManager } from '../../managers/SkillStateManager';
+import AudioManager from '../managers/AudioManager';
+import { IScene } from '../types/IScene';
+import { ScreenManager } from '../managers/ScreenManager';
+import { UIManager } from '../managers/UIManager';
+import { EmblemManager } from '../managers/EmblemManager';
+import { UpgradeManager } from '../managers/UpgradeManager';
+import { SkillType, SkillInfo } from '../types/SkillType';
+import { InitialShopFilterService } from '../services/InitialShopFilterService';
+import { InitialSkillPurchaseService } from '../services/InitialSkillPurchaseService';
+import { InitialShopHeader } from '../ui/Initial-shop/InitialShopHeader';
+import { InitialShopNavigation } from '../ui/Initial-shop/InitialShopNavigation';
+import { InitialSkillList } from '../ui/Initial-shop/InitialSkillList';
+import { SkillStateManager } from '../managers/SkillStateManager';
 
 export default class InitialUpgradesShopScene extends Phaser.Scene implements IScene {
     private audioManager!: AudioManager;

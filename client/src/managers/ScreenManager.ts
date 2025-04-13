@@ -135,7 +135,44 @@ export class ScreenManager {
      * Устанавливает фон игры с правильным масштабированием
      */
     public setupBackground(): void {
+        // Проверяем, импортирован ли класс MysticalBackground
+        const isMysticalBackgroundAvailable = () => {
+            try {
+                // Динамически импортируем MysticalBackground только при необходимости
+                return import('../objects/backgrounds/MysticalBackground')
+                    .then(module => {
+                        const { MysticalBackground } = module;
+                        // Создаем мистический фон
+                        return new MysticalBackground(this.scene);
+                    })
+                    .catch(error => {
+                        console.error('Failed to load MysticalBackground:', error);
+                        return null;
+                    });
+            } catch (error) {
+                console.error('Error trying to load MysticalBackground:', error);
+                return Promise.resolve(null);
+            }
+        };
 
+        // Асинхронно создаем мистический фон или используем обычный
+        isMysticalBackgroundAvailable()
+            .then(background => {
+                if (background) {
+                    // Успешно создали мистический фон
+                    // Сохраняем ссылку в объекте сцены для дальнейшего использования
+                    this.scene.data.set('mysticalBackground', background);
+                } else {
+                    // Если не удалось создать MysticalBackground, используем стандартный фон
+                    this.setupDefaultBackground();
+                }
+            });
+    }
+
+    /**
+     * Устанавливает стандартный фон (используется как запасной вариант)
+     */
+    private setupDefaultBackground(): void {
         const { width, height } = this.getScreenSize();
         const background = this.scene.add.image(width / 2, height / 2, 'background');
         background.setOrigin(0.5, 0.5);
