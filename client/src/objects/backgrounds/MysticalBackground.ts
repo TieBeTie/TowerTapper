@@ -10,7 +10,9 @@ export class MysticalBackground {
     private stars: Phaser.GameObjects.Image[] = [];
     private perimeterGlow: Phaser.GameObjects.Graphics | null = null;
     private isDestroyed: boolean = false;
-    private islandScale: number = 0.5;
+    private islandScale: number = 0.6;
+    private mainIslandXOffset: number = 1.08;
+    private mainIslandYOffset: number = 1.15;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -138,7 +140,7 @@ export class MysticalBackground {
      */
     private addMainIslandToScene(center: { x: number; y: number }): void {
         // Создаем остров под башней
-        this.mainIsland = this.scene.add.image(center.x, center.y * 1.1, 'mainIsland');
+        this.mainIsland = this.scene.add.image(center.x * this.mainIslandXOffset, center.y * this.mainIslandYOffset, 'mainIsland');
         // Устанавливаем масштаб острова
         const scale = this.islandScale * this.screenManager.getGameScale(); // НЕ МЕНЯТЬ
         this.mainIsland.setScale(scale);
@@ -592,7 +594,7 @@ export class MysticalBackground {
         // Обновляем главный остров
         if (this.mainIsland) {
             const center = this.screenManager.getGameViewCenter();
-            this.mainIsland.setPosition(center.x, center.y * 1.1); // Сохраняем смещение вниз
+            this.mainIsland.setPosition(center.x * this.mainIslandXOffset, center.y * this.mainIslandYOffset); // Сохраняем смещение вниз
             const scale = this.islandScale * this.screenManager.getGameScale();
             this.mainIsland.setScale(scale);
         }

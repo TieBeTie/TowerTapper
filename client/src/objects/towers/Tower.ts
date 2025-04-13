@@ -11,8 +11,8 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private static readonly COLOR_CIRCLE = 0xffffff; // Голубой цвет для круга
     
     // Константа масштаба башни
-    private static readonly TOWER_SCALE = 0.7;
-    private static readonly TOWER_ANGLE = -3;
+    private static readonly TOWER_SCALE = 0.8;
+    private static readonly TOWER_ANGLE = -0;
     // Константа для базового радиуса атаки (в % от высоты экрана)
 
     // We'll keep these properties for compatibility, but they'll be wrappers
@@ -151,10 +151,10 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         
         // Draw with more visible style 
         this.attackRangeCircle.lineStyle(3, Tower.COLOR_CIRCLE, 0.7);
-        this.attackRangeCircle.fillStyle(Tower.COLOR_CIRCLE, 0.2);
+        // Remove fillStyle and fillCircle to have only the outline
         
         const center = this.getPosition();
-        this.attackRangeCircle.fillCircle(center.x, center.y, this.attackRange);
+        // this.attackRangeCircle.fillCircle(center.x, center.y, this.attackRange);
         this.attackRangeCircle.strokeCircle(center.x, center.y, this.attackRange);
         this.attackRangeCircle.setVisible(true);
     }
@@ -178,10 +178,10 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         
         // Draw with more visible style
         this.attackRangeCircle.lineStyle(3, Tower.COLOR_CIRCLE, 0.7); 
-        this.attackRangeCircle.fillStyle(Tower.COLOR_CIRCLE, 0.2);
+        // Remove fillStyle and fillCircle to have only the outline
         
         const center = this.getPosition();
-        this.attackRangeCircle.fillCircle(center.x, center.y, this.attackRange);
+        // this.attackRangeCircle.fillCircle(center.x, center.y, this.attackRange);
         this.attackRangeCircle.strokeCircle(center.x, center.y, this.attackRange);
         this.attackRangeCircle.setVisible(true);
     }
