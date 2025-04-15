@@ -6,6 +6,8 @@ import InitialUpgradesShopScene from './scenes/InitialUpgradesShopScene';
 import EmblemsShopScene from './scenes/EmblemsShopScene';
 import BackgroundScene from './scenes/BackgroundScene';
 import { TelegramService } from './services/TelegramService';
+import { createApp } from 'vue';
+import App from './App.vue';
 
 // Инициализируем Telegram сервис
 const telegramService = TelegramService.getInstance();
@@ -153,3 +155,5 @@ if (telegramService.isTelegramWebApp()) {
     // Для не-Telegram сред инициализируем сразу
     initGame();
 }
+
+createApp(App).mount('#game-container');
