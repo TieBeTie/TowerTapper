@@ -6,7 +6,6 @@ import { SkillStateManager } from '../../managers/SkillStateManager';
 class Tower extends Phaser.Physics.Arcade.Sprite {
     // Цветовые константы
     private static readonly COLOR_RED = 0xff6b6b;  // Более розовый оттенок
-    private static readonly COLOR_GREEN = 0x00ff00;
     private static readonly COLOR_WHITE = 0xffffff;
     private static readonly COLOR_CIRCLE = 0xffffff; // Голубой цвет для круга
     
@@ -36,6 +35,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private screenManager: ScreenManager;
     private attackRangeCircle: Phaser.GameObjects.Graphics | null;
     private attackRange: number;
+    private isTakingDamageAnimation: boolean = false;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -230,40 +230,41 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     takeDamage(amount: number): void {
         if (!this.active || this.isDying) return;
 
-        // Apply damage through the centralized system
         this.skillManager.applyDamage(amount);
 
-        // Safety check for scene existence before accessing it
         if (!this.scene) return;
 
-        // Play tower damage sound
         if ('audioManager' in this.scene) {
             (this.scene as any).audioManager?.playSound('towerDamage');
         }
 
-        // Добавляем эффект тряски при получении урона
-        this.scene.tweens.add({
-            targets: this,
-            x: this.x + 4,
-            duration: 15,
-            yoyo: true,
-            repeat: 2,
-            ease: 'Stepped'
-        });
+        // Запускаем анимацию только если не идёт предыдущая
+        if (!this.isTakingDamageAnimation) {
+            this.isTakingDamageAnimation = true;
+            this.scene.tweens.add({
+                targets: this,
+                x: this.x + 4,
+                duration: 15,
+                yoyo: true,
+                repeat: 2,
+                ease: 'Stepped',
+                onComplete: () => {
+                    this.x = this.x; // Вернуть на место (или не трогать вообще)
+                    this.isTakingDamageAnimation = false;
+                }
+            });
 
-        // Добавляем эффект красного свечения
-        this.setTint(Tower.COLOR_RED);
-        this.scene.time.delayedCall(100, () => {
-            if (!this.isDying && this.scene) {
-                this.clearTint();
-            }
-        });
+            this.setTint(Tower.COLOR_RED);
+            this.scene.time.delayedCall(100, () => {
+                if (!this.isDying && this.scene) {
+                    this.clearTint();
+                }
+            });
+        }
 
         if (this.health <= 0) {
             this.die();
         }
-        
-        // Update health bar if needed
         this.updateHealthBar();
     }
 
@@ -293,6 +294,11 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             if ((gameScene as any).mysticalBackground && typeof (gameScene as any).mysticalBackground.hideGlowLayer === 'function') {
                 (gameScene as any).mysticalBackground.hideGlowLayer();
             }
+            // collision manager
+            if ((gameScene as any).collisionManager && typeof (gameScene as any).collisionManager.destroy === 'function') {
+                (gameScene as any).collisionManager.destroy();
+                (gameScene as any).collisionManager = null;
+            }
             // Отключаем projectileManager
             if ((gameScene as any).projectileManager && typeof (gameScene as any).projectileManager.destroy === 'function') {
                 (gameScene as any).projectileManager.destroy();
@@ -302,6 +308,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             if ((gameScene as any).enemyManager && typeof (gameScene as any).enemyManager.freezeAllEnemies === 'function') {
                 (gameScene as any).enemyManager.freezeAllEnemies();
             }
+
         }
 
         // Play tower death sound if audioManager exists

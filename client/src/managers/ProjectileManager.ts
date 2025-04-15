@@ -216,17 +216,18 @@ class ProjectileManager {
     }
 
     update(time: number, delta: number): void {
-        // Автоматический выстрел стрелы по таймеру
+        // Не стрелять, если башня мертва или неактивна
+        if (!this.scene.tower || !this.scene.tower.active || this.scene.tower.health <= 0) {
+            return;
+        }
         const currentFireRate = this.getFireRate();
         if (time - this.lastFireTime >= currentFireRate) {
             this.fireProjectile(1); // Fire with base speed multiplier
         }
-        
         // Обновляем все стрелы
         this.projectiles.children.iterate(projectile => {
             if (projectile instanceof Projectile) {
                 projectile.update(time, delta);
-                
                 // Проверяем, не покинула ли стрела игровое поле
                 if (projectile.active && this.isProjectileOutOfBounds(projectile)) {
                     projectile.destroy();

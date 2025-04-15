@@ -19,7 +19,7 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     private enemiesRemaining: number = 0;
     private baseEnemyHealth: number = 1; // Базовое здоровье врага равно 1
     private baseEnemyDamage: number = 3; // Базовый урон врага
-    private baseEnemySpeed: number = 100; // Базовая скорость врага (уже уменьшена в 2 раза от стандартной 200)
+    private baseEnemySpeed: number = 50; // Базовая скорость врага (уже уменьшена в 2 раза от стандартной 200)
     private autoStartNextWave: boolean = true; // Автоматически запускать следующую волну
     private waveDelay: number = 3000; // 3 seconds between waves
     private enemies: Phaser.GameObjects.Group;

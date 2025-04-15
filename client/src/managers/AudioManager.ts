@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-const gameVolume: number = 2;  
+const gameVolume: number = 3;  
 
 class AudioManager {
     private static instance: AudioManager;
@@ -42,19 +42,19 @@ class AudioManager {
                 soundKeys.forEach(key => {
                     if (this.scene.cache.audio.exists(key)) {
                         const volume = {
-                            'arrow': 0.3 * gameVolume,
-                            'enemyDie': 0.02 * gameVolume,
-                            'towerDie': 0.3 * gameVolume,
-                            'waveCompleted': 0.04 * gameVolume,
-                            'upgradeButton': 0.1 * gameVolume,
-                            'towerDamage': 0.1 * gameVolume,
+                            'arrow': 0.1 * gameVolume,
+                            'enemyDie': 0.01 * gameVolume,
+                            'towerDie': 0.05 * gameVolume,
+                            'waveCompleted': 0.02 * gameVolume,
+                            'upgradeButton': 0.05 * gameVolume,
+                            'towerDamage': 0.05 * gameVolume,
                             'usualButton': 1 * gameVolume,
-                            'crit': 0.25 * gameVolume,
-                            'heal': 0.3 * gameVolume,
+                            'crit': 0.2 * gameVolume,
+                            'heal': 0.2 * gameVolume,
                             'supply_drop': 0.2 * gameVolume,
                             'gold_collect': 0.15 * gameVolume,
-                            'purchase_sound': 0.2 * gameVolume,
-                            'tower_building': 0.14 * gameVolume
+                            'purchase_sound': 0.1 * gameVolume,
+                            'tower_building': 0.1 * gameVolume
                         }[key] || 0.2 * gameVolume;
                         
                         this.sounds.set(key, this.scene.sound.add(key, { volume }));

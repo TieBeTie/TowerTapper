@@ -84,19 +84,19 @@ export class SkillDefinitions {
     }
     
     private static calculateAttackSpeedValue(level: number): number {
-        return +(2.5 + (level * 0.1)).toFixed(2);
+        return +(1.3 + (level * 0.08)).toFixed(2);
     }
     
     private static calculateAttackSpeedCost(level: number): number {
-        return Math.ceil(5 + Math.pow(level, 1.5) * 2);
+        return Math.ceil(5 + 40 * Math.exp(0.2 * level) - 40); // 5 + 3 * e^(0.18 * level)
     }
     
     private static calculateAttackRangeValue(level: number): number {
-        return Math.round(130 + (level * 4));
+        return Math.round(80 + (level * 2));
     }
     
     private static calculateAttackRangeCost(level: number): number {
-        return Math.ceil(20 + Math.pow(level, 1.3) * 7);
+        return Math.ceil(20 + 30 * Math.exp(0.12 * level)); // 20 + 7 * e^(0.09 * level)
     }
     
     private static calculateCritMultiplierValue(level: number): number {
@@ -104,7 +104,7 @@ export class SkillDefinitions {
     }
     
     private static calculateCritMultiplierCost(level: number): number {
-        return Math.ceil(5 + Math.pow(level, 1.6) * 3);
+        return Math.ceil(5 + 3 * Math.exp(0.11 * level)); // 5 + 3 * e^(0.11 * level)
     }
     
     private static calculateKnockbackValue(level: number): number {
@@ -136,7 +136,7 @@ export class SkillDefinitions {
     }
     
     private static calculateEmblemBonusCost(level: number): number {
-        return Math.ceil(25 + Math.pow(level, 1.8) * 2);
+        return Math.ceil(25 + 50 * Math.exp(0.3 * level)); // 25 + 2 * e^(0.2 * level)
     }
     
     private static calculateGameSpeedValue(level: number): number {
@@ -180,8 +180,7 @@ export class SkillDefinitions {
     }
     
     private static calculateCoinRewardCost(level: number): number {
-        // For levels beyond the original array
-        return Math.ceil(25 + 50 * level);
+        return Math.ceil(25 + 50 * Math.exp(0.3 * level) - 50); // 25 + 2 * e^(0.2 * level)
     }
     
     /**
@@ -254,7 +253,7 @@ export class SkillDefinitions {
             case SkillType.ATTACK_SPEED:
                 return this.calculateAttackSpeedValue(level);
             case SkillType.ATTACK_RANGE:
-                return this.calculateAttackRangeValue(level) / 2;
+                return this.calculateAttackRangeValue(level);
             case SkillType.CRIT_CHANCE:
                 return this.calculateCritChanceValue(level);
             case SkillType.CRIT_MULTIPLIER:

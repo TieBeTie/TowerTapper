@@ -6,6 +6,7 @@ import { FloatingIslandsLayer } from './components/FloatingIslandsLayer';
 import { StarsLayer } from './components/StarsLayer';
 import { PerimeterGlowLayer } from './components/PerimeterGlowLayer';
 import { PlanetLayer } from './components/PlanetLayer';
+import { CometLayer } from './components/CometLayer';
 
 // === Интерфейс для слоев ===
 export interface BackgroundLayer {
@@ -36,7 +37,8 @@ export class MysticalBackground {
             new SkyGradientLayer(this.scene, this.screenManager),
             new MainIslandLayer(this.scene, this.screenManager),
             new FloatingIslandsLayer(this.scene, this.screenManager),
-            new StarsLayer(this.scene, this.screenManager)
+            new StarsLayer(this.scene, this.screenManager),
+            new CometLayer(this.scene, this.screenManager)
         ];
         this.layers.forEach(layer => layer.create());
         this.scene.events.on('screenResize', this.handleScreenResize, this);
