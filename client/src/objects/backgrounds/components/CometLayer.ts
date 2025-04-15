@@ -52,7 +52,7 @@ export class CometLayer implements BackgroundLayer {
 
     private startCometSpawner() {
         this.cometTimer = this.scene.time.addEvent({
-            delay: Phaser.Math.Between(8000, 18000),
+            delay: 20000 + Phaser.Math.Between(0, 60000), // 20 + random(0, 60) секунд
             callback: () => {
                 if (!this.isDestroyed) {
                     this.spawnComet();
@@ -66,20 +66,31 @@ export class CometLayer implements BackgroundLayer {
 
     private spawnComet() {
         const { width, height } = this.screenManager.getScreenSize();
-        // Стартовая точка: случайно сверху или слева
-        let x, y, vx, vy;
-        if (Math.random() > 0.5) {
+        // Случайная сторона появления (0=слева, 1=справа, 2=сверху, 3=снизу)
+        const side = Phaser.Math.Between(0, 3);
+        let x, y;
+        if (side === 0) { // слева
             x = -50;
-            y = Phaser.Math.Between(0, height * 0.7);
-        } else {
-            x = Phaser.Math.Between(0, width * 0.7);
+            y = Phaser.Math.Between(-50, height + 50);
+        } else if (side === 1) { // справа
+            x = width + 50;
+            y = Phaser.Math.Between(-50, height + 50);
+        } else if (side === 2) { // сверху
+            x = Phaser.Math.Between(-50, width + 50);
             y = -50;
+        } else { // снизу
+            x = Phaser.Math.Between(-50, width + 50);
+            y = height + 50;
         }
-        // Скорость: быстро по диагонали
-        const speed = Phaser.Math.Between(900, 1400) / 1000; // px/ms
-        const angle = Phaser.Math.DegToRad(Phaser.Math.Between(20, 60));
-        vx = Math.cos(angle) * speed * (width / 900);
-        vy = Math.sin(angle) * speed * (height / 600);
+        // Случайный угол (всегда в сторону экрана)
+        let angle;
+        if (side === 0) angle = Phaser.Math.FloatBetween(-Math.PI / 3, Math.PI / 3); // справа
+        else if (side === 1) angle = Phaser.Math.FloatBetween(2 * Math.PI / 3, 4 * Math.PI / 3); // влево
+        else if (side === 2) angle = Phaser.Math.FloatBetween(Math.PI / 6, 5 * Math.PI / 6); // вниз
+        else angle = Phaser.Math.FloatBetween(-5 * Math.PI / 6, -Math.PI / 6); // вверх
+        const speed = Phaser.Math.Between(900, 1400) / 1000;
+        const vx = Math.cos(angle) * speed * (width / 900);
+        const vy = Math.sin(angle) * speed * (height / 600);
         const tailLength = Phaser.Math.Between(18, 28);
         const comet: Comet = {
             sprite: this.scene.add.graphics({ x: 0, y: 0 }).setDepth(-2800),
