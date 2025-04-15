@@ -31,19 +31,21 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         // Initialize EmblemManager
         this.emblemManager = EmblemManager.getInstance();
         
-        // Check if we're running on iOS for special handling
+        // Check if we're running on iOS or in Telegram WebApp for special handling
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        const isTelegramWebApp = /Telegram/.test(navigator.userAgent) || (window as any).Telegram !== undefined;
+        const needsUserInteraction = isIOS || isTelegramWebApp;
         
         try {
-            // Initialize AudioManager but don't play music immediately on iOS
+            // Initialize AudioManager but don't play music immediately on iOS/Telegram
             this.audioManager = AudioManager.getInstance(this);
             console.log('[MenuScene] AudioManager initialized');
             
-            if (isIOS) {
-                console.log('[MenuScene] Running on iOS - special handling');
-                // On iOS, we'll play music only after user interaction
+            if (needsUserInteraction) {
+                console.log('[MenuScene] Running on iOS or Telegram WebApp - special handling');
+                // Музыка будет запущена только после взаимодействия пользователя
             } else {
-                // On non-iOS platforms, play music immediately if available
+                // На остальных платформах музыка запускается сразу
                 if (this.audioManager.hasSoundCached('gameMusic')) {
                     this.audioManager.playMusic();
                     console.log('[MenuScene] Playing gameMusic');
@@ -147,19 +149,17 @@ export default class MenuScene extends Phaser.Scene implements IScene {
                 })
                 .on('pointerdown', () => {
                     try {
-                        // On iOS, start playing music on first interaction
-                        if (isIOS && !this.audioManager.isMusicPlaying()) {
+                        // На iOS и в Telegram WebApp музыка запускается только после первого взаимодействия
+                        if (needsUserInteraction && !this.audioManager.isMusicPlaying()) {
                             this.audioManager.playMusic();
                         }
-                        
-                        // Play sound before starting the game (only if available)
+                        // Звук кнопки тоже только после взаимодействия
                         if (this.audioManager.hasSoundCached('usualButton')) {
                             this.audioManager.playSound('usualButton');
                         }
                     } catch (err) {
                         console.error('Error playing audio on button click:', err);
                     }
-                    
                     this.startGame();
                 });
         };

@@ -20,9 +20,6 @@ export class StarsLayer implements BackgroundLayer {
     destroy(): void {
         this.stars.forEach(star => star.destroy());
         this.stars = [];
-        if (this.scene.textures.exists(this.textureKey)) {
-            this.scene.textures.remove(this.textureKey);
-        }
     }
 
     handleResize(): void {

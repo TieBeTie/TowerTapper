@@ -6,6 +6,7 @@ export class FloatingIslandsLayer implements BackgroundLayer {
     private scene: Phaser.Scene;
     private screenManager: ScreenManager;
     private floatingIslands: Phaser.GameObjects.Image[] = [];
+    private isLoading = false;
 
     constructor(scene: Phaser.Scene, screenManager: ScreenManager) {
         this.scene = scene;
@@ -19,6 +20,8 @@ export class FloatingIslandsLayer implements BackgroundLayer {
     destroy(): void {
         this.floatingIslands.forEach(island => island.destroy());
         this.floatingIslands = [];
+        this.isLoading = false;
+        this.scene.load.removeAllListeners('complete');
     }
 
     handleResize(): void {
@@ -40,12 +43,18 @@ export class FloatingIslandsLayer implements BackgroundLayer {
             }
         });
         if (!this.scene.textures.exists(islandSpriteKeys[0])) {
-            this.scene.load.once('complete', () => {
-                this.createFloatingIslands();
-            });
-            this.scene.load.start();
+            if (!this.isLoading) {
+                this.isLoading = true;
+                this.scene.load.once('complete', () => {
+                    this.isLoading = false;
+                    this.createFloatingIslands();
+                });
+                this.scene.load.start();
+            }
             return;
         }
+        this.floatingIslands.forEach(island => island.destroy());
+        this.floatingIslands = [];
         const islandPositions = [
             { x: width * 0.2, y: height * 0.25, scale: 0.6, key: 'island1', alpha: 0.45, tint: 0xccccff, blur: 2 },
             { x: width * 0.85, y: height * 0.4, scale: 0.8, key: 'island2', alpha: 0.5, tint: 0xbbbbee, blur: 1.5 },
@@ -53,8 +62,6 @@ export class FloatingIslandsLayer implements BackgroundLayer {
             { x: width * 0.75, y: height * 0.2, scale: 0.6, key: 'island2', alpha: 0.35, tint: 0xccccff, blur: 2 },
             { x: width * 0.6, y: height * 0.7, scale: 0.7, key: 'island1', alpha: 0.5, tint: 0xbbbbee, blur: 1.5 },
         ];
-        this.floatingIslands.forEach(island => island.destroy());
-        this.floatingIslands = [];
         islandPositions.forEach((position, index) => {
             const scale = (position.scale * this.screenManager.getGameScale()) / 5;
             const scaleNorm = Math.max(0.1, Math.min(0.18, scale));

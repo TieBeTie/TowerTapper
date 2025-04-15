@@ -22,9 +22,6 @@ export class SkyGradientLayer implements BackgroundLayer {
             this.skyLayer.destroy();
             this.skyLayer = null;
         }
-        if (this.scene.textures.exists(this.textureKey)) {
-            this.scene.textures.remove(this.textureKey);
-        }
     }
 
     handleResize(): void {

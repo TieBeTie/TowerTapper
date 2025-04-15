@@ -12,6 +12,7 @@ export class PlanetLayer implements BackgroundLayer {
     private rotationStepTimer: Phaser.Time.TimerEvent | null = null;
     // Сохраняем угол между сценами
     private static lastAngle: number = 0;
+    private isLoading = false;
 
     constructor(scene: Phaser.Scene, screenManager: ScreenManager) {
         this.scene = scene;
@@ -41,6 +42,8 @@ export class PlanetLayer implements BackgroundLayer {
             this.rotationStepTimer.remove(false);
             this.rotationStepTimer = null;
         }
+        this.isLoading = false;
+        this.scene.load.removeAllListeners('complete');
     }
 
     handleResize(): void {
@@ -51,24 +54,25 @@ export class PlanetLayer implements BackgroundLayer {
     private addPlanet(): void {
         const { width, height } = this.screenManager.getScreenSize();
         if (!this.scene.textures.exists(this.textureKey)) {
-            this.scene.load.image(this.textureKey, 'assets/images/planet/Earth.png');
-            this.scene.load.once('complete', () => {
-                this.addPlanet();
-            });
-            this.scene.load.start();
+            if (!this.isLoading) {
+                this.isLoading = true;
+                this.scene.load.image(this.textureKey, 'assets/images/planet/Earth.png');
+                this.scene.load.once('complete', () => {
+                    this.isLoading = false;
+                    this.addPlanet();
+                });
+                this.scene.load.start();
+            }
             return;
         }
         const planetTexture = this.scene.textures.get(this.textureKey).getSourceImage() as HTMLImageElement;
-        const planetOriginalWidth = planetTexture.width;
-        const planetRadius = planetOriginalWidth / 2;
 
-        // Масштаб: чтобы видимая дуга (четверть круга) была чуть шире экрана
-        const desiredVisibleArc = width * 1.33; // чуть больше ширины экрана
-        const scale = desiredVisibleArc / (planetRadius * Math.SQRT2);
+        const planetRadius = Math.min(planetTexture.width, planetTexture.height) / 2;
+        const scale = 1.04;
 
         // Центр планеты сильно за пределами экрана (влево и вниз)
         const centerX = width / 2;
-        const centerY = height + height / 4;
+        const centerY = height + height / 2;
 
         this.planet = this.scene.add.image(centerX, centerY, this.textureKey);
         this.planet.setOrigin(0.5, 0.5);

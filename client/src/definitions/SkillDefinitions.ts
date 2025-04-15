@@ -238,7 +238,7 @@ export class SkillDefinitions {
             case SkillType.DAMAGE:
                 return this.calculateDamageValue(level);
             case SkillType.MAX_HEALTH:
-                return this.calculateMaxHealthValue(level) * 0.1;
+                return this.calculateMaxHealthValue(level);
             case SkillType.MULTISHOT:
                 return this.calculateMultishotValue(level);
             case SkillType.SUPPLY_DROP:
@@ -254,7 +254,7 @@ export class SkillDefinitions {
             case SkillType.ATTACK_SPEED:
                 return this.calculateAttackSpeedValue(level);
             case SkillType.ATTACK_RANGE:
-                return this.calculateAttackRangeValue(level) * 0.1;
+                return this.calculateAttackRangeValue(level) / 2;
             case SkillType.CRIT_CHANCE:
                 return this.calculateCritChanceValue(level);
             case SkillType.CRIT_MULTIPLIER:
