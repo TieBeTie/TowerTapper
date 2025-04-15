@@ -11,8 +11,10 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private static readonly COLOR_CIRCLE = 0xffffff; // Голубой цвет для круга
     
     // Константа масштаба башни
-    private static readonly TOWER_SCALE = 0.8;
-    private static readonly TOWER_ANGLE = -0;
+    private static readonly TOWER_SCALE = 0.27;
+    private static readonly TOWER_ANGLE = -4;
+    private static readonly ATTACK_RANGE_CIRCLE_ALPHA = 0.1;
+    private static readonly ATTACK_RANGE_CIRCLE_LINE_ALPHA = 0.3;
     // Константа для базового радиуса атаки (в % от высоты экрана)
 
     // We'll keep these properties for compatibility, but they'll be wrappers
@@ -51,7 +53,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
 
         // Создаем графический объект для отображения радиуса атаки с нужной глубиной
         this.attackRangeCircle = this.scene.add.graphics();
-        this.attackRangeCircle.setDepth(-10); // Set a very low depth to ensure it's below everything
+        this.attackRangeCircle.setDepth(-5); // Между островом (-15) и башней (10)
         this.updateAttackRangeVisual();
 
         this.setImmovable(true);
@@ -143,18 +145,18 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         // Make sure the circle exists
         if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {
             this.attackRangeCircle = this.scene.add.graphics();
-            this.attackRangeCircle.setDepth(-10);
+            this.attackRangeCircle.setDepth(-5); // Между островом (-15) и башней (10)
         } else {
             // Just clear the existing one instead of destroying and recreating
             this.attackRangeCircle.clear();
         }
         
         // Draw with more visible style 
-        this.attackRangeCircle.lineStyle(3, Tower.COLOR_CIRCLE, 0.7);
-        // Remove fillStyle and fillCircle to have only the outline
-        
+        this.attackRangeCircle.lineStyle(3, Tower.COLOR_CIRCLE, Tower.ATTACK_RANGE_CIRCLE_LINE_ALPHA);
+        // Добавляем полупрозрачную белую заливку
+        this.attackRangeCircle.fillStyle(Tower.COLOR_WHITE, Tower.ATTACK_RANGE_CIRCLE_ALPHA); // 0.15 - едва заметная прозрачность
         const center = this.getPosition();
-        // this.attackRangeCircle.fillCircle(center.x, center.y, this.attackRange);
+        this.attackRangeCircle.fillCircle(center.x, center.y, this.attackRange);
         this.attackRangeCircle.strokeCircle(center.x, center.y, this.attackRange);
         this.attackRangeCircle.setVisible(true);
     }
@@ -170,18 +172,17 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         // First, ensure the graphics object exists
         if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {
             this.attackRangeCircle = this.scene.add.graphics();
-            this.attackRangeCircle.setDepth(-10);
+            this.attackRangeCircle.setDepth(-5); // Между островом (-15) и башней (10)
         } else {
             // Just clear it rather than destroying and recreating
             this.attackRangeCircle.clear();
         }
         
         // Draw with more visible style
-        this.attackRangeCircle.lineStyle(3, Tower.COLOR_CIRCLE, 0.7); 
-        // Remove fillStyle and fillCircle to have only the outline
-        
+        this.attackRangeCircle.lineStyle(3, Tower.COLOR_CIRCLE, Tower.ATTACK_RANGE_CIRCLE_LINE_ALPHA);
+        this.attackRangeCircle.fillStyle(Tower.COLOR_WHITE, Tower.ATTACK_RANGE_CIRCLE_ALPHA);
         const center = this.getPosition();
-        // this.attackRangeCircle.fillCircle(center.x, center.y, this.attackRange);
+        this.attackRangeCircle.fillCircle(center.x, center.y, this.attackRange);
         this.attackRangeCircle.strokeCircle(center.x, center.y, this.attackRange);
         this.attackRangeCircle.setVisible(true);
     }

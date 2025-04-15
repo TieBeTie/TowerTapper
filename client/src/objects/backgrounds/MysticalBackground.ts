@@ -10,9 +10,8 @@ export class MysticalBackground {
     private stars: Phaser.GameObjects.Image[] = [];
     private perimeterGlow: Phaser.GameObjects.Graphics | null = null;
     private isDestroyed: boolean = false;
-    private islandScale: number = 0.6;
-    private mainIslandXOffset: number = 1.08;
-    private mainIslandYOffset: number = 1.15;
+    private islandScale: number = 0.3;
+    private mainIslandYOffset: number = 0.05;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -139,15 +138,14 @@ export class MysticalBackground {
      * Добавляет главный остров на сцену
      */
     private addMainIslandToScene(center: { x: number; y: number }): void {
-        // Создаем остров под башней
-        this.mainIsland = this.scene.add.image(center.x * this.mainIslandXOffset, center.y * this.mainIslandYOffset, 'mainIsland');
-        // Устанавливаем масштаб острова
-        const scale = this.islandScale * this.screenManager.getGameScale(); // НЕ МЕНЯТЬ
+        const { height } = this.screenManager.getScreenSize();
+        const gameViewHeight = height * this.screenManager.getGameViewHeightRatio();
+        // Центрируем по X, по Y смещаем вниз на 15% высоты игровой области
+        this.mainIsland = this.scene.add.image(center.x, center.y + this.mainIslandYOffset * gameViewHeight, 'mainIsland');
+        const scale = this.islandScale * this.screenManager.getGameScale();
         this.mainIsland.setScale(scale);
-        this.mainIsland.setDepth(-15); // Выше фона, но ниже башни
+        this.mainIsland.setDepth(-15);
         this.mainIsland.setName('mysticalBackground_mainIsland');
-        
-        // Возвращаем анимацию осыпания острова
         this.addCrumblingEffect();
     }
 
@@ -439,144 +437,98 @@ export class MysticalBackground {
      */
     private createFloatingIslands(): void {
         const { width, height } = this.screenManager.getScreenSize();
-        
-        // Создаем программно текстуры для островов, если их нет
-        this.createIslandTextures();
-        
-        // Определяем параметры расположения островов
-        // Избегаем центра, где находится башня
-        const islandPositions = [
-            { x: width * 0.2, y: height * 0.25, scale: 0.6, texture: 'islandSmall', speed: 0.2 },
-            { x: width * 0.85, y: height * 0.4, scale: 0.8, texture: 'islandMedium', speed: 0.15 },
-            { x: width * 0.1, y: height * 0.7, scale: 0.5, texture: 'islandSmall', speed: 0.25 },
-            { x: width * 0.75, y: height * 0.2, scale: 0.6, texture: 'islandSmall', speed: 0.18 },
-            { x: width * 0.6, y: height * 0.7, scale: 0.7, texture: 'islandMedium', speed: 0.1 }
+
+        // Пути к спрайтам островов
+        const islandSpriteKeys = ['island1', 'island2', 'island3'];
+        const islandSpritePaths = [
+            'assets/images/islands/1.png',
+            'assets/images/islands/2.png',
+            'assets/images/islands/3.png',
         ];
-        
+
+        // Загружаем спрайты, если не загружены
+        islandSpriteKeys.forEach((key, i) => {
+            if (!this.scene.textures.exists(key)) {
+                this.scene.load.image(key, islandSpritePaths[i]);
+            }
+        });
+        if (!this.scene.textures.exists(islandSpriteKeys[0])) {
+            this.scene.load.once('complete', () => {
+                this.createFloatingIslands();
+            });
+            this.scene.load.start();
+            return;
+        }
+
+        // Параметры расположения и эффектов для островов
+        const islandPositions = [
+            { x: width * 0.2, y: height * 0.25, scale: 0.6, key: 'island1', alpha: 0.45, tint: 0xccccff, blur: 2 },
+            { x: width * 0.85, y: height * 0.4, scale: 0.8, key: 'island2', alpha: 0.5, tint: 0xbbbbee, blur: 1.5 },
+            { x: width * 0.1, y: height * 0.7, scale: 0.5, key: 'island3', alpha: 0.4, tint: 0xddddff, blur: 2.5 },
+            { x: width * 0.75, y: height * 0.2, scale: 0.6, key: 'island2', alpha: 0.35, tint: 0xccccff, blur: 2 },
+            { x: width * 0.6, y: height * 0.7, scale: 0.7, key: 'island1', alpha: 0.5, tint: 0xbbbbee, blur: 1.5 },
+        ];
+
+        // Очищаем старые острова
+        this.floatingIslands.forEach(island => island.destroy());
+        this.floatingIslands = [];
+
         // Создаем острова и добавляем анимацию парения
         islandPositions.forEach((position, index) => {
-            const island = this.scene.add.image(position.x, position.y, position.texture);
-            island.setScale(position.scale * this.screenManager.getGameScale());
-            island.setDepth(-2500 + index * 5); // Разная глубина для эффекта параллакса
+            const scale = (position.scale * this.screenManager.getGameScale()) / 5;
+            // Чем меньше остров, тем сильнее эффекты дальности
+            const scaleNorm = Math.max(0.1, Math.min(0.18, scale));
+            const farFactor = 1 - (scaleNorm - 0.1) / (0.18 - 0.1);
+            const alpha = position.alpha * (0.7 + 0.6 * farFactor);
+            const tint = Phaser.Display.Color.Interpolate.ColorWithColor(
+                Phaser.Display.Color.ValueToColor(position.tint),
+                Phaser.Display.Color.ValueToColor(0xffffff),
+                1,
+                farFactor
+            );
+            const tintValue = Phaser.Display.Color.GetColor(tint.r, tint.g, tint.b);
+            const blur = position.blur + 2 * farFactor;
+            const maxAngle = 10 + 15 * farFactor;
+            const angle = (Math.random() * 2 - 1) * maxAngle;
+
+            const island = this.scene.add.image(position.x, position.y, position.key);
+            island.setScale(scale);
+            island.setDepth(-2500 + index * 5);
             island.setName(`mysticalBackground_island_${index}`);
-            
-            // Добавляем небольшой случайный начальный поворот
-            island.setAngle((Math.random() * 10 - 5));
-            
-            // Анимация медленного парения вверх-вниз
+            island.setAlpha(Math.min(1, alpha));
+            island.setTint(tintValue);
+            if ((island as any).setPipeline) {
+                try {
+                    (island as any).setPipeline('BlurPostFX');
+                } catch {}
+            }
+            island.setAngle(angle);
+
+            // Сохраняем начальные значения для анимации
+            const baseY = island.y;
+            const baseAngle = island.angle;
+
+            // Плавное парение вверх-вниз относительно базового положения (делаем быстрее)
             this.scene.tweens.add({
                 targets: island,
-                y: island.y - 15,
-                duration: 3000 + Math.random() * 2000,
+                y: { from: baseY, to: baseY - 10 },
+                duration: 2500 + Math.random() * 800, // быстрее
                 ease: 'Sine.easeInOut',
                 yoyo: true,
                 repeat: -1,
                 delay: Math.random() * 1000
             });
-            
-            // Очень медленное вращение
+            // Плавное вращение относительно базового угла (делаем быстрее)
             this.scene.tweens.add({
                 targets: island,
-                angle: island.angle + (Math.random() > 0.5 ? 2 : -2),
-                duration: 8000 + Math.random() * 4000,
+                angle: { from: baseAngle, to: baseAngle + (Math.random() > 0.5 ? 1.2 : -1.2) },
+                duration: 6000 + Math.random() * 2000, // быстрее
                 ease: 'Sine.easeInOut',
                 yoyo: true,
                 repeat: -1
             });
-            
             this.floatingIslands.push(island);
         });
-    }
-    
-    /**
-     * Создает текстуры для островов программно
-     */
-    private createIslandTextures(): void {
-        // Проверяем, существуют ли уже текстуры
-        if (this.scene.textures.exists('islandSmall')) {
-            return;
-        }
-        
-        // Создаем текстуры для островов разных размеров
-        this.createIslandTexture('islandSmall', 80, 50);
-        this.createIslandTexture('islandMedium', 120, 70);
-    }
-    
-    /**
-     * Создает одну текстуру острова с заданными параметрами
-     */
-    private createIslandTexture(key: string, width: number, height: number): void {
-        const graphics = this.scene.add.graphics();
-        
-        // Цвета островов как у главного острова
-        const topColor = 0x5b6b47;     // Зеленый цвет для верха
-        const soilColor = 0x7e5c42;    // Коричневый цвет для почвы
-        
-        // Параметры овалов
-        const topOvalWidth = width * 0.9;
-        const topOvalHeight = height * 0.5;
-        const bottomOvalWidth = width * 0.85;
-        const bottomOvalHeight = height * 0.4;
-        
-        const topOvalY = height * 0.4;
-        const bottomOvalY = height * 0.7;
-        
-        // Рисуем прямоугольник, соединяющий овалы (заполняет цилиндр)
-        graphics.fillStyle(soilColor);
-        graphics.fillRect(
-            width / 2 - topOvalWidth / 2,
-            topOvalY,
-            topOvalWidth,
-            bottomOvalY - topOvalY
-        );
-        
-        // Рисуем нижнюю часть острова (почва/земля)
-        graphics.fillStyle(soilColor);
-        
-        // Нижний овал для почвы
-        graphics.fillEllipse(width / 2, bottomOvalY, bottomOvalWidth, bottomOvalHeight);
-        
-        // Рисуем верхнюю часть острова (трава)
-        graphics.fillStyle(topColor);
-        
-        // Верхний овал для травы
-        graphics.fillEllipse(width / 2, topOvalY, topOvalWidth, topOvalHeight);
-        
-        // Добавляем деревья как на главном острове
-        const treePositions = [
-            { x: 0.3, y: 0.25 },
-            { x: 0.5, y: 0.2 },
-            { x: 0.7, y: 0.25 }
-        ];
-        
-        treePositions.forEach(pos => {
-            if (Math.random() > 0.3) { // Не на каждом острове будут все деревья
-                this.drawPixelTree(graphics, width * pos.x, height * pos.y, width * 0.08);
-            }
-        });
-        
-        // Генерируем текстуру
-        graphics.generateTexture(key, width, height);
-        graphics.destroy();
-    }
-    
-    /**
-     * Рисует пиксельное дерево как на главном острове
-     */
-    private drawPixelTree(graphics: Phaser.GameObjects.Graphics, x: number, y: number, size: number): void {
-        // Рисуем ствол дерева
-        graphics.fillStyle(0x6b4c33);
-        graphics.fillRect(x - size * 0.2, y, size * 0.4, size * 0.7);
-        
-        // Рисуем крону дерева
-        graphics.fillStyle(0x2a7d2a);
-        const crownSize = size * 0.9;
-        graphics.fillCircle(x, y - size * 0.4, crownSize / 2);
-        
-        // Добавляем детали к кроне
-        graphics.fillStyle(0x348b34);
-        graphics.fillCircle(x - crownSize * 0.25, y - size * 0.5, crownSize * 0.3);
-        graphics.fillCircle(x + crownSize * 0.25, y - size * 0.6, crownSize * 0.3);
     }
 
     /**
@@ -584,30 +536,22 @@ export class MysticalBackground {
      */
     private handleScreenResize(): void {
         const { width, height } = this.screenManager.getScreenSize();
-        
-        // Обновляем фоновые слои
         this.backgroundLayers.forEach(layer => {
             layer.setPosition(width / 2, height / 2);
-            layer.setDisplaySize(width * 1.5, height * 1.5); // Увеличиваем для избежания появления краев
+            layer.setDisplaySize(width * 1.5, height * 1.5);
         });
-        
-        // Обновляем главный остров
         if (this.mainIsland) {
             const center = this.screenManager.getGameViewCenter();
-            this.mainIsland.setPosition(center.x * this.mainIslandXOffset, center.y * this.mainIslandYOffset); // Сохраняем смещение вниз
+            const gameViewHeight = height * this.screenManager.getGameViewHeightRatio();
+            // Центрируем по X, по Y смещаем вниз на 15% высоты игровой области
+            this.mainIsland.setPosition(center.x, center.y + this.mainIslandYOffset * gameViewHeight);
             const scale = this.islandScale * this.screenManager.getGameScale();
             this.mainIsland.setScale(scale);
         }
-        
-        // Обновляем положение островов
         this.updateIslandsPositions(width, height);
-        
-        // Удаляем старые звезды и создаем новые
         this.stars.forEach(star => star.destroy());
         this.stars = [];
         this.createStars();
-        
-        // Обновляем свечение периметра
         if (this.perimeterGlow) {
             this.perimeterGlow.clear();
             this.createPerimeterGlow();
@@ -641,22 +585,22 @@ export class MysticalBackground {
                 // Сохраняем случайный начальный поворот при обновлении
                 island.setAngle((Math.random() * 10 - 5));
                 
-                // Анимация медленного парения вверх-вниз
+                // Анимация медленного парения вверх-вниз (делаем плавнее)
                 this.scene.tweens.add({
                     targets: island,
-                    y: island.y - 15,
-                    duration: 3000 + Math.random() * 2000,
+                    y: island.y - 10, // чуть меньше амплитуда
+                    duration: 5000 + Math.random() * 2000, // дольше
                     ease: 'Sine.easeInOut',
                     yoyo: true,
                     repeat: -1,
                     delay: Math.random() * 1000
                 });
                 
-                // Очень медленное вращение
+                // Очень медленное и плавное вращение
                 this.scene.tweens.add({
                     targets: island,
-                    angle: island.angle + (Math.random() > 0.5 ? 2 : -2),
-                    duration: 8000 + Math.random() * 4000,
+                    angle: island.angle + (Math.random() > 0.5 ? 1.2 : -1.2), // меньше амплитуда
+                    duration: 12000 + Math.random() * 4000, // дольше
                     ease: 'Sine.easeInOut',
                     yoyo: true,
                     repeat: -1
