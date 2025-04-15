@@ -3,48 +3,19 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "webpack serve --config webpack.config.js",
-    "build": "webpack --config webpack.config.js",
-    "build:prod": "cross-env NODE_ENV=production webpack --config webpack.config.js",
-    "build:prod:obfuscate:none": "cross-env NODE_ENV=production OBFUSCATION_LEVEL=none webpack --config webpack.config.js",
-    "build:prod:obfuscate:basic": "cross-env NODE_ENV=production OBFUSCATION_LEVEL=basic webpack --config webpack.config.js",
-    "build:prod:obfuscate:advanced": "cross-env NODE_ENV=production OBFUSCATION_LEVEL=advanced webpack --config webpack.config.js",
-    "obfuscate": "node obfuscation-helper.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@babel/core": "^7.25.8",
-    "@babel/preset-env": "^7.25.8",
-    "@babel/preset-typescript": "^7.25.7",
-    "@typescript-eslint/eslint-plugin": "^8.8.1",
-    "@typescript-eslint/parser": "^8.8.1",
-    "babel-loader": "^9.2.1",
-    "css-loader": "^7.1.2",
-    "eslint": "^9.12.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "html-webpack-plugin": "^5.6.0",
     "phaser": "^3.88.2",
-    "prettier": "^3.3.3",
-    "style-loader": "^4.0.0",
-    "ts-loader": "^9.5.1",
-    "typescript": "^5.6.3",
-    "webpack": "^5.95.0",
-    "webpack-cli": "^5.1.4"
+    "typescript": "^5.6.3"
   },
   "devDependencies": {
-    "copy-webpack-plugin": "^12.0.2",
-    "cross-env": "^7.0.3",
-    "esm": "^3.2.25",
-    "javascript-obfuscator": "^4.1.1",
-    "phaser3-webfont-loader": "^1.0.0",
-    "terser-webpack-plugin": "^5.3.14",
-    "ts-node": "^10.9.2",
-    "webpack-dev-server": "^5.1.0",
-    "webpack-obfuscator": "^3.5.1"
+    "vite": "^6.2.6"
   }
 }
