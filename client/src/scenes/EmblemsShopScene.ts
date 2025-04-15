@@ -52,6 +52,11 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
     }
 
     create(): void {
+        // Останавливаем BackgroundScene, если она запущена
+        if (this.scene.isActive('BackgroundScene')) {
+            this.scene.stop('BackgroundScene');
+        }
+        
         // Immediately create a black background to prevent white flash
         const { width, height } = this.scale;
         this.blackBackground = this.add.graphics();

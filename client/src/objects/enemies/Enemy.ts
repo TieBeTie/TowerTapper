@@ -16,6 +16,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     static readonly ENEMY_SCALE = 0.2;
     private skillStateManager: SkillStateManager;
     private baseSpeed: number;
+    isFrozen: boolean = false;
+    private freezeStartTime: number | null = null;
+    private freezeInitialVelocity: Phaser.Math.Vector2 | null = null;
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string, cost: number) {
         super(scene, x, y, texture);
@@ -54,6 +57,33 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     update(time: number, delta: number): void {
+        if (this.isFrozen) {
+            // Плавное замедление за 50 мс
+            if (this.freezeStartTime === null) {
+                this.freezeStartTime = time;
+                if (this.body) {
+                    this.freezeInitialVelocity = new Phaser.Math.Vector2((this.body as Phaser.Physics.Arcade.Body).velocity.x, (this.body as Phaser.Physics.Arcade.Body).velocity.y);
+                }
+            }
+            const elapsed = time - (this.freezeStartTime || 0);
+            if (this.body && this.freezeInitialVelocity) {
+                if (elapsed < 500) {
+                    // Линейное замедление
+                    const factor = 1 - elapsed / 500;
+                    (this.body as Phaser.Physics.Arcade.Body).setVelocity(
+                        this.freezeInitialVelocity.x * factor,
+                        this.freezeInitialVelocity.y * factor
+                    );
+                } else {
+                    (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+                    if (typeof this.body.stop === 'function') this.body.stop();
+                }
+            }
+            return;
+        }
+        // Сбросить freeze state если разморожен
+        this.freezeStartTime = null;
+        this.freezeInitialVelocity = null;
         // If the enemy has an active body with non-zero velocity, 
         // we assume it's being knocked back, so we don't override its movement
         if (this.body && (this.body as Phaser.Physics.Arcade.Body).velocity.length() > 0) {

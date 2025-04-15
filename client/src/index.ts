@@ -4,6 +4,7 @@ import MenuScene from './scenes/MenuScene';
 import GameScene from './scenes/GameScene';
 import InitialUpgradesShopScene from './scenes/InitialUpgradesShopScene';
 import EmblemsShopScene from './scenes/EmblemsShopScene';
+import BackgroundScene from './scenes/BackgroundScene';
 import { TelegramService } from './services/TelegramService';
 
 // Инициализируем Telegram сервис
@@ -72,7 +73,7 @@ const initGame = () => {
                 gravity: { x: 0, y: 0 }
             }
         },
-        scene: [BootScene, MenuScene, GameScene, InitialUpgradesShopScene, EmblemsShopScene],
+        scene: [BootScene, BackgroundScene,MenuScene, GameScene, InitialUpgradesShopScene, EmblemsShopScene],
         backgroundColor: '#ffffff',
         // Modify render settings to fix blurry text
         render: {

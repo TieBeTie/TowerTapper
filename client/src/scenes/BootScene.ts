@@ -5,6 +5,7 @@ import { IScene } from '../types/IScene';
 import { TelegramService } from '../services/TelegramService';
 import { InitialSkillService } from '../services/InitialSkillService';
 import { EmblemStorage } from '../storage/EmblemStorage';
+import { MysticalBackground } from '../objects/backgrounds/MysticalBackground';
 
 class BootScene extends Phaser.Scene implements IScene {
     public screenManager!: ScreenManager;
@@ -252,6 +253,9 @@ class BootScene extends Phaser.Scene implements IScene {
         // Load emblem icon
         this.load.image('emblem_icon', 'assets/images/currency/heraldic_emblem16x16.png');
 
+        // Load Earth planet for background
+        this.load.image('Earth', 'assets/images/planet/Earth.png');
+
         // Load coins
         this.load.spritesheet('gold', 'assets/images/towers/Gold-sheet.png', {
             frameWidth: 65,
@@ -260,6 +264,9 @@ class BootScene extends Phaser.Scene implements IScene {
     }
 
     create() {
+        this.scene.launch('BackgroundScene');
+        this.scene.bringToTop('BootScene');
+        
         // Initialize ScreenManager first
         this.screenManager = new ScreenManager(this);
         
@@ -460,7 +467,7 @@ class BootScene extends Phaser.Scene implements IScene {
 
     private setupBootView(): void {
         // Создаем фон через ScreenManager
-        this.screenManager.setupBackground();
+        // this.screenManager.setupBackground();
 
         // Check if running on iOS for special handling
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
@@ -523,7 +530,7 @@ class BootScene extends Phaser.Scene implements IScene {
 
     private handleScreenResize(gameScale: number): void {
         // Обновляем фон
-        this.screenManager.setupBackground();
+        // this.screenManager.setupBackground();
         
         const { width, height } = this.screenManager.getScreenSize();
         

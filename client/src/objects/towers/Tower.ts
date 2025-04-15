@@ -277,6 +277,31 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             if ((gameScene as any).goldManager) {
                 (gameScene as any).goldManager.updateGoldDirectly(0);
             }
+            // Скрываем UI и glow-эффект при смерти башни
+            if ((gameScene as any).uiManager && typeof (gameScene as any).uiManager.setVisible === 'function') {
+                (gameScene as any).uiManager.setVisible(false);
+                // Скрываем StatsView полностью
+                if ((gameScene as any).uiManager.statsView && typeof (gameScene as any).uiManager.statsView.setVisible === 'function') {
+                    (gameScene as any).uiManager.statsView.setVisible(false);
+                }
+                // Полностью уничтожаем UIManager
+                if (typeof (gameScene as any).uiManager.destroy === 'function') {
+                    (gameScene as any).uiManager.destroy();
+                    (gameScene as any).uiManager = null;
+                }
+            }
+            if ((gameScene as any).mysticalBackground && typeof (gameScene as any).mysticalBackground.hideGlowLayer === 'function') {
+                (gameScene as any).mysticalBackground.hideGlowLayer();
+            }
+            // Отключаем projectileManager
+            if ((gameScene as any).projectileManager && typeof (gameScene as any).projectileManager.destroy === 'function') {
+                (gameScene as any).projectileManager.destroy();
+                (gameScene as any).projectileManager = null;
+            }
+            // Останавливаем движение врагов (замораживаем их update)
+            if ((gameScene as any).enemyManager && typeof (gameScene as any).enemyManager.freezeAllEnemies === 'function') {
+                (gameScene as any).enemyManager.freezeAllEnemies();
+            }
         }
 
         // Play tower death sound if audioManager exists
@@ -309,6 +334,16 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             duration: 700,
             ease: 'Power2',
             onComplete: () => {
+                // Даем игроку немного времени осознать конец игры
+                const phaserScene = this.scene as Phaser.Scene;
+                if (phaserScene && phaserScene.time && phaserScene.scene) {
+                    phaserScene.time.delayedCall(400, () => {
+                        phaserScene.scene.stop('GameScene');
+                        phaserScene.scene.start('MenuScene');
+                        super.destroy();
+                    });
+                    return;
+                }
                 if (this.scene?.scene) {
                     // Используем правильный способ перехода между сценами
                     // с явной остановкой текущей сцены
@@ -351,6 +386,12 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     // Helper method to get current position
     public getPosition(): Phaser.Math.Vector2 {
         return new Phaser.Math.Vector2(this.x, this.y);
+    }
+
+    public setAttackRangeVisible(visible: boolean): void {
+        if (this.attackRangeCircle) {
+            this.attackRangeCircle.setVisible(visible);
+        }
     }
 }
 

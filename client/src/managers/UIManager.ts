@@ -720,4 +720,31 @@ export class UIManager {
         
         console.log('[UIManager] Reset complete');
     }
+
+    public setVisible(visible: boolean): void {
+        // Показываем или скрываем все основные UI элементы
+        this.statsView?.setVisible(visible);
+        this.upgradePanel?.setVisible(visible);
+        if (this.goldIcon) this.goldIcon.setVisible(visible);
+        if (this.goldNumberText) this.goldNumberText.setVisible(visible);
+        if (this.emblemIcon) this.emblemIcon.setVisible(visible);
+        if (this.emblemNumberText) this.emblemNumberText.setVisible(visible);
+
+        // Управляем glow-эффектом через mysticalBackground
+        const gameScene = this.scene.scene.get('GameScene');
+        const mysticalBackground = (gameScene && (gameScene as any).mysticalBackground) ? (gameScene as any).mysticalBackground : null;
+        if (mysticalBackground) {
+            if (visible && typeof mysticalBackground.showGlowLayer === 'function') {
+                mysticalBackground.showGlowLayer();
+            } else if (!visible && typeof mysticalBackground.hideGlowLayer === 'function') {
+                mysticalBackground.hideGlowLayer();
+            }
+        }
+
+        // Управляем кругом радиуса атаки башни
+        const tower = (gameScene && (gameScene as any).tower) ? (gameScene as any).tower : null;
+        if (tower && typeof tower.setAttackRangeVisible === 'function') {
+            tower.setAttackRangeVisible(visible);
+        }
+    }
 }

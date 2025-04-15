@@ -51,6 +51,11 @@ export default class InitialUpgradesShopScene extends Phaser.Scene implements IS
     }
 
     create(): void {
+        // Останавливаем BackgroundScene, если она запущена
+        if (this.scene.isActive('BackgroundScene')) {
+            this.scene.stop('BackgroundScene');
+        }
+        
         // Инициализация менеджеров
         this.initializeManagers();
         
@@ -106,9 +111,6 @@ export default class InitialUpgradesShopScene extends Phaser.Scene implements IS
             this.audioManager,
             this
         );
-
-        // Create background using ScreenManager
-        this.screenManager.setupBackground();
     }
     
     /**

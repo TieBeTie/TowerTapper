@@ -4,6 +4,7 @@ import { IScene } from '../types/IScene';
 import { ScreenManager } from '../managers/ScreenManager';
 import { UIManager } from '../managers/UIManager';
 import { EmblemManager } from '../managers/EmblemManager';
+import { MysticalBackground } from '../objects/backgrounds/MysticalBackground';
 
 export default class MenuScene extends Phaser.Scene implements IScene {
     private audioManager!: AudioManager;
@@ -20,8 +21,12 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     }
 
     create(): void {
+        this.scene.launch('BackgroundScene');
+        this.scene.bringToTop('MenuScene');
+        console.log('[MenuScene] create() start');
         // Initialize ScreenManager
         this.screenManager = new ScreenManager(this);
+        console.log('[MenuScene] ScreenManager initialized');
         
         // Initialize EmblemManager
         this.emblemManager = EmblemManager.getInstance();
@@ -32,24 +37,23 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         try {
             // Initialize AudioManager but don't play music immediately on iOS
             this.audioManager = AudioManager.getInstance(this);
+            console.log('[MenuScene] AudioManager initialized');
             
             if (isIOS) {
-                console.log('MenuScene: Running on iOS - applying special handling');
+                console.log('[MenuScene] Running on iOS - special handling');
                 // On iOS, we'll play music only after user interaction
             } else {
                 // On non-iOS platforms, play music immediately if available
                 if (this.audioManager.hasSoundCached('gameMusic')) {
                     this.audioManager.playMusic();
+                    console.log('[MenuScene] Playing gameMusic');
                 } else {
-                    console.warn('Unable to play music - gameMusic not found in cache');
+                    console.warn('[MenuScene] Unable to play music - gameMusic not found in cache');
                 }
             }
         } catch (err) {
-            console.error('Error setting up audio in MenuScene:', err);
+            console.error('[MenuScene] Error setting up audio:', err);
         }
-
-        // Создаем фон через ScreenManager
-        this.screenManager.setupBackground();
 
         // Force a small delay on iOS to ensure textures are loaded
         const setupComponents = () => {
@@ -169,6 +173,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             
         // Подписываемся на изменение размера экрана
         this.events.on('screenResize', this.handleScreenResize, this);
+        console.log('[MenuScene] create() end');
     }
     
     private handleScreenResize(gameScale: number): void {
@@ -327,13 +332,13 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     }
 
     destroy(): void {
-        // Clean up all resources
+        // MysticalBackground больше не уничтожаем!
         try {
             // Handle mystical background cleanup if it exists
-            const mysticalBackground = this.data?.get('mysticalBackground');
-            if (mysticalBackground && typeof mysticalBackground.destroy === 'function') {
-                mysticalBackground.destroy();
-            }
+            // const mysticalBackground = this.data?.get('mysticalBackground');
+            // if (mysticalBackground && typeof mysticalBackground.destroy === 'function') {
+            //     mysticalBackground.destroy();
+            // }
             
             // Clean up screen manager
             if (this.screenManager) {

@@ -55,6 +55,9 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     }
 
     create(): void {
+        this.scene.bringToTop('GameScene');
+        this.scene.launch('BackgroundScene');
+        
         // Initialize ScreenManager first
         this.screenManager = new ScreenManager(this);
         
@@ -63,9 +66,6 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         
         // Initialize SkillStateManager properly by first resetting it
         this.skillStateManager.tryResetToTheServer();
-        
-        // Создаем мистический фон вместо стандартного
-        this.mysticalBackground = new MysticalBackground(this);
         
         // Создаем черный прямоугольник на весь экран
         const { width, height } = this.screenManager.getScreenSize();
@@ -279,6 +279,8 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             this.upgradeManager,
             this.screenManager
         );
+        // Явно показываем UI и glow при старте игры
+        this.uiManager.setVisible(true);
 
         // Initialize GoldManager
         this.goldManager = new GoldManager(this, this.uiManager);
@@ -406,9 +408,9 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             }
             
             // Обновляем мистический фон
-            if (this.mysticalBackground) {
-                this.mysticalBackground.update();
-            }
+            // if (this.mysticalBackground) {
+            //     this.mysticalBackground.update();
+            // }
 
             // Apply game speed multiplier to delta time
             const scaledDelta = delta * this.gameSpeedMultiplier;
@@ -503,10 +505,10 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     shutdown(): void {
         console.log('GameScene shutdown started...');
         
-        // Уничтожаем мистический фон
-        if (this.mysticalBackground) {
-            this.mysticalBackground.destroy();
-        }
+        // MysticalBackground больше не уничтожаем!
+        // if (this.mysticalBackground) {
+        //     this.mysticalBackground.destroy();
+        // }
         
         // Отписываемся от событий
         this.events.off('screenResize');

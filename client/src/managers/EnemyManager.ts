@@ -267,6 +267,23 @@ class EnemyManager {
             this.spawnTimer = null;
         }
     }
+
+    public freezeAllEnemies(): void {
+        // Останавливаем спавн новых врагов
+        this.clearSpawnTimer();
+        if (!this.enemies || !this.enemies.getChildren) return;
+        const children = this.enemies.getChildren();
+        if (Array.isArray(children)) {
+            children.forEach((enemy: any) => {
+                if (enemy) {
+                    // Через 50 мс замораживаем врага
+                    this.scene.time.delayedCall(50, () => {
+                        enemy.isFrozen = true;
+                    });
+                }
+            });
+        }
+    }
 }
 
 export default EnemyManager;
