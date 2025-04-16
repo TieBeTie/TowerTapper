@@ -10,7 +10,6 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     private audioManager!: AudioManager;
     public screenManager!: ScreenManager;
     public uiManager!: UIManager;
-    private emblemManager!: EmblemManager;
 
     constructor() {
         super({ key: 'MenuScene' });
@@ -21,15 +20,14 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     }
 
     create(): void {
+        window.dispatchEvent(new Event('vue-show-menu'));
         this.scene.launch('BackgroundScene');
-        this.scene.bringToTop('MenuScene');
         console.log('[MenuScene] create() start');
         // Initialize ScreenManager
         this.screenManager = new ScreenManager(this);
         console.log('[MenuScene] ScreenManager initialized');
         
         // Initialize EmblemManager
-        this.emblemManager = EmblemManager.getInstance();
         
         // Check if we're running on iOS or in Telegram WebApp for special handling
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
@@ -57,125 +55,36 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             console.error('[MenuScene] Error setting up audio:', err);
         }
 
-        // Force a small delay on iOS to ensure textures are loaded
-        const setupComponents = () => {
-            // Получаем размеры экрана через ScreenManager
-            const { width, height } = this.screenManager.getScreenSize();
-            const gameScale = this.screenManager.getGameScale();
-            const center = this.screenManager.getScreenCenter();
+        // Подписываемся на события от Vue-кнопок
+        window.addEventListener('vue-menu-play', this.startGameHandler);
+        window.addEventListener('vue-menu-upgrades', this.openInitialUpgradesShopHandler);
+        window.addEventListener('vue-menu-emblems', this.openEmblemsShopHandler);
 
-            // Удаляем монстра из меню
-
-            // Создаем кнопку "Играть" с использованием адаптивного шрифта
-            const fontSize = this.screenManager.getLargeFontSize();
-            const usualButton = this.screenManager.createText(
-                center.x, 
-                height * 0.6, 
-                'Play', 
-                fontSize,
-                '#ffffff'
-            );
-
-            // Добавляем кнопку для перехода в магазин постоянных улучшений
-            const upgradesButtonFontSize = this.screenManager.getResponsiveFontSize(32);
-            const upgradesButton = this.screenManager.createText(
-                center.x, 
-                height * 0.75, 
-                'Initial Upgrades', 
-                upgradesButtonFontSize,
-                '#ffcc00'
-            );
-            
-            // Добавляем кнопку для пополнения эмблем
-            const replenishButtonFontSize = this.screenManager.getResponsiveFontSize(32);
-            const replenishButton = this.screenManager.createText(
-                center.x, 
-                height * 0.85, 
-                'Replenish Emblems', 
-                replenishButtonFontSize,
-                '#ffcc00'
-            );
-
-            // Добавляем интерактивность кнопке магазина улучшений
-            upgradesButton.setInteractive()
-                .on('pointerover', () => {
-                    upgradesButton.setScale(1.1);
-                })
-                .on('pointerout', () => {
-                    upgradesButton.setScale(1);
-                })
-                .on('pointerdown', () => {
-                    try {
-                        // Проигрываем звук нажатия при наличии
-                        if (this.audioManager.hasSoundCached('usualButton')) {
-                            this.audioManager.playSound('usualButton');
-                        }
-                    } catch (err) {
-                        console.error('Error playing audio on upgrades button click:', err);
-                    }
-                    
-                    this.openInitialUpgradesShop();
-                });
-
-            // Добавляем интерактивность кнопке пополнения эмблем
-            replenishButton.setInteractive()
-                .on('pointerover', () => {
-                    replenishButton.setScale(1.1);
-                })
-                .on('pointerout', () => {
-                    replenishButton.setScale(1);
-                })
-                .on('pointerdown', () => {
-                    try {
-                        // Проигрываем звук нажатия при наличии
-                        if (this.audioManager.hasSoundCached('usualButton')) {
-                            this.audioManager.playSound('usualButton');
-                        }
-                        
-                        // Navigate to emblems shop scene
-                        this.openEmblemsShop();
-                    } catch (err) {
-                        console.error('Error on replenish emblems button click:', err);
-                    }
-                });
-
-            // Добавляем интерактивность кнопке
-            usualButton.setInteractive()
-                .on('pointerover', () => {
-                    usualButton.setScale(1.2);
-                })
-                .on('pointerout', () => {
-                    usualButton.setScale(1);
-                })
-                .on('pointerdown', () => {
-                    try {
-                        // На iOS и в Telegram WebApp музыка запускается только после первого взаимодействия
-                        if (needsUserInteraction && !this.audioManager.isMusicPlaying()) {
-                            this.audioManager.playMusic();
-                        }
-                        // Звук кнопки тоже только после взаимодействия
-                        if (this.audioManager.hasSoundCached('usualButton')) {
-                            this.audioManager.playSound('usualButton');
-                        }
-                    } catch (err) {
-                        console.error('Error playing audio on button click:', err);
-                    }
-                    this.startGame();
-                });
-        };
-
-        // Use a longer delay for iOS to ensure assets are loaded
-        if (isIOS) {
-            this.time.delayedCall(500, setupComponents);
-        } else {
-            setupComponents();
-        }
-            
         // Подписываемся на изменение размера экрана
         this.events.on('screenResize', this.handleScreenResize, this);
         console.log('[MenuScene] create() end');
     }
-    
+
+    // Обработчики для отписки
+    private startGameHandler = () => {
+        if (this.audioManager && this.audioManager.hasSoundCached('usualButton')) {
+            this.audioManager.playSound('usualButton');
+        }
+        this.startGame();
+    };
+    private openInitialUpgradesShopHandler = () => {
+        if (this.audioManager && this.audioManager.hasSoundCached('usualButton')) {
+            this.audioManager.playSound('usualButton');
+        }
+        this.openInitialUpgradesShop();
+    };
+    private openEmblemsShopHandler = () => {
+        if (this.audioManager && this.audioManager.hasSoundCached('usualButton')) {
+            this.audioManager.playSound('usualButton');
+        }
+        this.openEmblemsShop();
+    };
+
     private handleScreenResize(gameScale: number): void {
         // Удалили обновление монстра при ресайзе
         
@@ -225,16 +134,9 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         }
     }
 
-    update(time: number, delta: number): void {
-        // Обновление логики если нужно
-    }
-
     private startGame(): void {
         // Создаем затемнение через ScreenManager
         const fadeRect = this.screenManager.createFadeOverlay();
-        
-        // Store reference to scene for clean completion
-        const currentScene = this;
 
         // Анимируем затемнение и масштабирование кнопки
         this.tweens.add({
@@ -242,29 +144,13 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             alpha: 1,
             duration: 500,
             ease: 'Power2',
-            onComplete: function() {
-                // Ensure we always proceed to GameScene even if other animations fail
-                currentScene.time.delayedCall(600, () => {
-                    currentScene.scene.start('GameScene');
+            onComplete: () => {
+                this.time.delayedCall(100, () => {
+                    window.dispatchEvent(new Event('vue-hide-menu'));
+                    this.scene.start('GameScene');
                 });
             }
         });
-
-        // Находим монстра и анимируем его исчезновение
-        const monster = this.children.list.find(child => 
-            child instanceof Phaser.GameObjects.Sprite && 
-            (child as Phaser.GameObjects.Sprite).texture.key === 'enemy'
-        ) as Phaser.GameObjects.Sprite;
-
-        if (monster) {
-            this.tweens.add({
-                targets: monster,
-                scale: 0.5 * this.screenManager.getGameScale(), // Учитываем масштаб игры
-                alpha: 0,
-                duration: 500,
-                ease: 'Power2'
-            });
-        }
 
         // Находим кнопку "Играть" и анимируем её
         const usualButton = this.children.list.find(child => 
@@ -279,20 +165,14 @@ export default class MenuScene extends Phaser.Scene implements IScene {
                 alpha: 0,
                 duration: 500,
                 ease: 'Power2',
-                onComplete: () => {
-                    // После завершения анимации запускаем GameScene
-                    this.scene.start('GameScene');
-                }
             });
         }
+        console.log('[MenuScene] startGame() end');
     }
 
     private openInitialUpgradesShop(): void {
         // Создаем затемнение через ScreenManager
         const fadeRect = this.screenManager.createFadeOverlay();
-        
-        // Store reference to scene for clean completion
-        const currentScene = this;
 
         // Анимируем затемнение
         this.tweens.add({
@@ -300,10 +180,10 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             alpha: 1,
             duration: 500,
             ease: 'Power2',
-            onComplete: function() {
-                // Переходим в сцену магазина постоянных улучшений
-                currentScene.time.delayedCall(600, () => {
-                    currentScene.scene.start('InitialUpgradesShopScene');
+            onComplete: () => {
+                this.time.delayedCall(600, () => {
+                    window.dispatchEvent(new Event('vue-hide-menu'));
+                    this.scene.start('InitialUpgradesShopScene');
                 });
             }
         });
@@ -312,9 +192,6 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     private openEmblemsShop(): void {
         // Создаем затемнение через ScreenManager
         const fadeRect = this.screenManager.createFadeOverlay();
-        
-        // Store reference to scene for clean completion
-        const currentScene = this;
 
         // Анимируем затемнение
         this.tweens.add({
@@ -322,38 +199,37 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             alpha: 1,
             duration: 500,
             ease: 'Power2',
-            onComplete: function() {
-                // Переходим в сцену магазина эмблем
-                currentScene.time.delayedCall(600, () => {
-                    currentScene.scene.start('EmblemsShopScene');
+            onComplete: () => {
+                this.time.delayedCall(600, () => {
+                    window.dispatchEvent(new Event('vue-hide-menu'));
+                    this.scene.start('EmblemsShopScene');
                 });
             }
         });
     }
 
     destroy(): void {
-        // MysticalBackground больше не уничтожаем!
+        console.log('[MenuScene] destroy called');
+        window.dispatchEvent(new Event('vue-hide-menu'));
         try {
-            // Handle mystical background cleanup if it exists
-            // const mysticalBackground = this.data?.get('mysticalBackground');
-            // if (mysticalBackground && typeof mysticalBackground.destroy === 'function') {
-            //     mysticalBackground.destroy();
-            // }
-            
             // Clean up screen manager
             if (this.screenManager) {
                 this.screenManager.destroy();
             }
-            
             // Clean up audio manager events
             if (this.audioManager) {
                 // Don't destroy the audio manager instance since it's shared
                 // Just remove any scene-specific events
             }
-            
             this.events.off('screenResize', this.handleScreenResize, this);
         } catch (err) {
             console.error('Error in MenuScene destroy:', err);
         }
+    }
+
+    shutdown(): void {
+        // Вызываем скрытие Vue-меню при остановке сцены
+        console.log('[MenuScene] shutdown() start');
+        window.dispatchEvent(new Event('vue-hide-menu'));
     }
 }

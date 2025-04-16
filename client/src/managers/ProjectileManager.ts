@@ -13,7 +13,7 @@ import { SkillStateManager } from '../managers/SkillStateManager';
 class ProjectileManager {
     // Константы класса
     private static readonly PROJECTILE_MAX_LIFETIME: number = 5000; // Максимальное время жизни стрелы в мс
-    private static readonly BASE_FIRE_INTERVAL: number = 1300; // Базовый интервал между выстрелами в мс
+    private static readonly BASE_FIRE_INTERVAL: number = 1000; // Базовый интервал между выстрелами в мс
     private static readonly ATTACK_SPEED_NORMALIZER: number = 4; // Базовое значение Attack Speed для нормализации
     private static readonly DEFAULT_DAMAGE: number = 3; // Базовый урон стрелы
     private static readonly MULTISHOT_DEVIATION_DEGREES: number = 10; // Угол отклонения для мультивыстрела в градусах

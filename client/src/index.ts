@@ -75,7 +75,7 @@ const initGame = () => {
                 gravity: { x: 0, y: 0 }
             }
         },
-        scene: [BootScene, BackgroundScene,MenuScene, GameScene, InitialUpgradesShopScene, EmblemsShopScene],
+        scene: [BootScene, BackgroundScene, MenuScene, GameScene, InitialUpgradesShopScene, EmblemsShopScene],
         backgroundColor: '#ffffff',
         // Modify render settings to fix blurry text
         render: {

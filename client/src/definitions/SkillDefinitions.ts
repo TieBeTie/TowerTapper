@@ -84,7 +84,7 @@ export class SkillDefinitions {
     }
     
     private static calculateAttackSpeedValue(level: number): number {
-        return +(1.3 + (level * 0.08)).toFixed(2);
+        return +(2.50 + (level * 0.1)).toFixed(2);
     }
     
     private static calculateAttackSpeedCost(level: number): number {
@@ -92,7 +92,7 @@ export class SkillDefinitions {
     }
     
     private static calculateAttackRangeValue(level: number): number {
-        return Math.round(80 + (level * 2));
+        return Math.round(100 + (level * 2));
     }
     
     private static calculateAttackRangeCost(level: number): number {

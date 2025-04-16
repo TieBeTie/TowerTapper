@@ -102,7 +102,10 @@ export class InitialSkillCard {
         
         // Check if we can afford the upgrade
         const canAfford = this.purchaseService.canAffordSkill(this.skill.type);
-        
+
+        // Добавляю лог для отладки
+        console.log('[InitialSkillCard] Эмблемы:', this.purchaseService.getEmblemCount(), 'Стоимость:', emblemsCost, 'Могу купить:', canAfford, 'Уровень:', this.skill.currentLevel, '/', this.skill.maxLevel);
+
         // Create emblem purchase button background
         this.emblemButtonBg = this.scene.add.rectangle(x, this.y, buttonWidth, buttonHeight, 
             canAfford ? 0x2196F3 : 0x757575, 0.9);

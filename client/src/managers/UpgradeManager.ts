@@ -3,6 +3,7 @@ import { SkillStateManager } from './SkillStateManager';
 import { IScene } from '../types/IScene';
 import { IGameScene } from '../types/IGameScene';
 import { SkillDefinitions } from '../definitions/SkillDefinitions';
+import { EmblemManager } from './EmblemManager';
 
 export class UpgradeManager {
     private scene: IScene;
@@ -164,14 +165,13 @@ export class UpgradeManager {
 
     private getPlayerEmblems(): number {
         try {
-            const emblemManager = require('./EmblemManager').EmblemManager.getInstance();
+            const emblemManager = EmblemManager.getInstance();
             if (emblemManager) {
                 return emblemManager.getEmblemCount();
             }
         } catch (error) {
             console.warn('Failed to get emblems from EmblemManager:', error);
         }
-        
         return 0;
     }
 
@@ -199,7 +199,7 @@ export class UpgradeManager {
                 break;
             case CurrencyType.EMBLEMS:
                 try {
-                    const emblemManager = require('./EmblemManager').EmblemManager.getInstance();
+                    const emblemManager = EmblemManager.getInstance();
                     if (emblemManager) {
                         emblemManager.deductEmblems(amount);
                         gameScene.events.emit('updateEmblems', emblemManager.getEmblemCount());

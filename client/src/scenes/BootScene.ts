@@ -459,6 +459,7 @@ class BootScene extends Phaser.Scene implements IScene {
                 onComplete: () => {
                     // Don't wait for font loading, just transition to game
                     this.createAnimations();
+                    this.scene.stop('BootScene');
                     this.scene.start('MenuScene');
                 }
             });

@@ -1,0 +1,69 @@
+<template>
+  <div class="menu-overlay">
+    <button class="menu-btn play" @click="onPlay">Play</button>
+    <button class="menu-btn upgrades" @click="onUpgrades">Initial Upgrades</button>
+    <button class="menu-btn emblems" @click="onEmblems">Replenish Emblems</button>
+  </div>
+</template>
+
+<script setup lang="ts">
+function onPlay() {
+  window.dispatchEvent(new CustomEvent('vue-menu-play'));
+}
+function onUpgrades() {
+  window.dispatchEvent(new CustomEvent('vue-menu-upgrades'));
+}
+function onEmblems() {
+  window.dispatchEvent(new CustomEvent('vue-menu-emblems'));
+}
+</script>
+
+<style scoped>
+.menu-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 3vh;
+  padding-bottom: 20vh;
+  pointer-events: none;
+  z-index: 1000;
+}
+.menu-btn {
+  pointer-events: auto;
+  background: none;
+  border: none;
+  font-size: 2.2rem;
+  font-family: 'pixelFont', 'Arial', sans-serif;
+  color: #ffcc00;
+  font-weight: normal;
+  letter-spacing: 1px;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  /* Phaser-like stroke for text, 1px */
+  text-shadow:
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000,
+     0px  1px 0 #000,
+     1px  0px 0 #000,
+     0px -1px 0 #000,
+    -1px  0px 0 #000;
+  transition: transform 0.1s;
+  cursor: pointer;
+}
+.menu-btn.play {
+  color: #fff;
+}
+.menu-btn:hover {
+  transform: scale(1.07);
+  filter: brightness(1.08);
+}
+</style> 

@@ -455,7 +455,10 @@ export default class EmblemsShopScene extends Phaser.Scene implements IScene {
             if (this.audioManager.hasSoundCached('usualButton')) {
                 this.audioManager.playSound('usualButton');
             }
-            
+            // Запускаем главную тему игры перед возвратом в меню
+            if (this.audioManager.hasSoundCached('gameMusic')) {
+                this.audioManager.playMusic('gameMusic');
+            }
             // Эффект нажатия
             this.tweens.add({
                 targets: backButton,

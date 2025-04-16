@@ -1,9 +1,25 @@
 <template>
-  <!-- Пустой компонент -->
+  <MenuOverlay v-if="showMenu" />
+  <router-view />
 </template>
 
 <script setup lang="ts">
-// Нет логики
+import { ref, onMounted, onUnmounted } from 'vue';
+import MenuOverlay from './MenuOverlay.vue';
+
+const showMenu = ref(false);
+
+function showMenuHandler() { showMenu.value = true; }
+function hideMenuHandler() { showMenu.value = false; }
+
+onMounted(() => {
+  window.addEventListener('vue-show-menu', showMenuHandler);
+  window.addEventListener('vue-hide-menu', hideMenuHandler);
+});
+onUnmounted(() => {
+  window.removeEventListener('vue-show-menu', showMenuHandler);
+  window.removeEventListener('vue-hide-menu', hideMenuHandler);
+});
 </script>
 
 <style scoped>
