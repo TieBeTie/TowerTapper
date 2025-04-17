@@ -9,8 +9,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { playUiSound } from './services/UIAudioService';
-import eventBus from './services/eventBus';
+import { playUiSound } from '../services/UIAudioService';
+import eventBus from '../services/eventBus';
 
 const visible = ref(true);
 

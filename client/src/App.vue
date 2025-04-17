@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import MenuOverlay from './MenuOverlay.vue';
+import MenuOverlay from './ui/MenuOverlay.vue';
 import RatingView from './views/RatingView.vue';
 import eventBus from './services/eventBus';
 
