@@ -1,7 +1,7 @@
 import { SkillType } from '../types/SkillType';
-import { GameServerGateway, PlayerSkill } from '../api/GameServerGateway';
+import { GameServerGateway, PlayerSkill } from '../../services/api/GameServerGateway';
 import { SkillStateManager } from '../managers/SkillStateManager';
-import { GameServerFactory } from '../api/GameServerFactory';
+import { GameServerFactory } from '../../services/api/GameServerFactory';
 
 export class InitialSkillService {
     private static instance: InitialSkillService;

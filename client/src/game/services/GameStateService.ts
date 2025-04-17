@@ -1,4 +1,4 @@
-import { GameServerGateway, GameState } from '../api/GameServerGateway';
+import { GameServerGateway, GameState } from '../../services/api/GameServerGateway';
 
 export class GameStateService {
     private server: GameServerGateway;

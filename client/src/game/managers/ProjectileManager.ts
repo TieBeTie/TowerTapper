@@ -7,7 +7,7 @@ import GameScene from '../scenes/GameScene';
 import Tower from '../objects/towers/Tower';
 import { SkillType } from '../types/SkillType';
 import { IGameScene } from '../types/IGameScene';
-import { SkillStateManager } from '../managers/SkillStateManager';
+import { SkillStateManager } from './SkillStateManager';
 
 // ProjectileManager handles the logic for managing and firing projectiles at enemies
 class ProjectileManager {

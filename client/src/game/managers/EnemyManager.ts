@@ -6,7 +6,7 @@ import { UIManager } from './UIManager';
 import { WaveManager } from './WaveManager';
 import Tower from '../objects/towers/Tower';
 import GameScene from '../scenes/GameScene';
-import { SkillStateManager } from '../managers/SkillStateManager';
+import { SkillStateManager } from './SkillStateManager';
 
 // EnemyManager handles the logic for managing and spawning enemies
 class EnemyManager {

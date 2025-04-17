@@ -1,4 +1,4 @@
-import { PlayerRating } from '../types/PlayerRating';
+import { PlayerRating } from '../../game/types/PlayerRating';
 
 export interface PlayerSkill {
     skillType: string;

@@ -29,8 +29,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { fetchTopPlayers, fetchPlayerRank } from '../api/GameServerGateway';
-import { PlayerRating } from '../types/PlayerRating';
+import { fetchTopPlayers, fetchPlayerRank } from '../services/api/GameServerGateway';
+import { PlayerRating } from '../game/types/PlayerRating';
 
 const topPlayers = ref<PlayerRating[]>([]);
 const myRank = ref<number|null>(null);

@@ -1,5 +1,5 @@
-import { GameServerGateway } from '../api/GameServerGateway';
-import { GameServerFactory } from '../api/GameServerFactory';
+import { GameServerGateway } from '../../services/api/GameServerGateway';
+import { GameServerFactory } from '../../services/api/GameServerFactory';
 
 /**
  * A singleton class to manage emblem storage and synchronization with the server.

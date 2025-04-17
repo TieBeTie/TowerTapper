@@ -13,11 +13,12 @@
             "*": [
                 "types/*"
             ]
-        }
+        },
+        "lib": ["es2017", "dom"]
     },
     "include": [
         "src/**/*"
-    ],
+, "services/UIAudioService.ts"    ],
     "exclude": [
         "node_modules",
         "dist"

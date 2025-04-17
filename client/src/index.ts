@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
-import BootScene from './scenes/BootScene';
-import MenuScene from './scenes/MenuScene';
-import GameScene from './scenes/GameScene';
-import InitialUpgradesShopScene from './scenes/InitialUpgradesShopScene';
-import EmblemsShopScene from './scenes/EmblemsShopScene';
-import BackgroundScene from './scenes/BackgroundScene';
-import { TelegramService } from './services/TelegramService';
+import BootScene from './game/scenes/BootScene';
+import MenuScene from './game/scenes/MenuScene';
+import GameScene from './game/scenes/GameScene';
+import InitialUpgradesShopScene from './game/scenes/InitialUpgradesShopScene';
+import EmblemsShopScene from './game/scenes/EmblemsShopScene';
+import BackgroundScene from './game/scenes/BackgroundScene';
+import { TelegramService } from './game/services/TelegramService';
 import { createApp } from 'vue';
 import App from './App.vue';
 

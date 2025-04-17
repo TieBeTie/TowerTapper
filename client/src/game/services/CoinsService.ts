@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { GameServerGateway } from '../api/GameServerGateway';
+import { GameServerGateway } from '../../services/api/GameServerGateway';
 
 export interface GoldState {
     amount: number;
