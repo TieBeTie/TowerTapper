@@ -4,12 +4,13 @@ import "time"
 
 // Player представляет игрока
 type Player struct {
-	ID         int64     `json:"id"`
-	TelegramID int64     `json:"telegram_id"`
-	Username   string    `json:"username"`
-	Emblems    int64     `json:"emblems"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID               int64     `json:"id"`
+	TelegramID       int64     `json:"telegram_id"`
+	Username         string    `json:"username"`
+	Emblems          int64     `json:"emblems"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+	MaxWaveCompleted int       `json:"max_wave_completed"`
 }
 
 // PlayerSkill представляет постоянный уровень навыка игрока
@@ -57,6 +58,10 @@ type Repository interface {
 	CreatePayment(payment *Payment) error
 	UpdatePayment(payment *Payment) error
 	GetPaymentByID(id int64) (*Payment, error)
+
+	// Рейтинг
+	GetTopPlayersByMaxWave(limit int) ([]*Player, error)
+	GetPlayerRankByMaxWave(telegramID int64) (int, error)
 }
 
 // PaymentService определяет методы для работы с платежами

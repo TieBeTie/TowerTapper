@@ -104,3 +104,15 @@ func (uc *PlayerUseCase) SavePlayerSkill(telegramID int64, skillType string, lev
 
 	return uc.repo.SavePlayerSkill(skill)
 }
+
+func (uc *PlayerUseCase) GetTopPlayersByMaxWave(limit int) ([]*domain.Player, error) {
+	return uc.repo.GetTopPlayersByMaxWave(limit)
+}
+
+func (uc *PlayerUseCase) GetPlayerRankByMaxWave(telegramID int64) (int, error) {
+	return uc.repo.GetPlayerRankByMaxWave(telegramID)
+}
+
+func (uc *PlayerUseCase) UpdatePlayer(player *domain.Player) error {
+	return uc.repo.UpdatePlayer(player)
+}

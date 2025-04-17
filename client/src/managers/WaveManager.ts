@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events';
 import Phaser from 'phaser';
 import GameScene from '../scenes/GameScene';
 import { SkillType } from '../types/SkillType';
@@ -26,6 +25,7 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     private scene: GameScene;
     private isWaveInProgress: boolean = false;
     private skillStateManager: SkillStateManager;
+    private maxWaveCompleted: number = 0;
 
     constructor(scene: GameScene) {
         super();
@@ -127,6 +127,18 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         const gameScene = this.scene as GameScene;
         if (gameScene.audioManager) {
             gameScene.audioManager.playSound('waveCompleted');
+        }
+
+        // === Логика обновления max_wave_completed ===
+        // Получаем WebSocket из сцены
+        if (gameScene.socket && gameScene.socket.readyState === WebSocket.OPEN) {
+            if (this.currentWave > this.maxWaveCompleted) {
+                this.maxWaveCompleted = this.currentWave;
+                gameScene.socket.send(JSON.stringify({
+                    type: 'update_max_wave',
+                    payload: this.currentWave
+                }));
+            }
         }
     }
 

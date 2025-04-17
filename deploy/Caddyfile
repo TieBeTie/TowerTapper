@@ -3,15 +3,13 @@ https://towertapper.org {
         reverse_proxy tower_tapper_server:8080
     }
 
-    route /api* {
-        uri strip_prefix /api
-        reverse_proxy tower_tapper_server:8080
-    }
-
-    route /webhook* {
+    route /webhook {
         reverse_proxy tower_tapper_server:8080
     }
     
+    route /api* {
+        reverse_proxy tower_tapper_server:8080
+    }
     
     route * {
         reverse_proxy tower_tapper_client:80

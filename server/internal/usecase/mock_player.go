@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"sort"
 	"sync"
 	"time"
 
@@ -132,4 +133,43 @@ func (m *MockPlayerUseCase) GetPaymentByID(id int64) (*domain.Payment, error) {
 		return payment, nil
 	}
 	return nil, nil
+}
+
+// Реализация метода для ранга по волне
+func (m *MockPlayerUseCase) GetPlayerRankByMaxWave(telegramID int64) (int, error) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	player, ok := m.players[telegramID]
+	if !ok {
+		return 0, nil // или можно вернуть ошибку
+	}
+	rank := 1
+	for _, p := range m.players {
+		if p.MaxWaveCompleted > player.MaxWaveCompleted {
+			rank++
+		}
+	}
+	return rank, nil
+}
+
+// Реализация метода для топа по волне
+func (m *MockPlayerUseCase) GetTopPlayersByMaxWave(limit int) ([]*domain.Player, error) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	// Собираем всех игроков в слайс
+	players := make([]*domain.Player, 0, len(m.players))
+	for _, p := range m.players {
+		players = append(players, p)
+	}
+	// Сортируем по MaxWaveCompleted по убыванию
+	sort.Slice(players, func(i, j int) bool {
+		return players[i].MaxWaveCompleted > players[j].MaxWaveCompleted
+	})
+	// Ограничиваем по limit
+	if len(players) > limit {
+		players = players[:limit]
+	}
+	return players, nil
 }

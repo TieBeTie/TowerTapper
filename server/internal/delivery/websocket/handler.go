@@ -289,6 +289,28 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 			} else {
 				log.Printf("=== INFO === Successfully updated skill %s to level %d for user %d", skillData.SkillType, skillData.Level, telegramID)
 			}
+
+		case "update_max_wave":
+			wavePayload, ok := msg.Payload.(float64)
+			if !ok {
+				log.Printf("=== ERROR === Invalid max_wave payload from user %d", telegramID)
+				continue
+			}
+			wave := int(wavePayload)
+			player, err := h.playerUseCase.GetPlayerData(telegramID)
+			if err != nil || player == nil {
+				log.Printf("=== ERROR === Failed to get player for max_wave update: %v", err)
+				continue
+			}
+			if wave > player.MaxWaveCompleted {
+				player.MaxWaveCompleted = wave
+				err = h.playerUseCase.UpdatePlayer(player)
+				if err != nil {
+					log.Printf("=== ERROR === Failed to update max_wave for user %d: %v", telegramID, err)
+				} else {
+					log.Printf("=== INFO === Updated max_wave_completed for user %d to %d", telegramID, wave)
+				}
+			}
 		}
 	}
 }

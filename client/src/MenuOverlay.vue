@@ -3,18 +3,28 @@
     <button class="menu-btn play" @click="onPlay">Play</button>
     <button class="menu-btn upgrades" @click="onUpgrades">Initial Upgrades</button>
     <button class="menu-btn emblems" @click="onEmblems">Replenish Emblems</button>
+    <button class="menu-btn rating" @click="onRating">Rating</button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { playUiSound } from './services/UIAudioService';
+
 function onPlay() {
+  playUiSound('button');
   window.dispatchEvent(new CustomEvent('vue-menu-play'));
 }
 function onUpgrades() {
+  playUiSound('button');
   window.dispatchEvent(new CustomEvent('vue-menu-upgrades'));
 }
 function onEmblems() {
+  playUiSound('button');
   window.dispatchEvent(new CustomEvent('vue-menu-emblems'));
+}
+function onRating() {
+  playUiSound('button');
+  window.dispatchEvent(new CustomEvent('vue-show-rating'));
 }
 </script>
 
@@ -46,6 +56,10 @@ function onEmblems() {
   padding: 0;
   margin: 0;
   outline: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
   /* Phaser-like stroke for text, 1px */
   text-shadow:
     -1px -1px 0 #000,
@@ -59,11 +73,21 @@ function onEmblems() {
   transition: transform 0.1s;
   cursor: pointer;
 }
+.menu-btn:focus,
+.menu-btn:active,
+.menu-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
 .menu-btn.play {
   color: #fff;
 }
 .menu-btn:hover {
   transform: scale(1.07);
   filter: brightness(1.08);
+}
+.menu-btn:active {
+  transform: none;
+  filter: none;
 }
 </style> 

@@ -1,3 +1,5 @@
+import { PlayerRating } from '../types/PlayerRating';
+
 export interface PlayerSkill {
     skillType: string;
     level: number;
@@ -210,4 +212,20 @@ export class MockGameServer implements GameServerGateway {
             });
         }
     }
+}
+
+// --- Rating API ---
+// Базовый URL для API запросов
+const API_BASE_URL = '/api'; 
+
+export async function fetchTopPlayers(limit: number = 10): Promise<PlayerRating[]> {
+  const res = await fetch(`${API_BASE_URL}/rating/top?limit=${limit}`);
+  if (!res.ok) throw new Error('Failed to fetch top players');
+  return await res.json();
+}
+
+export async function fetchPlayerRank(telegramId: number): Promise<{ rank: number }> {
+  const res = await fetch(`${API_BASE_URL}/rating/rank?telegram_id=${telegramId}`);
+  if (!res.ok) throw new Error('Failed to fetch player rank');
+  return await res.json();
 } 

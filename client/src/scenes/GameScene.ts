@@ -320,8 +320,8 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
         const host = window.location.hostname;
         const port = window.location.port;
-        // Если порт не указан в URL, используем порт из конфига или 8080
-        const wsPort = port || (process.env.SERVER_PORT || '8080');
+        // If port is not specified in URL, use default port 8080
+        const wsPort = port || '8080';
         const wsUrl = port ? `${protocol}://${host}:${wsPort}/ws` : `${protocol}://${host}/ws`;
         
         const fullUrl = `${wsUrl}?telegram_id=${telegramId}`;

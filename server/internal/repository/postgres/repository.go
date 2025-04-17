@@ -18,8 +18,8 @@ func NewPostgresRepository(db *sql.DB) domain.Repository {
 // Player methods
 func (r *postgresRepository) CreatePlayer(player *domain.Player) error {
 	query := `
-        INSERT INTO players (telegram_id, username, emblems, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO players (telegram_id, username, emblems, max_wave_completed, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id`
 
 	now := time.Now()
@@ -31,6 +31,7 @@ func (r *postgresRepository) CreatePlayer(player *domain.Player) error {
 		player.TelegramID,
 		player.Username,
 		player.Emblems,
+		player.MaxWaveCompleted,
 		player.CreatedAt,
 		player.UpdatedAt,
 	).Scan(&player.ID)
@@ -39,7 +40,7 @@ func (r *postgresRepository) CreatePlayer(player *domain.Player) error {
 func (r *postgresRepository) GetPlayerByTelegramID(telegramID int64) (*domain.Player, error) {
 	player := &domain.Player{}
 	query := `
-        SELECT id, telegram_id, username, emblems, created_at, updated_at
+        SELECT id, telegram_id, username, emblems, max_wave_completed, created_at, updated_at
         FROM players
         WHERE telegram_id = $1`
 
@@ -48,6 +49,7 @@ func (r *postgresRepository) GetPlayerByTelegramID(telegramID int64) (*domain.Pl
 		&player.TelegramID,
 		&player.Username,
 		&player.Emblems,
+		&player.MaxWaveCompleted,
 		&player.CreatedAt,
 		&player.UpdatedAt,
 	)
@@ -60,8 +62,8 @@ func (r *postgresRepository) GetPlayerByTelegramID(telegramID int64) (*domain.Pl
 func (r *postgresRepository) UpdatePlayer(player *domain.Player) error {
 	query := `
         UPDATE players
-        SET username = $1, emblems = $2, updated_at = $3
-        WHERE id = $4`
+        SET username = $1, emblems = $2, max_wave_completed = $3, updated_at = $4
+        WHERE id = $5`
 
 	player.UpdatedAt = time.Now()
 
@@ -69,6 +71,7 @@ func (r *postgresRepository) UpdatePlayer(player *domain.Player) error {
 		query,
 		player.Username,
 		player.Emblems,
+		player.MaxWaveCompleted,
 		player.UpdatedAt,
 		player.ID,
 	)
@@ -211,4 +214,44 @@ func (r *postgresRepository) GetPaymentByID(id int64) (*domain.Payment, error) {
 		return nil, nil
 	}
 	return payment, err
+}
+
+func (r *postgresRepository) GetTopPlayersByMaxWave(limit int) ([]*domain.Player, error) {
+	rows, err := r.db.Query(`
+		SELECT id, telegram_id, username, emblems, max_wave_completed, created_at, updated_at
+		FROM players
+		ORDER BY max_wave_completed DESC, id ASC
+		LIMIT $1
+	`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var players []*domain.Player
+	for rows.Next() {
+		p := &domain.Player{}
+		err := rows.Scan(&p.ID, &p.TelegramID, &p.Username, &p.Emblems, &p.MaxWaveCompleted, &p.CreatedAt, &p.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		players = append(players, p)
+	}
+	return players, nil
+}
+
+func (r *postgresRepository) GetPlayerRankByMaxWave(telegramID int64) (int, error) {
+	var maxWave int
+	err := r.db.QueryRow(`SELECT max_wave_completed FROM players WHERE telegram_id = $1`, telegramID).Scan(&maxWave)
+	if err != nil {
+		return 0, err
+	}
+	var rank int
+	err = r.db.QueryRow(`
+		SELECT COUNT(*) + 1 FROM players WHERE max_wave_completed > $1
+	`, maxWave).Scan(&rank)
+	if err != nil {
+		return 0, err
+	}
+	return rank, nil
 }

@@ -41,6 +41,7 @@ func CreateTables(db *sql.DB) error {
 			telegram_id BIGINT UNIQUE NOT NULL,
 			username VARCHAR(255) NOT NULL,
 			emblems BIGINT NOT NULL DEFAULT 0,
+			max_wave_completed INT NOT NULL DEFAULT 0,
 			created_at TIMESTAMP NOT NULL,
 			updated_at TIMESTAMP NOT NULL
 		)
