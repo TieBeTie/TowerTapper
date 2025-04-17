@@ -1,5 +1,5 @@
 <template>
-  <div class="menu-overlay">
+  <div v-if="visible" class="menu-overlay">
     <button class="menu-btn play" @click="onPlay">Play</button>
     <button class="menu-btn upgrades" @click="onUpgrades">Initial Upgrades</button>
     <button class="menu-btn emblems" @click="onEmblems">Replenish Emblems</button>
@@ -8,23 +8,44 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
 import { playUiSound } from './services/UIAudioService';
+import eventBus from './services/eventBus';
+
+const visible = ref(true);
+
+function showMenu() {
+  visible.value = true;
+}
+function hideMenu() {
+  visible.value = false;
+}
+
+onMounted(() => {
+  eventBus.on('vue-show-menu', showMenu);
+  eventBus.on('vue-hide-menu', hideMenu);
+  showMenu();
+});
+onUnmounted(() => {
+  eventBus.off('vue-show-menu', showMenu);
+  eventBus.off('vue-hide-menu', hideMenu);
+});
 
 function onPlay() {
   playUiSound('button');
-  window.dispatchEvent(new CustomEvent('vue-menu-play'));
+  eventBus.emit('vue-menu-play');
 }
 function onUpgrades() {
   playUiSound('button');
-  window.dispatchEvent(new CustomEvent('vue-menu-upgrades'));
+  eventBus.emit('vue-menu-upgrades');
 }
 function onEmblems() {
   playUiSound('button');
-  window.dispatchEvent(new CustomEvent('vue-menu-emblems'));
+  eventBus.emit('vue-menu-emblems');
 }
 function onRating() {
   playUiSound('button');
-  window.dispatchEvent(new CustomEvent('vue-show-rating'));
+  eventBus.emit('vue-show-rating');
 }
 </script>
 

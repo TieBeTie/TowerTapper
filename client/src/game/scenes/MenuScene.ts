@@ -5,6 +5,7 @@ import { ScreenManager } from '../managers/ScreenManager';
 import { UIManager } from '../managers/UIManager';
 import { EmblemManager } from '../managers/EmblemManager';
 import { MysticalBackground } from '../objects/backgrounds/MysticalBackground';
+import eventBus from '../../services/eventBus';
 
 export default class MenuScene extends Phaser.Scene implements IScene {
     private audioManager!: AudioManager;
@@ -20,7 +21,8 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     }
 
     create(): void {
-        window.dispatchEvent(new Event('vue-show-menu'));
+        console.log('[MenuScene] create() called');
+        eventBus.emit('vue-show-menu');
         this.scene.launch('BackgroundScene');
         console.log('[MenuScene] create() start');
         // Initialize ScreenManager
@@ -55,10 +57,11 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             console.error('[MenuScene] Error setting up audio:', err);
         }
 
-        // Подписываемся на события от Vue-кнопок
-        window.addEventListener('vue-menu-play', this.startGameHandler);
-        window.addEventListener('vue-menu-upgrades', this.openInitialUpgradesShopHandler);
-        window.addEventListener('vue-menu-emblems', this.openEmblemsShopHandler);
+        // Подписываемся на события от Vue-кнопок через eventBus
+        eventBus.on('vue-menu-play', this.startGameHandler);
+        eventBus.on('vue-menu-upgrades', this.openInitialUpgradesShopHandler);
+        eventBus.on('vue-menu-emblems', this.openEmblemsShopHandler);
+        console.log('[MenuScene] eventBus listeners set');
 
         // Подписываемся на изменение размера экрана
         this.events.on('screenResize', this.handleScreenResize, this);
@@ -67,18 +70,21 @@ export default class MenuScene extends Phaser.Scene implements IScene {
 
     // Обработчики для отписки
     private startGameHandler = () => {
+        console.log('[MenuScene] startGameHandler (vue-menu-play)');
         if (this.audioManager && this.audioManager.hasSoundCached('usualButton')) {
             this.audioManager.playSound('usualButton');
         }
         this.startGame();
     };
     private openInitialUpgradesShopHandler = () => {
+        console.log('[MenuScene] openInitialUpgradesShopHandler (vue-menu-upgrades)');
         if (this.audioManager && this.audioManager.hasSoundCached('usualButton')) {
             this.audioManager.playSound('usualButton');
         }
         this.openInitialUpgradesShop();
     };
     private openEmblemsShopHandler = () => {
+        console.log('[MenuScene] openEmblemsShopHandler (vue-menu-emblems)');
         if (this.audioManager && this.audioManager.hasSoundCached('usualButton')) {
             this.audioManager.playSound('usualButton');
         }
@@ -135,6 +141,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     }
 
     private startGame(): void {
+        console.log('[MenuScene] startGame()');
         // Создаем затемнение через ScreenManager
         const fadeRect = this.screenManager.createFadeOverlay();
 
@@ -146,7 +153,8 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             ease: 'Power2',
             onComplete: () => {
                 this.time.delayedCall(100, () => {
-                    window.dispatchEvent(new Event('vue-hide-menu'));
+                    console.log('[MenuScene] emit vue-hide-menu');
+                    eventBus.emit('vue-hide-menu');
                     this.scene.start('GameScene');
                 });
             }
@@ -171,6 +179,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     }
 
     private openInitialUpgradesShop(): void {
+        console.log('[MenuScene] openInitialUpgradesShop()');
         // Создаем затемнение через ScreenManager
         const fadeRect = this.screenManager.createFadeOverlay();
 
@@ -182,7 +191,8 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             ease: 'Power2',
             onComplete: () => {
                 this.time.delayedCall(600, () => {
-                    window.dispatchEvent(new Event('vue-hide-menu'));
+                    console.log('[MenuScene] emit vue-hide-menu');
+                    eventBus.emit('vue-hide-menu');
                     this.scene.start('InitialUpgradesShopScene');
                 });
             }
@@ -190,6 +200,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     }
 
     private openEmblemsShop(): void {
+        console.log('[MenuScene] openEmblemsShop()');
         // Создаем затемнение через ScreenManager
         const fadeRect = this.screenManager.createFadeOverlay();
 
@@ -201,7 +212,8 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             ease: 'Power2',
             onComplete: () => {
                 this.time.delayedCall(600, () => {
-                    window.dispatchEvent(new Event('vue-hide-menu'));
+                    console.log('[MenuScene] emit vue-hide-menu');
+                    eventBus.emit('vue-hide-menu');
                     this.scene.start('EmblemsShopScene');
                 });
             }
@@ -210,7 +222,8 @@ export default class MenuScene extends Phaser.Scene implements IScene {
 
     destroy(): void {
         console.log('[MenuScene] destroy called');
-        window.dispatchEvent(new Event('vue-hide-menu'));
+        console.log('[MenuScene] emit vue-hide-menu');
+        eventBus.emit('vue-hide-menu');
         try {
             // Clean up screen manager
             if (this.screenManager) {
@@ -222,6 +235,11 @@ export default class MenuScene extends Phaser.Scene implements IScene {
                 // Just remove any scene-specific events
             }
             this.events.off('screenResize', this.handleScreenResize, this);
+            // Отписываемся от событий eventBus
+            eventBus.off('vue-menu-play', this.startGameHandler);
+            eventBus.off('vue-menu-upgrades', this.openInitialUpgradesShopHandler);
+            eventBus.off('vue-menu-emblems', this.openEmblemsShopHandler);
+            console.log('[MenuScene] eventBus listeners removed');
         } catch (err) {
             console.error('Error in MenuScene destroy:', err);
         }
@@ -230,6 +248,7 @@ export default class MenuScene extends Phaser.Scene implements IScene {
     shutdown(): void {
         // Вызываем скрытие Vue-меню при остановке сцены
         console.log('[MenuScene] shutdown() start');
-        window.dispatchEvent(new Event('vue-hide-menu'));
+        console.log('[MenuScene] emit vue-hide-menu');
+        eventBus.emit('vue-hide-menu');
     }
 }

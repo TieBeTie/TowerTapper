@@ -1,4 +1,5 @@
 import mitt from 'mitt';
 
-const eventBus = mitt();
-export default eventBus; 
+// Создаём singleton emitter
+const emitter = mitt();
+export default emitter; 

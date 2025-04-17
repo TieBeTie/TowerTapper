@@ -8,6 +8,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import MenuOverlay from './MenuOverlay.vue';
 import RatingView from './views/RatingView.vue';
+import eventBus from './services/eventBus';
 
 const showMenu = ref(false);
 const showRating = ref(false);
@@ -18,16 +19,16 @@ function showRatingHandler() { showRating.value = true; }
 function hideRatingHandler() { showRating.value = false; }
 
 onMounted(() => {
-  window.addEventListener('vue-show-menu', showMenuHandler);
-  window.addEventListener('vue-hide-menu', hideMenuHandler);
-  window.addEventListener('vue-show-rating', showRatingHandler);
-  window.addEventListener('vue-hide-rating', hideRatingHandler);
+  eventBus.on('vue-show-menu', showMenuHandler);
+  eventBus.on('vue-hide-menu', hideMenuHandler);
+  eventBus.on('vue-show-rating', showRatingHandler);
+  eventBus.on('vue-hide-rating', hideRatingHandler);
 });
 onUnmounted(() => {
-  window.removeEventListener('vue-show-menu', showMenuHandler);
-  window.removeEventListener('vue-hide-menu', hideMenuHandler);
-  window.removeEventListener('vue-show-rating', showRatingHandler);
-  window.removeEventListener('vue-hide-rating', hideRatingHandler);
+  eventBus.off('vue-show-menu', showMenuHandler);
+  eventBus.off('vue-hide-menu', hideMenuHandler);
+  eventBus.off('vue-show-rating', showRatingHandler);
+  eventBus.off('vue-hide-rating', hideRatingHandler);
 });
 </script>
 

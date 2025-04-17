@@ -31,6 +31,7 @@
 import { ref, onMounted } from 'vue';
 import { fetchTopPlayers, fetchPlayerRank } from '../services/api/GameServerGateway';
 import { PlayerRating } from '../game/types/PlayerRating';
+import eventBus from '../services/eventBus';
 
 const topPlayers = ref<PlayerRating[]>([]);
 const myRank = ref<number|null>(null);
@@ -49,7 +50,7 @@ async function loadRating() {
 }
 
 function goBack() {
-  window.dispatchEvent(new CustomEvent('vue-hide-rating'));
+  eventBus.emit('vue-hide-rating');
 }
 
 onMounted(loadRating);
