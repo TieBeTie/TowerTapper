@@ -1,9 +1,9 @@
 <template>
   <div class="stats-view">
-    <!-- Semi-transparent background (как background в StatsView.ts) -->
+    <!-- Полупрозрачный фон -->
     <div class="stats-background"></div>
     
-    <!-- Content container (как contentContainer в StatsView.ts) -->
+    <!-- Основной контейнер -->
     <div class="content-container">
       <!-- HP container (левая сторона) -->
       <div class="hp-container">
@@ -16,11 +16,13 @@
       <!-- Currency container (правая сторона) -->
       <div class="currency-container">
         <div class="currency-item gold">
-          <img class="currency-img gold-img" src="/assets/images/towers/Gold.png" alt="Gold" />
+          <img class="currency-img gold-img" src="/assets/images/towers/Gold.png" alt="Gold" 
+               onerror="this.onerror=null; this.src='/assets/images/currency/gold_coin.png';" />
           <div class="currency-text gold-text">{{ goldCount }}</div>
         </div>
         <div class="currency-item emblem">
-          <img class="currency-img emblem-img" src="/assets/images/currency/heraldic_emblem16x16.png" alt="Emblem" />
+          <img class="currency-img emblem-img" src="/assets/images/currency/heraldic_emblem16x16.png" alt="Emblem" 
+               onerror="this.onerror=null; this.src='/assets/images/emblems/emblem.png';" />
           <div class="currency-text emblem-text">{{ emblemCount }}</div>
         </div>
       </div>
@@ -51,16 +53,13 @@ const healthState = reactive({
 watchEffect(() => {
   // Update gold from store
   goldCount.value = gameStore.stats.gold;
-  console.log(`[StatsView] Gold updated from store: ${goldCount.value}`);
   
   // Update emblems from store
   emblemCount.value = gameStore.stats.emblems;
-  console.log(`[StatsView] Emblems updated from store: ${emblemCount.value}`);
   
   // Update health from store
-  healthState.current = gameStore.stats.health;
-  healthState.max = gameStore.stats.maxHealth;
-  console.log(`[StatsView] Health updated from store: ${healthState.current}/${healthState.max}`);
+  healthState.current = gameStore.stats.health || 100;
+  healthState.max = gameStore.stats.maxHealth || 100;
 });
 
 // Calculate percentage for progress bar - like in StatsView.ts
@@ -77,24 +76,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Основные стили компонента - соответствуют константам из StatsView.ts */
+/* Основной контейнер */
 .stats-view {
   position: relative;
   width: 100%;
-  height: 10vh; /* Аналогичная высота как в StatsView.ts (10% экрана) */
-  z-index: 1500; /* Такой же z-index как в StatsView.ts */
+  height: 100%;
+  z-index: 1500;
   overflow: hidden;
-  pointer-events: auto; /* Make stats view interactive */
+  pointer-events: auto;
 }
 
-/* Полупрозрачный черный фон как в StatsView.ts */
+/* Полупрозрачный фон */
 .stats-background {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Идентично fillStyle(0x000000, 0.5) */
+  background-color: rgba(0, 0, 0, 0.5);
   z-index: -1;
 }
 
@@ -106,40 +105,40 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 3%; /* Соответствует PADDING_RATIO = 0.08 в StatsView.ts */
+  padding: 0 3%;
 }
 
-/* HP Container (левая сторона) - позиционирование как в distributeElements() */
+/* HP Container (левая сторона) */
 .hp-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
-  margin-left: 2%; 
-  width: 24%; /* Соответствует HP_BAR_WIDTH_RATIO = 0.24 */
+  width: 24%;
+  margin-left: 2%;
 }
 
-/* Прогресс-бар в точности как в StatsView.ts */
+/* Прогресс-бар HP */
 .progress-bar {
   width: 100%;
-  height: 6%; /* Соответствует HP_BAR_HEIGHT_RATIO = 0.06 */
-  min-height: 15px;
+  height: 16px;
+  min-height: 14px;
   background-color: v-bind(HP_BACKGROUND_COLOR);
-  border: 1px solid rgba(0, 0, 0, 0.7); /* borderAlpha: 0.7 */
-  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.7);
+  border-radius: 4px;
   overflow: hidden;
   position: relative;
 }
 
-/* Заполнение прогресс-бара точно как в StatsView.ts */
+/* Заполнение прогресс-бара */
 .progress-bar-fill {
   height: 100%;
   background-color: v-bind(HP_COLOR);
   transition: width 0.2s;
-  border-radius: 999px;
+  border-radius: 3px;
 }
 
-/* Текст HP в точности как в StatsView.ts */
+/* Текст HP */
 .hp-text {
   position: absolute;
   top: 50%;
@@ -148,20 +147,20 @@ onMounted(() => {
   color: #ffffff;
   font-family: 'pixelFont', monospace;
   font-size: 11px;
-  text-shadow: 1px 1px 2px #000000; /* Вместо stroke */
+  text-shadow: 1px 1px 2px #000000;
   text-align: center;
-  z-index: 1600; /* Такой же depth как в StatsView.ts */
+  z-index: 1600;
+  pointer-events: none;
 }
 
-/* Currency Container (правая сторона) - позиционирование как в distributeElements() */
+/* Currency Container (правая сторона) */
 .currency-container {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
-  gap: 3vw; /* Соответствует ELEMENTS_SPACING_RATIO = 0.1 */
+  gap: 16px;
   width: 50%;
-  position: relative;
-  left: -5%;
+  margin-right: 4%;
 }
 
 .currency-item {
@@ -169,65 +168,46 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 0;
-  background: none !important;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  min-height: 0;
 }
 
-.currency-img, .gold-img, .emblem-img {
+.currency-img {
   width: 24px;
   height: 24px;
   object-fit: contain;
-  background: none !important;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
   display: block;
-  padding: 0;
-  margin: 0;
-}
-
-.gold-img {
-  background: #ffd700;
-}
-
-.emblem-img {
-  background: #7b68ee;
 }
 
 .currency-text {
   font-family: 'pixelFont', monospace;
   font-size: 15px;
   text-align: center;
-  text-shadow: none;
   font-weight: bold;
   letter-spacing: 0.5px;
-  padding-left: 0;
-  padding-right: 0;
-  line-height: 1;
-  margin: 0;
   display: flex;
   align-items: center;
 }
 
 .gold-text {
   color: #ffd700;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8);
 }
 
 .emblem-text {
   color: #7b68ee;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.8);
 }
 
-/* Медиа-запросы для адаптивного масштабирования (как в handleScreenResize) */
+/* Адаптивное масштабирование */
 @media (max-width: 600px) {
   .currency-img {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
   }
   .currency-text {
-    font-size: 12px;
+    font-size: 13px;
+  }
+  .hp-text {
+    font-size: 10px;
   }
 }
 </style> 

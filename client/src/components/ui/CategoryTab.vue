@@ -1,5 +1,5 @@
 <template>
-  <div class="category-tabs">
+  <div class="category-switcher">
     <div 
       v-for="(category, index) in categories" 
       :key="index" 
@@ -30,54 +30,46 @@ function selectCategory(index: number) {
 </script>
 
 <style scoped>
-.category-tabs {
+.category-switcher {
+  width: 100%;
+  height: 100%;
   display: flex;
-  justify-content: space-between;
-  background-color: rgba(255, 0, 0, 0.5); /* яркий красный фон для отладки */
-  border-radius: 5px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  border: 3px solid yellow; /* яркая рамка для отладки */
-  margin-bottom: 15px;
-  min-height: 50px;
+  justify-content: space-around;
+  align-items: center;
+  background-color: rgba(30, 30, 30, 0.9);
+  border-top: 1px solid #444;
 }
 
 .tab-item {
   flex: 1;
-  padding: 10px 5px;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
   text-align: center;
   font-family: 'pixelFont', monospace;
   font-size: 14px;
   color: white;
-  font-weight: bold;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border-bottom: 2px solid transparent;
+  transition: background-color 0.2s;
   user-select: none;
-  text-shadow: 1px 1px 2px black; /* для лучшей видимости */
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+  background-color: rgba(40, 40, 40, 0.9);
 }
 
 .tab-item:hover {
-  background-color: rgba(255, 165, 0, 0.8); /* яркий оранжевый для отладки */
-  color: #fff;
+  background-color: rgba(60, 60, 60, 0.9);
 }
 
 .tab-item.active {
-  background-color: rgba(0, 255, 0, 0.8); /* яркий зеленый для отладки */
-  color: #000;
-  border-bottom: 2px solid #ffff00;
-  font-weight: bold;
+  background-color: rgba(70, 70, 70, 0.9);
+  box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.1);
+  border-bottom: 2px solid #ffcc00;
+  color: #ffcc00;
 }
 
-/* Разделительные линии между вкладками */
 .tab-item:not(:last-child) {
-  border-right: 2px solid yellow;
-}
-
-@media (max-width: 768px) {
-  .tab-item {
-    font-size: 12px;
-    padding: 8px 4px;
-  }
+  border-right: 1px solid #444;
 }
 </style> 

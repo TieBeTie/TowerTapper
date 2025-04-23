@@ -1,162 +1,213 @@
 <template>
-  <div class="upgrade-button" :class="{ 'can-afford': canAfford, 'max-level': level >= maxLevel }">
-    <div class="button-header">
-      <div class="name">{{ name }}</div>
-      <div class="level">Lvl {{ level }}/{{ maxLevel }}</div>
-    </div>
-    <div class="description">{{ description }}</div>
-    <div class="button-footer">
-      <div class="cost">
-        <img class="gold-icon" src="/assets/images/towers/Gold.png" alt="Gold" />
-        <span>{{ cost }}</span>
+  <button 
+    class="upgrade-button" 
+    :class="{ 'can-afford': canAfford, 'max-level': level >= maxLevel }"
+    @click="onUpgrade" 
+    :disabled="level >= maxLevel"
+    :title="level >= maxLevel ? 'Max level reached' : ''"
+  >
+    <div class="button-content">
+      <div class="name-container">
+        <div class="button-text">{{ name }}</div>
       </div>
-      <button class="upgrade-btn" @click="onUpgrade" :disabled="!canAfford || level >= maxLevel">
-        {{ level >= maxLevel ? 'MAX' : 'UPGRADE' }}
-      </button>
+      <div class="info-container">
+        <div class="level-text">Amount {{ level }}</div>
+        <div class="cost-container">
+          <img class="currency-img gold-img" src="/assets/images/towers/Gold.png" alt="Gold" 
+               onerror="this.onerror=null; this.src='/assets/images/currency/gold_coin.png';" />
+          <div class="cost-text">{{ cost }}</div>
+        </div>
+      </div>
     </div>
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, ref } from 'vue';
+import { SkillType, CurrencyType } from '../../game/types/SkillType';
+
+// Объявление для TypeScript, что window.game существует
+declare global {
+  interface Window {
+    game?: any;
+  }
+}
 
 const props = defineProps<{
   name: string;
-  description: string;
   cost: number;
   level: number;
   maxLevel: number;
   canAfford: boolean;
+  skillType: SkillType;
 }>();
 
 const emit = defineEmits<{
-  (e: 'upgrade'): void;
+  (e: 'upgrade', skillType: SkillType): void;
+  (e: 'purchase-success', skillType: SkillType): void;
 }>();
 
+// Обработчик нажатия на кнопку улучшения
 function onUpgrade() {
-  if (props.canAfford && props.level < props.maxLevel) {
-    emit('upgrade');
+  // Если достигнут максимальный уровень, ничего не делаем
+  if (props.level >= props.maxLevel) return;
+  
+  // Отправка оригинального события для совместимости
+  emit('upgrade', props.skillType);
+  
+  // Найти GameScene и UpgradeManager
+  if (window.game?.scene?.scenes) {
+    const gameScene = window.game.scene.scenes.find((scene: any) => scene.key === 'GameScene');
+    if (gameScene && gameScene.upgradeManager) {
+      const upgradeManager = gameScene.upgradeManager;
+      
+      try {
+        console.log(`UpgradeButton: Попытка покупки ${props.skillType} за GOLD`);
+        
+        // Попытка купить улучшение через UpgradeManager (явно указываем GOLD)
+        const success = upgradeManager.purchaseUpgrade(props.skillType, CurrencyType.GOLD);
+        
+        console.log(`UpgradeButton: Результат покупки: ${success ? 'успешно' : 'неудачно'}`);
+        
+        if (success) {
+          // Воспроизвести звук покупки через audioManager (как в UIManager)
+          const audioManager = gameScene.audioManager;
+          if (audioManager && audioManager.playSound) {
+            audioManager.playSound('upgradeButton');
+          } else if (gameScene.sound && gameScene.sound.play) {
+            gameScene.sound.play('upgrade');
+          }
+          
+          // Обновить башню
+          if (gameScene.tower && gameScene.tower.upgrade) {
+            gameScene.tower.upgrade();
+          }
+          
+          // Обновить UI через uiManager
+          if (gameScene.uiManager && gameScene.uiManager.updateGoldCount) {
+            const currentGold = gameScene.goldManager?.gold_count || 0;
+            gameScene.uiManager.updateGoldCount(currentGold);
+            console.log(`UpgradeButton: UI обновлен, текущее количество монет: ${currentGold}`);
+          }
+          
+          // Сообщить об успешной покупке
+          emit('purchase-success', props.skillType);
+        }
+      } catch (error) {
+        console.error('Error purchasing upgrade:', error);
+      }
+    }
   }
 }
 </script>
 
 <style scoped>
 .upgrade-button {
-  background-color: rgba(30, 30, 30, 0.9);
-  border: 1px solid #555;
-  border-radius: 5px;
-  padding: 10px;
   width: 160px;
-  transition: all 0.2s ease;
+  height: 45px;
+  background-color: rgba(34, 102, 34, 0.8);
+  border: 1px solid #666;
+  border-radius: 6px;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 2px;
+  padding: 4px;
+}
+
+.button-content {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.name-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 55%;
+  height: 100%;
+}
+
+.info-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 100%;
+  width: 45%;
 }
 
 .upgrade-button.can-afford {
-  border-color: #ffd700;
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+  background-color: rgba(69, 160, 73, 0.5);
+  border-color: #45a049;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
 }
 
-.upgrade-button.max-level {
-  border-color: #b9b9b9;
-  opacity: 0.8;
+.upgrade-button:hover {
+  background-color: rgba(56, 120, 56, 0.8);
+  transform: scale(1.03);
 }
 
-.button-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.upgrade-button.can-afford:hover {
+  background-color: rgba(76, 175, 80, 0.7);
 }
 
-.name {
+.button-text {
   font-family: 'pixelFont', monospace;
-  font-size: 14px;
-  font-weight: bold;
-  color: #fff;
+  font-size: 15px;
+  color: white;
+  text-align: left;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: normal;
+  overflow: hidden;
+  word-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-.level {
+.level-text {
   font-family: 'pixelFont', monospace;
-  font-size: 12px;
-  color: #aaa;
+  font-size: 13px;
+  color: #ccc;
+  margin-bottom: 3px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  text-align: right;
 }
 
-.description {
-  font-family: 'pixelFont', monospace;
-  font-size: 11px;
-  color: #ddd;
-  min-height: 30px;
-}
-
-.button-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.cost {
+.cost-container {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.gold-icon {
-  width: 16px;
-  height: 16px;
+.currency-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
 }
 
-.cost span {
+.cost-text {
   font-family: 'pixelFont', monospace;
-  font-size: 12px;
-  color: #ffd700;
+  font-size: 13px;
+  color: #FFD700;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.upgrade-btn {
-  font-family: 'pixelFont', monospace;
-  font-size: 12px;
-  background-color: #3d6aaf;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  padding: 4px 8px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.upgrade-btn:hover:not(:disabled) {
-  background-color: #4a7ecf;
-}
-
-.upgrade-btn:disabled {
-  background-color: #555;
-  color: #999;
+.upgrade-button.max-level {
+  background-color: rgba(68, 68, 68, 0.3);
+  border-color: #888;
   cursor: not-allowed;
-}
-
-@media (max-width: 768px) {
-  .upgrade-button {
-    width: 140px;
-    padding: 8px;
-  }
-  
-  .name, .cost span {
-    font-size: 11px;
-  }
-  
-  .description, .level {
-    font-size: 10px;
-  }
-  
-  .upgrade-btn {
-    font-size: 10px;
-    padding: 3px 6px;
-  }
-  
-  .gold-icon {
-    width: 14px;
-    height: 14px;
-  }
+  opacity: 0.7;
 }
 </style> 

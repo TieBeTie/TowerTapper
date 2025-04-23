@@ -1,34 +1,27 @@
 <template>
   <div v-if="gameStore.gameUIVisible" class="game-ui">
     <!-- Верхняя панель с информацией о ресурсах (15% высоты) -->
-    <StatsView />
-    
-    <!-- Средняя панель с витриной апгрейдов (70% высоты) -->
-    <div class="upgrade-showcase" v-if="gameStore.upgradesPanelVisible">
-      <UpgradePanel />
+    <div class="stats-view">
+      <StatsView />
     </div>
     
-    <!-- Нижняя панель с категориями (15% высоты) -->
-    <div class="category-switcher" v-if="gameStore.upgradesPanelVisible">
-      <!-- Здесь будут кнопки категорий -->
+    <!-- Основная панель с улучшениями (85% высоты) -->
+    <div v-if="gameStore.upgradesPanelVisible" class="upgrade-showcase">
+      <UpgradePanel />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { onMounted } from 'vue';
 import { useGameStore } from '../../stores/game';
 import StatsView from './StatsView.vue';
 import UpgradePanel from './UpgradePanel.vue';
-import { ScreenManager } from '../../game/managers/ScreenManager';
 
 console.log('[GameGeneralUIPanel] Component script executed');
 
 // Use the game store
 const gameStore = useGameStore();
-
-// Получаем пропорции UI из ScreenManager
-const uiHeightRatio = ScreenManager.getUIViewHeightRatio();
 
 // На монтировании показываем UI
 onMounted(() => {
@@ -36,6 +29,14 @@ onMounted(() => {
   
   // При монтировании сразу показываем UI
   gameStore.showGameUI();
+  
+  // Также показываем панель улучшений
+  gameStore.showUpgradesPanel();
+  
+  // Добавляем инициализацию начальных данных для тестирования
+  if (gameStore.stats.gold === 0) {
+    gameStore.updateGold(100);
+  }
 });
 </script>
 
@@ -46,7 +47,7 @@ onMounted(() => {
   left: 0;
   bottom: 0;
   width: 100vw;
-  height: calc(33vh); /* 33% экрана по вертикали - из ScreenManager.UI_VIEW_HEIGHT_RATIO */
+  height: calc(33vh); /* 33% экрана по вертикали */
   z-index: 1000;
   pointer-events: none; /* UI не блокирует нажатия на игру */
   display: flex;
@@ -59,33 +60,22 @@ onMounted(() => {
 }
 
 /* Панель StatsView - 15% высоты UI */
-:deep(.stats-view) {
+.stats-view {
   flex: 0 0 15%;
   width: 100%;
   overflow: hidden;
+  pointer-events: auto; /* Разрешаем взаимодействие со статистикой */
 }
 
-/* Панель улучшений - 70% высоты UI */
+/* Панель улучшений - 85% высоты UI (включая категории) */
 .upgrade-showcase {
-  flex: 0 0 70%;
+  flex: 0 0 85%;
   width: 100%;
   background: rgba(0, 0, 0, 0.3);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   pointer-events: auto; /* Разрешаем взаимодействие с панелью улучшений */
-}
-
-/* Панель категорий - 15% высоты UI */
-.category-switcher {
-  flex: 0 0 15%;
-  width: 100%;
-  background: rgba(30, 30, 30, 0.8);
-  border-top: 1px solid #444;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  pointer-events: auto; /* Разрешаем взаимодействие с кнопками */
 }
 </style> 
