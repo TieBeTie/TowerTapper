@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SkillType } from '../../types/SkillType';
 import { ScreenManager } from '../../managers/ScreenManager';
 import { SkillStateManager } from '../../managers/SkillStateManager';
+import { useGameStore } from '../../../stores/game';
 
 class Tower extends Phaser.Physics.Arcade.Sprite {
     // Цветовые константы
@@ -220,6 +221,14 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         // Get current health values from the centralized system
         const currentHealth = this.skillManager.getCurrentHealth();
         const maxHealth = this.skillManager.getMaxHealth();
+        
+        // Update Pinia store
+        try {
+            const gameStore = useGameStore();
+            gameStore.updateHealth(currentHealth, maxHealth);
+        } catch (err) {
+            console.warn('Could not update Pinia store with health', err);
+        }
         
         // If a GameScene health bar needs to be updated
         if ('updateHealthBar' in this.scene) {

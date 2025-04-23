@@ -17,6 +17,8 @@ import { SkillStateManager } from '../managers/SkillStateManager';
 import { EmblemManager } from '../managers/EmblemManager';
 import { SkillType } from '../types/SkillType';
 import { MysticalBackground } from '../objects/backgrounds/MysticalBackground';
+import { useGameStore } from '../../stores/game';
+import { useSceneStore } from '../../stores/scene';
 
 export default class GameScene extends Phaser.Scene implements IGameScene {
     // Game objects
@@ -55,6 +57,16 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     }
 
     create(): void {
+        console.log('[GameScene] create() start');
+        
+        // Update Pinia stores
+        const gameStore = useGameStore();
+        const sceneStore = useSceneStore();
+        
+        // Show game view and UI
+        sceneStore.setView('game');
+        gameStore.showGameUI();
+        
         this.scene.bringToTop('GameScene');
         this.scene.launch('BackgroundScene');
         
@@ -455,6 +467,14 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     }
 
     destroy(): void {
+        // Hide UI in store before cleanup
+        try {
+            const gameStore = useGameStore();
+            gameStore.hideGameUI();
+        } catch (err) {
+            console.warn('[GameScene] Could not update game store in destroy()', err);
+        }
+        
         // Clean up all manager resources
         if (this.socket) {
             this.socket.close();
@@ -493,16 +513,31 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         return this.emblemManager.getEmblemCount();
     }
 
-    // Add the updateHealthBar method that Tower tries to call
+    // Update the health bar method to use Pinia
     updateHealthBar(currentHP: number, maxHP: number): void {
-        // Update StatsView's HP bar through UIManager
-        if (this.uiManager && this.uiManager.updateHealthDisplay) {
+        try {
+            const gameStore = useGameStore();
+            gameStore.updateHealth(currentHP, maxHP);
+        } catch (err) {
+            console.warn('[GameScene] Could not update health in store', err);
+        }
+        
+        // Notify UI manager if available
+        if (this.uiManager) {
             this.uiManager.updateHealthDisplay(currentHP, maxHP);
         }
     }
 
     // Очистка ресурсов при закрытии сцены
     shutdown(): void {
+        // Hide UI on shutdown
+        try {
+            const gameStore = useGameStore();
+            gameStore.hideGameUI();
+        } catch (err) {
+            console.warn('[GameScene] Could not update game store in shutdown()', err);
+        }
+        
         console.log('GameScene shutdown started...');
         
         // MysticalBackground больше не уничтожаем!

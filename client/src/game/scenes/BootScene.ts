@@ -255,6 +255,9 @@ class BootScene extends Phaser.Scene implements IScene {
 
         // Load Earth planet for background
         this.load.image('Earth', 'assets/images/planet/Earth.png');
+        this.load.image('island1', 'assets/images/islands/1.png');
+        this.load.image('island2', 'assets/images/islands/2.png');
+        this.load.image('island3', 'assets/images/islands/3.png');
 
         // Load coins
         this.load.spritesheet('gold', 'assets/images/towers/Gold-sheet.png', {
@@ -264,7 +267,6 @@ class BootScene extends Phaser.Scene implements IScene {
     }
 
     create() {
-        this.scene.launch('BackgroundScene');
         this.scene.bringToTop('BootScene');
         
         // Initialize ScreenManager first

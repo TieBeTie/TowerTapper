@@ -31,8 +31,9 @@
 import { ref, onMounted } from 'vue';
 import { fetchTopPlayers, fetchPlayerRank } from '../services/api/GameServerGateway';
 import { PlayerRating } from '../game/types/PlayerRating';
-import eventBus from '../services/eventBus';
+import { useSceneStore } from '../stores/scene';
 
+const scene = useSceneStore();
 const topPlayers = ref<PlayerRating[]>([]);
 const myRank = ref<number|null>(null);
 const myTelegramId = Number(window.Telegram?.WebApp?.initDataUnsafe?.user?.id) || 0;
@@ -50,7 +51,7 @@ async function loadRating() {
 }
 
 function goBack() {
-  eventBus.emit('vue-hide-rating');
+  scene.setView('menu');
 }
 
 onMounted(loadRating);
@@ -77,6 +78,7 @@ onMounted(loadRating);
   box-shadow: none;
   text-align: center;
   font-family: 'pixelFont', 'Arial', sans-serif;
+  pointer-events: auto;
 }
 .rating-table {
   width: 100%;

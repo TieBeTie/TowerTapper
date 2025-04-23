@@ -7,6 +7,7 @@ import EmblemsShopScene from './game/scenes/EmblemsShopScene';
 import BackgroundScene from './game/scenes/BackgroundScene';
 import { TelegramService } from './game/services/TelegramService';
 import { createApp } from 'vue';
+import { createPinia } from 'pinia';
 import App from './App.vue';
 
 // Инициализируем Telegram сервис
@@ -17,8 +18,50 @@ if (telegramService.isTelegramWebApp()) {
     telegramService.expandWebApp();
 }
 
+// Создаем структуру контейнеров для Phaser и Vue
+const setupContainers = () => {
+    const gameContainer = document.getElementById('game-container');
+    if (gameContainer) {
+        // Устанавливаем стили для основного контейнера
+        gameContainer.style.position = 'fixed';
+        gameContainer.style.top = '0';
+        gameContainer.style.left = '0';
+        gameContainer.style.width = '100%';
+        gameContainer.style.height = '100%';
+        gameContainer.style.display = 'flex';
+        gameContainer.style.justifyContent = 'center';
+        gameContainer.style.alignItems = 'center';
+        gameContainer.style.overflow = 'hidden';
+        
+        // Проверяем, существуют ли уже контейнеры, чтобы избежать дублирования
+        if (!document.getElementById('phaser-container')) {
+            // Создаем контейнер для Phaser
+            const phaserContainer = document.createElement('div');
+            phaserContainer.id = 'phaser-container';
+            phaserContainer.style.position = 'absolute';
+            phaserContainer.style.width = '100%';
+            phaserContainer.style.height = '100%';
+            gameContainer.appendChild(phaserContainer);
+        }
+        
+        if (!document.getElementById('vue-container')) {
+            // Создаем контейнер для Vue (поверх Phaser)
+            const vueContainer = document.createElement('div');
+            vueContainer.id = 'vue-container';
+            vueContainer.style.position = 'absolute';
+            vueContainer.style.width = '100%';
+            vueContainer.style.height = '100%';
+            vueContainer.style.pointerEvents = 'none'; // Позволяет кликать сквозь на Phaser
+            gameContainer.appendChild(vueContainer);
+        }
+    }
+};
+
 // Добавляем задержку перед инициализацией игры для Telegram
 const initGame = () => {
+    // Сначала настраиваем контейнеры
+    setupContainers();
+    
     // Базовое соотношение сторон игры (9:16)
     const ASPECT_RATIO = 9/16;
 
@@ -39,27 +82,12 @@ const initGame = () => {
         gameHeight = viewportWidth / ASPECT_RATIO;
     }
 
-    // Прикрепляем элемент контейнера к body для исправления позиционирования
-    const gameContainer = document.getElementById('game-container');
-    if (gameContainer) {
-        // Добавляем фиксированное позиционирование для контейнера
-        gameContainer.style.position = 'fixed';
-        gameContainer.style.top = '0';
-        gameContainer.style.left = '0';
-        gameContainer.style.width = '100%';
-        gameContainer.style.height = '100%';
-        gameContainer.style.display = 'flex';
-        gameContainer.style.justifyContent = 'center';
-        gameContainer.style.alignItems = 'center';
-        gameContainer.style.overflow = 'hidden';
-    }
-
     const config: Phaser.Types.Core.GameConfig = {
         type: Phaser.AUTO,
         scale: {
             mode: Phaser.Scale.RESIZE,  // Используем RESIZE вместо FIT для Telegram Web App
             autoCenter: Phaser.Scale.CENTER_BOTH,
-            parent: 'game-container',
+            parent: 'phaser-container', // Изменено: теперь используем phaser-container
             width: gameWidth,
             height: gameHeight,
             // Add more detailed resize handling
@@ -104,6 +132,9 @@ const initGame = () => {
     };
 
     const gameInstance = new Phaser.Game(config);
+
+    // Expose the game instance to the window object for Vue components
+    (window as any).PhaserGame = gameInstance;
 
     // Instead, set canvas properties directly after the game is created
     if (gameInstance.canvas) {
@@ -156,4 +187,17 @@ if (telegramService.isTelegramWebApp()) {
     initGame();
 }
 
-createApp(App).mount('#game-container');
+// Создаем экземпляр Pinia
+const pinia = createPinia();
+
+// Создаем приложение Vue и подключаем Pinia
+const app = createApp(App);
+app.use(pinia);
+
+// Инициализируем Vue после того, как контейнеры созданы
+window.addEventListener('load', () => {
+    // Убедимся, что контейнеры созданы
+    setupContainers();
+    // Подключаем Vue к отдельному контейнеру
+    app.mount('#vue-container');
+});

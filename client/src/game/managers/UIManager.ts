@@ -1,15 +1,14 @@
 // managers/UIManager.js
 import Phaser from 'phaser';
-import { StatsView } from '../ui/components/StatsView';
 import { ScrollableButtonPanel } from '../ui/components/ScrollableButtonPanel';
 import { UpgradeButton } from '../ui/components/UpgradeButton';
 import { SkillType } from '../types/SkillType';
 import { UpgradeManager } from './UpgradeManager';
 import { ScreenManager } from './ScreenManager';
+import { useGameStore } from '../../stores/game';
 
 
 export class UIManager {
-    private statsView!: StatsView;
     private upgradePanel!: ScrollableButtonPanel;
     private goldCount: number = 0;
     private goldIcon!: Phaser.GameObjects.Image;
@@ -57,89 +56,6 @@ export class UIManager {
         
         // Set up update callback for regular updates
         this.scene.events.on('update', this.onUpdate, this);
-    }
-
-    private getStatsViewBeginY() {
-        const { height } = this.screenManager.getScreenSize();
-        return height * this.screenManager.getGameViewHeightRatio();
-    }
-
-    private getStatsViewEndY() {
-        return this.getStatsViewBeginY() + this.STATS_VIEW_HEIGHT_PIXEL;
-    }
-
-    private initilizeStatsView(iconSize: number, fontSize: number): void {
-        try {
-            // Create statsView with screenManager
-            this.statsView = new StatsView(this.scene, this.screenManager);
-            
-            // Create gold elements - уменьшаем размер иконки монеты
-            this.goldIcon = this.scene.add.image(0, 0, 'gold');
-            
-            // Уменьшаем размер иконки монеты до 60% от оригинального размера
-            const reducedIconSize = iconSize * 0.6;
-            this.goldIcon.setDisplaySize(reducedIconSize, reducedIconSize);
-
-            this.goldNumberText = this.scene.add.text(0, 0, '0', {
-                fontSize: `${fontSize}px`,
-                color: '#ffffff',
-                fontFamily: 'pixelFont'
-            }).setOrigin(0, 0.5);
-
-            // Проверяем, успешно ли созданы объекты
-            if (!this.goldIcon || !this.goldNumberText) {
-                console.error('Ошибка при создании объектов монет');
-                return;
-            }
-
-            // Add elements to statsView
-            // Create a container for gold display
-            const goldContainer = this.scene.add.container(0, 0);
-            goldContainer.add(this.goldIcon);
-            goldContainer.add(this.goldNumberText);
-            
-            // Position the gold text closer to the icon
-            this.goldNumberText.setPosition(reducedIconSize * 0.8, 0);
-            
-            // Add the container as a single element
-            this.statsView.addCurrencyElement(goldContainer);
-            
-            // Create emblem elements
-            this.emblemIcon = this.scene.add.image(0, 0, 'emblem_icon');
-            
-            // Set emblem icon size
-            this.emblemIcon.setDisplaySize(reducedIconSize, reducedIconSize);
-            
-            this.emblemNumberText = this.scene.add.text(0, 0, '0', {
-                fontSize: `${fontSize}px`,
-                color: '#ffffff',
-                fontFamily: 'pixelFont'
-            }).setOrigin(0, 0.5);
-            
-            // Проверяем, успешно ли созданы объекты эмблем
-            if (!this.emblemIcon || !this.emblemNumberText) {
-                console.error('Ошибка при создании объектов эмблем');
-                return;
-            }
-            
-            // Create a container for emblem display
-            const emblemContainer = this.scene.add.container(0, 0);
-            emblemContainer.add(this.emblemIcon);
-            emblemContainer.add(this.emblemNumberText);
-            
-            // Position the emblem text closer to the icon
-            this.emblemNumberText.setPosition(reducedIconSize * 0.8, 0);
-            
-            // Add the container as a single element
-            this.statsView.addCurrencyElement(emblemContainer);
-            
-            // Update emblem count только если объект существует
-            if (this.emblemNumberText && this.emblemNumberText.active) {
-                this.updateEmblemCount();
-            }
-        } catch (error) {
-            console.error('Ошибка при инициализации StatsView:', error);
-        }
     }
 
     private initilizeUpgradePanel(): void {
@@ -428,7 +344,6 @@ export class UIManager {
         const iconSize = width * this.ICON_SIZE_RATIO;
         const fontSize = this.screenManager.getResponsiveFontSize(20);
         
-        this.initilizeStatsView(iconSize, fontSize);
         this.initilizeUpgradePanel(); 
         this.updatePositions();
     }
@@ -442,16 +357,11 @@ export class UIManager {
         // Рассчитываем высоту доступную для игрового поля
         const gameViewHeight = height * this.screenManager.getGameViewHeightRatio();
         
-        // Position and size statsView
-        this.statsView.setPosition(0, gameViewHeight);
-        this.statsView.setSize(width, statsViewHeight);
- 
         // Position the upgradePanel so its bottom edge aligns with the bottom of the screen
         // We need to subtract the panel height from the screen height
         this.upgradePanel.setPosition(0, height - this.upgradePanel.getHeight());
         
         // Ensure components are visible
-        this.statsView.setVisible(true);
         this.upgradePanel.setVisible(true);
         
         // Ensure gold display is visible
@@ -471,7 +381,6 @@ export class UIManager {
         if (this.scene && this.scene.time) {
             this.scene.time.delayedCall(150, () => {
                 // Final visibility check
-                this.statsView.setVisible(true);
                 this.upgradePanel.setVisible(true);
                 
                 if (this.goldIcon && this.goldNumberText) {
@@ -483,7 +392,6 @@ export class UIManager {
                 
                 // Try one more delayed update as last resort
                 this.scene.time.delayedCall(300, () => {
-                    this.statsView.setVisible(true);
                     this.upgradePanel.setVisible(true);
                 });
             });
@@ -505,7 +413,6 @@ export class UIManager {
         this.scene.events.emit('upgradeButtonsVisibility');
         
         // Ensure stats view and upgrade panel are visible
-        this.statsView.setVisible(true);
         this.upgradePanel.setVisible(true);
         
         // Ensure gold display is visible
@@ -518,8 +425,15 @@ export class UIManager {
     }
 
     public updateGold(gold: number): void {
-        // Делегируем работу новому методу для единого кода обновления
         this.updateGoldCount(gold);
+        
+        // Update Pinia store directly instead of using eventBus
+        try {
+            const gameStore = useGameStore();
+            gameStore.updateGold(gold);
+        } catch (err) {
+            console.warn('Could not update Pinia store with gold:', err);
+        }
     }
 
     // Additional method used by the UpgradeButton
@@ -612,15 +526,6 @@ export class UIManager {
             this.scene.events.off('upgradeButtonsVisibility');
         }
         
-        // Destroy StatsView (с проверкой существования)
-        if (this.statsView) {
-            try {
-                this.statsView.destroy();
-            } catch (e) {
-                console.warn('Error destroying StatsView:', e);
-            }
-        }
-        
         // Destroy UpgradePanel (с проверкой существования)
         if (this.upgradePanel) {
             try {
@@ -652,12 +557,6 @@ export class UIManager {
 
     private updateEmblemCount(): void {
         try {
-            // Проверяем существование текстового объекта перед обновлением
-            if (!this.emblemNumberText || !this.emblemNumberText.scene) {
-                console.log('Текстовый объект эмблемы не инициализирован или уничтожен');
-                return;
-            }
-            
             // Get the emblem count from the GameScene
             const gameScene = this.scene.scene.get('GameScene');
             if (!gameScene) {
@@ -672,6 +571,14 @@ export class UIManager {
             if (this.emblemNumberText && this.emblemNumberText.active) {
                 this.emblemNumberText.setText(emblemCount.toString());
             }
+            
+            // Update Pinia store directly
+            try {
+                const gameStore = useGameStore();
+                gameStore.updateEmblems(emblemCount);
+            } catch (err) {
+                console.warn('Could not update Pinia store with emblems:', err);
+            }
         } catch (error) {
             console.log('Ошибка при обновлении счетчика эмблем:', error);
             // Use default value when emblem manager is not yet initialized
@@ -685,6 +592,21 @@ export class UIManager {
     updateCounts(): void {
         this.updateGold(this.goldCount);
         this.updateEmblemCount();
+        
+        // Update Pinia store with full stats
+        try {
+            // Get emblem count from GameScene for consistency
+            const gameScene = this.scene.scene.get('GameScene');
+            const emblemCount = (gameScene as any).emblemManager?.getEmblemCount() || 0;
+            
+            const gameStore = useGameStore();
+            gameStore.updateStats({
+                gold: this.goldCount,
+                emblems: emblemCount
+            });
+        } catch (err) {
+            console.warn('Could not update Pinia store with stats:', err);
+        }
     }
 
     // Update method that gets called every frame
@@ -701,8 +623,12 @@ export class UIManager {
 
     // Add a method to update the health display in StatsView
     updateHealthDisplay(currentHP: number, maxHP: number): void {
-        if (this.statsView) {
-            this.statsView.setHP(currentHP, maxHP);
+        // Update Pinia store directly
+        try {
+            const gameStore = useGameStore();
+            gameStore.updateHealth(currentHP, maxHP);
+        } catch (err) {
+            console.warn('Could not update Pinia store with health:', err);
         }
     }
 
@@ -723,7 +649,6 @@ export class UIManager {
 
     public setVisible(visible: boolean): void {
         // Показываем или скрываем все основные UI элементы
-        this.statsView?.setVisible(visible);
         this.upgradePanel?.setVisible(visible);
         if (this.goldIcon) this.goldIcon.setVisible(visible);
         if (this.goldNumberText) this.goldNumberText.setVisible(visible);

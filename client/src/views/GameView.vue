@@ -1,52 +1,33 @@
 <template>
-  <div class="game-container">
-    <iframe
-      ref="gameFrame"
-      :src="gameSrc"
-      width="100%"
-      height="100%"
-      frameborder="0"
-      @load="onGameLoad"
-    />
+  <div class="game-ui-container">
+    <!-- Игровой UI -->
+    <GameGeneralUIPanel />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
+import GameGeneralUIPanel from '../components/ui/GameGeneralUIPanel.vue';
 
-const gameSrc = '/game/index.html';
-const gameFrame = ref<HTMLIFrameElement | null>(null);
-
-function onGameLoad() {
-  // Можно отправить стартовые данные в игру через postMessage
-}
-
-function onGameMessage(event: MessageEvent) {
-  if (event.data.action === 'open_menu') {
-    // показать Vue-меню
-    // Например, emit или изменение состояния
-    console.log('Открыть меню из игры!');
-  }
-  // Добавь другие обработчики событий по необходимости
-}
+console.log('[GameView] Component script executed');
 
 onMounted(() => {
-  window.addEventListener('message', onGameMessage);
-});
+  console.log('[GameView] Component mounted');
+}); 
+
 onUnmounted(() => {
-  window.removeEventListener('message', onGameMessage);
+  console.log('[GameView] Component unmounted');
 });
 </script>
 
 <style scoped>
-.game-container {
+.game-ui-container {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
-}
-iframe {
-  border: none;
-  width: 100vw;
-  height: 100vh;
+  pointer-events: none; /* Позволяет кликать сквозь контейнер на игру */
+  z-index: 10;
 }
 </style> 

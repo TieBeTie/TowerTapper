@@ -2,12 +2,25 @@ import Phaser from 'phaser';
 import { TelegramService } from '../services/TelegramService';
 
 export class ScreenManager {
+    // Статические константы для UI пропорций
+    public static readonly GAME_VIEW_HEIGHT_RATIO: number = 0.67;
+    public static readonly UI_VIEW_HEIGHT_RATIO: number = 0.33;
+    
     private gameScale: number = 1;
     private scene: Phaser.Scene;
     private telegramService: TelegramService;
     private isDestroyed: boolean = false;
-    private gameViewHeightRatio: number = 0.67;
+    private gameViewHeightRatio: number = ScreenManager.GAME_VIEW_HEIGHT_RATIO;
+    private UIViewHeightRatio: number = ScreenManager.UI_VIEW_HEIGHT_RATIO;
 
+    // Статические методы для доступа к константам
+    public static getGameViewHeightRatio(): number {
+        return ScreenManager.GAME_VIEW_HEIGHT_RATIO;
+    }
+
+    public static getUIViewHeightRatio(): number {
+        return ScreenManager.UI_VIEW_HEIGHT_RATIO;
+    }
     
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -117,9 +130,15 @@ export class ScreenManager {
         return { x: width / 2, y: height / 2 };
     }
 
+    // Методы экземпляра для обратной совместимости
     public getGameViewHeightRatio(): number {
         return this.gameViewHeightRatio;
     }
+
+    public getUIViewHeightRatio(): number {
+        return this.UIViewHeightRatio;
+    }
+
 
     /**
      * Возвращает центр игровой области (GameView)

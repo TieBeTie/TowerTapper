@@ -54,21 +54,13 @@ export class PlanetLayer implements BackgroundLayer {
     private addPlanet(): void {
         const { width, height } = this.screenManager.getScreenSize();
         if (!this.scene.textures.exists(this.textureKey)) {
-            if (!this.isLoading) {
-                this.isLoading = true;
-                this.scene.load.image(this.textureKey, 'assets/images/planet/Earth.png');
-                this.scene.load.once('complete', () => {
-                    this.isLoading = false;
-                    this.addPlanet();
-                });
-                this.scene.load.start();
-            }
+            console.warn(`[PlanetLayer] Texture ${this.textureKey} not found. Skipping planet creation.`);
             return;
         }
+        
         const planetTexture = this.scene.textures.get(this.textureKey).getSourceImage() as HTMLImageElement;
 
         // Центр планеты сильно за пределами экрана (влево и вниз)
-
         const centerX = width / 2;
         // x^2 + b^2 = (x + a)^2
         // x^2 + b^2 = x^2 + 2ax + a^2

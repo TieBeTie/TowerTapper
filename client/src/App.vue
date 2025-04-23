@@ -1,37 +1,52 @@
 <template>
-  <MenuOverlay v-if="showMenu && !showRating" />
-  <RatingView v-if="showRating" />
-  <router-view />
+  <div class="app-container">
+    <!-- Phaser container -->
+    <div id="game-container"></div>
+    
+    <!-- Vue UI components -->
+    <MenuView />
+    <GameView v-if="scene.view === 'game'" />
+    <RatingView v-if="scene.view === 'rating'" />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-import MenuOverlay from './ui/MenuOverlay.vue';
+import { onMounted, onUnmounted } from 'vue';
+import { useSceneStore } from './stores/scene';
+import { usePhaser } from './composables/usePhaser';
+import MenuView from './views/MenuView.vue';
+import GameView from './views/GameView.vue';
 import RatingView from './views/RatingView.vue';
-import eventBus from './services/eventBus';
 
-const showMenu = ref(false);
-const showRating = ref(false);
+// Use the scene store
+const scene = useSceneStore();
 
-function showMenuHandler() { showMenu.value = true; }
-function hideMenuHandler() { showMenu.value = false; }
-function showRatingHandler() { showRating.value = true; }
-function hideRatingHandler() { showRating.value = false; }
-
-onMounted(() => {
-  eventBus.on('vue-show-menu', showMenuHandler);
-  eventBus.on('vue-hide-menu', hideMenuHandler);
-  eventBus.on('vue-show-rating', showRatingHandler);
-  eventBus.on('vue-hide-rating', hideRatingHandler);
-});
-onUnmounted(() => {
-  eventBus.off('vue-show-menu', showMenuHandler);
-  eventBus.off('vue-hide-menu', hideMenuHandler);
-  eventBus.off('vue-show-rating', showRatingHandler);
-  eventBus.off('vue-hide-rating', hideRatingHandler);
-});
+// Initialize Phaser with our composable
+usePhaser('game-container');
 </script>
 
-<style scoped>
-/* Нет стилей */
+<style>
+.app-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Allow clicking through to Phaser by default */
+}
+
+/* Enable pointer events for all interactive Vue components */
+button, 
+a, 
+input, 
+select, 
+.interactive,
+[class*="-container"],
+[class*="menu-"],
+[class*="button"],
+[class*="btn"] {
+  pointer-events: auto !important;
+}
+
+/* Add any additional global styles here */
 </style> 

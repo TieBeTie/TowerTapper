@@ -32,27 +32,22 @@ export class FloatingIslandsLayer implements BackgroundLayer {
     private createFloatingIslands(): void {
         const { width, height } = this.screenManager.getScreenSize();
         const islandSpriteKeys = ['island1', 'island2', 'island3'];
-        const islandSpritePaths = [
-            'assets/images/islands/1.png',
-            'assets/images/islands/2.png',
-            'assets/images/islands/3.png',
-        ];
-        islandSpriteKeys.forEach((key, i) => {
+        
+        // Проверяем, загружены ли все текстуры
+        let allTexturesLoaded = true;
+        for (const key of islandSpriteKeys) {
             if (!this.scene.textures.exists(key)) {
-                this.scene.load.image(key, islandSpritePaths[i]);
+                console.warn(`[FloatingIslandsLayer] Texture ${key} not found. Skipping island creation.`);
+                allTexturesLoaded = false;
+                // Продолжаем проверять другие текстуры вместо немедленного возврата
             }
-        });
-        if (!this.scene.textures.exists(islandSpriteKeys[0])) {
-            if (!this.isLoading) {
-                this.isLoading = true;
-                this.scene.load.once('complete', () => {
-                    this.isLoading = false;
-                    this.createFloatingIslands();
-                });
-                this.scene.load.start();
-            }
+        }
+        
+        // Если не все текстуры загружены, выходим без попытки загрузить их
+        if (!allTexturesLoaded) {
             return;
         }
+        
         this.floatingIslands.forEach(island => island.destroy());
         this.floatingIslands = [];
         const islandPositions = [
