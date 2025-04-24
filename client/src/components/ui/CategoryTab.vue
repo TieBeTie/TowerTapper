@@ -36,8 +36,8 @@ function selectCategory(index: number) {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background-color: rgba(30, 30, 30, 0.9);
-  border-top: 1px solid #444;
+  background-color: transparent;
+  border-top: none;
 }
 
 .tab-item {
@@ -52,24 +52,24 @@ function selectCategory(index: number) {
   font-size: 14px;
   color: white;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   user-select: none;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
-  background-color: rgba(40, 40, 40, 0.9);
+  box-shadow: none;
+  background-color: rgba(40, 40, 40, 0.4);
 }
 
 .tab-item:hover {
-  background-color: rgba(60, 60, 60, 0.9);
+  background-color: rgba(60, 60, 60, 0.5);
 }
 
 .tab-item.active {
-  background-color: rgba(70, 70, 70, 0.9);
-  box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.1);
+  background-color: rgba(60, 60, 60, 0.6);
+  box-shadow: none;
   border-bottom: 2px solid #ffcc00;
   color: #ffcc00;
 }
 
 .tab-item:not(:last-child) {
-  border-right: 1px solid #444;
+  border-right: 1px solid rgba(68, 68, 68, 0.3);
 }
 </style> 

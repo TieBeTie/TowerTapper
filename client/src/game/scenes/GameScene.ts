@@ -254,13 +254,19 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                         } else {
                             moveTimer.destroy();
                             this.tower.x = center.x;
+                            
+
                             this.initializeManagers();
+                            // Обновляем состояние башни в хранилище Pinia после построения
+                            const gameStore = useGameStore();
+                            gameStore.setTowerAlive(true);
                         }
                     },
                     repeat: 15
                 });
             }
         });
+        
     }
 
     private initializeManagers(): void {

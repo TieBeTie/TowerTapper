@@ -214,7 +214,7 @@ export class SkillDefinitions {
                 return 100;
             case SkillType.LIFESTEAL_AMOUNT:
                 return 100;
-            case SkillType.DAILY_GOLD:
+            case SkillType.WAVE_BONUS:
                 return 1000;
             case SkillType.EMBLEM_BONUS:
                 return 100; 
@@ -242,7 +242,7 @@ export class SkillDefinitions {
                 return this.calculateMultishotValue(level);
             case SkillType.SUPPLY_DROP:
                 return this.calculateSupplyDropValue(level);
-            case SkillType.DAILY_GOLD:
+            case SkillType.WAVE_BONUS:
                 return this.calculateDailyGoldValue(level);
             case SkillType.COIN_REWARD:
                 return this.calculateCoinRewardValue(level);
@@ -282,7 +282,7 @@ export class SkillDefinitions {
                 return this.calculateMultishotCost(level);
             case SkillType.SUPPLY_DROP:
                 return this.calculateSupplyDropCost(level);
-            case SkillType.DAILY_GOLD:
+            case SkillType.WAVE_BONUS:
                 return this.calculateDailyGoldCost(level);
             case SkillType.GAME_SPEED:
                 return this.calculateGameSpeedCost(level);
@@ -329,15 +329,15 @@ export class SkillDefinitions {
         return new Map([
             [SkillType.MAX_HEALTH, {
                 type: SkillType.MAX_HEALTH,
-                name: 'Castle Strength',
-                description: 'Increases the maximum health of the castle',
+                name: 'Tower Health',
+                description: 'Increases the maximum health of the tower',
                 currentLevel: currentLevels.get(SkillType.MAX_HEALTH) || 0,
                 maxLevel: this.getMaxLevel(SkillType.MAX_HEALTH),
                 calculateValue: (currentLevel: number) => this.getValueForSkill(SkillType.MAX_HEALTH, currentLevel)
             }],
             [SkillType.DEFENSE, {
                 type: SkillType.DEFENSE,
-                name: 'Castle Defense',
+                name: 'Tower Defense',
                 description: 'Reduces incoming damage',
                 currentLevel: currentLevels.get(SkillType.DEFENSE) || 0,
                 maxLevel: this.getMaxLevel(SkillType.DEFENSE),
@@ -346,7 +346,7 @@ export class SkillDefinitions {
             [SkillType.HEALTH_REGEN, {
                 type: SkillType.HEALTH_REGEN,
                 name: 'Health Regeneration',
-                description: 'Restores castle health over time',
+                description: 'Restores tower health over time',
                 currentLevel: currentLevels.get(SkillType.HEALTH_REGEN) || 0,
                 maxLevel: this.getMaxLevel(SkillType.HEALTH_REGEN),
                 calculateValue: (currentLevel: number) => this.getValueForSkill(SkillType.HEALTH_REGEN, currentLevel)
@@ -361,7 +361,7 @@ export class SkillDefinitions {
             }],
             [SkillType.COIN_REWARD, {
                 type: SkillType.COIN_REWARD,
-                name: 'Gold Reward Bonus',
+                name: 'Kill Bonus',
                 description: 'Increases the amount of coins from killed enemies',
                 currentLevel: currentLevels.get(SkillType.COIN_REWARD) || 0,
                 maxLevel: this.getMaxLevel(SkillType.COIN_REWARD),
@@ -431,13 +431,13 @@ export class SkillDefinitions {
                 maxLevel: this.getMaxLevel(SkillType.LIFESTEAL_AMOUNT),
                 calculateValue: (currentLevel: number) => this.getValueForSkill(SkillType.LIFESTEAL_AMOUNT, currentLevel)
             }],
-            [SkillType.DAILY_GOLD, {
-                type: SkillType.DAILY_GOLD,
-                name: 'Daily Gold',
+            [SkillType.WAVE_BONUS, {
+                type: SkillType.WAVE_BONUS,
+                name: 'Wave Bonus',
                 description: 'Provides gold at the start of each wave',
-                currentLevel: currentLevels.get(SkillType.DAILY_GOLD) || 0,
-                maxLevel: this.getMaxLevel(SkillType.DAILY_GOLD),
-                calculateValue: (currentLevel: number) => this.getValueForSkill(SkillType.DAILY_GOLD, currentLevel)
+                currentLevel: currentLevels.get(SkillType.WAVE_BONUS) || 0,
+                maxLevel: this.getMaxLevel(SkillType.WAVE_BONUS),
+                calculateValue: (currentLevel: number) => this.getValueForSkill(SkillType.WAVE_BONUS, currentLevel)
             }],
             [SkillType.EMBLEM_BONUS, {
                 type: SkillType.EMBLEM_BONUS,
@@ -598,13 +598,13 @@ export class SkillDefinitions {
                     calculateCost: (currentLevel: number) => Math.ceil(this.getCostForSkill(SkillType.LIFESTEAL_AMOUNT, currentLevel) / 2)
                 }
             }],
-            [SkillType.DAILY_GOLD, {
-                skillType: SkillType.DAILY_GOLD,
+            [SkillType.WAVE_BONUS, {
+                skillType: SkillType.WAVE_BONUS,
                 goldCost: {
-                    calculateCost: (currentLevel: number) => this.getCostForSkill(SkillType.DAILY_GOLD, currentLevel)
+                    calculateCost: (currentLevel: number) => this.getCostForSkill(SkillType.WAVE_BONUS, currentLevel)
                 },
                 emblemsCost: {
-                    calculateCost: (currentLevel: number) => Math.ceil(this.getCostForSkill(SkillType.DAILY_GOLD, currentLevel) / 2)
+                    calculateCost: (currentLevel: number) => Math.ceil(this.getCostForSkill(SkillType.WAVE_BONUS, currentLevel) / 2)
                 }
             }],
             [SkillType.EMBLEM_BONUS, {

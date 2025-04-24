@@ -6,24 +6,28 @@
     <!-- Основной контейнер -->
     <div class="content-container">
       <!-- HP container (левая сторона) -->
-      <div class="hp-container">
-        <div class="progress-bar">
-          <div class="progress-bar-fill" :style="{ width: `${calculateHealthPercentage()}%` }"></div>
+      <div class="left-section">
+        <div class="hp-container">
+          <div class="progress-bar">
+            <div class="progress-bar-fill" :style="{ width: `${calculateHealthPercentage()}%` }"></div>
+          </div>
+          <div class="hp-text">{{ Math.floor(healthState.current) }}/{{ healthState.max }}</div>
         </div>
-        <div class="hp-text">{{ Math.floor(healthState.current) }}/{{ healthState.max }}</div>
       </div>
       
       <!-- Currency container (правая сторона) -->
-      <div class="currency-container">
-        <div class="currency-item gold">
-          <img class="currency-img gold-img" src="/assets/images/towers/Gold.png" alt="Gold" 
-               onerror="this.onerror=null; this.src='/assets/images/currency/gold_coin.png';" />
-          <div class="currency-text gold-text">{{ goldCount }}</div>
-        </div>
-        <div class="currency-item emblem">
-          <img class="currency-img emblem-img" src="/assets/images/currency/heraldic_emblem16x16.png" alt="Emblem" 
-               onerror="this.onerror=null; this.src='/assets/images/emblems/emblem.png';" />
-          <div class="currency-text emblem-text">{{ emblemCount }}</div>
+      <div class="right-section">
+        <div class="currency-container">
+          <div class="currency-item gold">
+            <img class="currency-img gold-img" src="/assets/images/towers/Gold.png" alt="Gold" 
+                 onerror="this.onerror=null; this.src='/assets/images/currency/gold_coin.png';" />
+            <div class="currency-text gold-text">{{ goldCount }}</div>
+          </div>
+          <div class="currency-item emblem">
+            <img class="currency-img emblem-img" src="/assets/images/currency/heraldic_emblem16x16.png" alt="Emblem" 
+                 onerror="this.onerror=null; this.src='/assets/images/emblems/emblem.png';" />
+            <div class="currency-text emblem-text">{{ emblemCount }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -35,7 +39,7 @@ import { onMounted, reactive, ref, watchEffect } from 'vue';
 import { useGameStore } from '../../stores/game';
 
 // Constants matching StatsView.ts
-const HP_COLOR = '#009900'; // equivalent to 0x009900
+const HP_COLOR = '#008800'; // equivalent to 0x008800
 const HP_BACKGROUND_COLOR = '#005500'; // equivalent to 0x005500
 
 // Get the game store
@@ -93,39 +97,52 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   z-index: -1;
 }
 
 /* Контейнер для содержимого */
 .content-container {
-  position: relative;
+  display: flex;
   width: 100%;
   height: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 3%;
 }
 
-/* HP Container (левая сторона) */
-.hp-container {
+/* Левая секция для HP */
+.left-section {
+  flex: 1;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
+  padding-left: 0%;
+  padding-right: 0%;
+}
+
+/* Правая секция для валют */
+.right-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-left: 0%;
+  padding-right: 0%;
+}
+
+/* HP Container */
+.hp-container {
+  width: 90%;
+  max-width: 200px;
   position: relative;
-  width: 24%;
-  margin-left: 2%;
 }
 
 /* Прогресс-бар HP */
 .progress-bar {
   width: 100%;
-  height: 16px;
-  min-height: 14px;
+  height: 12px;
+  min-height: 10px;
   background-color: v-bind(HP_BACKGROUND_COLOR);
-  border: 1px solid rgba(0, 0, 0, 0.7);
-  border-radius: 4px;
+  border: 0px solid rgba(0, 0, 0, 0.7);
+  border-radius: 6px;
   overflow: hidden;
   position: relative;
 }
@@ -135,7 +152,7 @@ onMounted(() => {
   height: 100%;
   background-color: v-bind(HP_COLOR);
   transition: width 0.2s;
-  border-radius: 3px;
+  border-radius: 0px;
 }
 
 /* Текст HP */
@@ -146,40 +163,38 @@ onMounted(() => {
   transform: translate(-50%, -50%);
   color: #ffffff;
   font-family: 'pixelFont', monospace;
-  font-size: 11px;
+  font-size: 10px;
   text-shadow: 1px 1px 2px #000000;
   text-align: center;
   z-index: 1600;
   pointer-events: none;
 }
 
-/* Currency Container (правая сторона) */
+/* Currency Container */
 .currency-container {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
-  gap: 16px;
-  width: 50%;
-  margin-right: 4%;
+  gap: 14px;
 }
 
 .currency-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 0;
 }
 
 .currency-img {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
   display: block;
 }
 
 .currency-text {
   font-family: 'pixelFont', monospace;
-  font-size: 15px;
+  font-size: 14px;
   text-align: center;
   font-weight: bold;
   letter-spacing: 0.5px;
@@ -200,14 +215,14 @@ onMounted(() => {
 /* Адаптивное масштабирование */
 @media (max-width: 600px) {
   .currency-img {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
   }
   .currency-text {
-    font-size: 13px;
+    font-size: 12px;
   }
   .hp-text {
-    font-size: 10px;
+    font-size: 9px;
   }
 }
 </style> 

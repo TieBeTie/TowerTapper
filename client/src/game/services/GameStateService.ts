@@ -52,8 +52,8 @@ export class GameStateService {
         this.server.sendEnemyKilled(gold);
     }
 
-    handleCastleDamaged(health: number): void {
-        this.server.sendCastleDamaged(health);
+    handleTowerDamaged(health: number): void {
+        this.server.sendTowerDamaged(health);
     }
 
     getCurrentState(): GameState | null {

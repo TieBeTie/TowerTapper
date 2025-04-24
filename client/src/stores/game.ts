@@ -5,6 +5,7 @@ export type GameUIState = {
   gameUIVisible: boolean;
   upgradesPanelVisible: boolean;
   statsUpdateCounter: number;
+  isTowerAlive: boolean;
   stats: {
     gold: number;
     emblems: number;
@@ -18,6 +19,7 @@ export const useGameStore = defineStore('game', {
     gameUIVisible: false,
     upgradesPanelVisible: false,
     statsUpdateCounter: 0,
+    isTowerAlive: false,
     stats: {
       gold: 0,
       emblems: 0,
@@ -27,6 +29,11 @@ export const useGameStore = defineStore('game', {
   }),
   
   actions: {
+    // Tower alive state actions
+    setTowerAlive(isAlive: boolean) {
+      this.isTowerAlive = isAlive;
+    },
+    
     // UI visibility actions
     showGameUI() {
       this.gameUIVisible = true;

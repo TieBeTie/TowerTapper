@@ -2,100 +2,121 @@
   <div class="skills-panel">
     <div class="skills-container">
       <UpgradeButton 
-        v-for="skill in skills" 
-        :key="skill.id"
-        :name="skill.name"
-        :cost="skill.cost"
-        :level="skill.level"
-        :maxLevel="skill.maxLevel"
-        :canAfford="canAffordUpgrade(skill.skillType)"
-        :skillType="skill.skillType"
-        @upgrade="onUpgrade(skill.id)"
-        @purchase-success="handlePurchaseSuccess"
+        v-for="skill in filteredSkills" 
+        :key="skill.type"
+        :skill="skill"
       />
     </div>
     
-    <div v-if="skills.length === 0" class="no-skills">
+    <div v-if="filteredSkills.length === 0" class="no-skills">
       <p>No skills available in this category</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, ref, onMounted } from 'vue';
+import { defineProps, defineEmits, ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import UpgradeButton from './UpgradeButton.vue';
 import { SkillType, CurrencyType } from '../../game/types/SkillType';
 
-// Тип для навыка
-interface Skill {
-  id: string;
-  category: number;
-  name: string;
-  description: string;
-  cost: number;
-  level: number;
-  maxLevel: number;
-  skillType: SkillType;
-}
-
-// Объявление для TypeScript, что window.game существует
+// Объявление для TypeScript, что window.PhaserGame существует
 declare global {
   interface Window {
-    game?: any;
+    PhaserGame?: any;
   }
 }
 
 const props = defineProps<{
-  skills: Skill[];
-  goldCount: number;
+  categoryId: number;
 }>();
 
-const emit = defineEmits<{
-  (e: 'upgrade', id: string): void;
-  (e: 'refresh-skills'): void;
-}>();
+// Карта категорий на типы навыков
+const SKILL_CATEGORIES: Record<number, SkillType[]> = {
+  0: [ // Attack Upgrades
+    SkillType.DAMAGE,
+    SkillType.ATTACK_SPEED,
+    SkillType.ATTACK_RANGE,
+    SkillType.MULTISHOT,
+    SkillType.CRIT_CHANCE,
+    SkillType.CRIT_MULTIPLIER
+  ],
+  1: [ // Defense Upgrades
+    SkillType.MAX_HEALTH,
+    SkillType.HEALTH_REGEN,
+    SkillType.DEFENSE,
+    SkillType.KNOCKBACK,
+    SkillType.LIFESTEAL_CHANCE,
+    SkillType.LIFESTEAL_AMOUNT
+  ],
+  2: [ // Utility Upgrades
+    SkillType.WAVE_BONUS,
+    SkillType.COIN_REWARD,
+    SkillType.EMBLEM_BONUS,
+    SkillType.FREE_UPGRADE,
+    SkillType.SUPPLY_DROP,
+    SkillType.GAME_SPEED
+  ]
+};
 
-let upgradeManager: any = null;
-let gameScene: any = null;
+const allSkills = ref<any[]>([]);
+const upgradeManager = ref<any>(null);
+const gameScene = ref<any>(null);
+
+// Получение доступных навыков из UpgradeManager
+const loadAvailableSkills = () => {
+  if (!gameScene.value || !upgradeManager.value) return;
+  
+  try {
+    allSkills.value = upgradeManager.value.getAvailableSkills();
+    console.log('Loaded skills:', allSkills.value);
+  } catch (error) {
+    console.error('Error loading skills:', error);
+  }
+};
 
 // Инициализация при монтировании
 onMounted(() => {
-  // Попытаться найти GameScene и UpgradeManager
-  if (window.game?.scene?.scenes) {
-    gameScene = window.game.scene.scenes.find((scene: any) => scene.key === 'GameScene');
-    if (gameScene) {
-      upgradeManager = gameScene.upgradeManager;
+  // Получаем доступ к экземпляру игры
+  if (window.PhaserGame?.scene) {
+    // Находим GameScene
+    gameScene.value = window.PhaserGame.scene.getScene ? 
+      window.PhaserGame.scene.getScene('GameScene') : 
+      (window.PhaserGame.scene.scenes?.find((scene: any) => scene.key === 'GameScene'));
+      
+    if (gameScene.value) {
+      // Получаем UpgradeManager из GameScene
+      upgradeManager.value = gameScene.value.upgradeManager;
+      
+      if (upgradeManager.value) {
+        // Загружаем доступные навыки
+        loadAvailableSkills();
+        
+        // Добавляем слушатель события обновления золота
+        gameScene.value.events.on('updateGold', loadAvailableSkills);
+      }
     }
   }
 });
 
-// Проверка, может ли игрок позволить себе улучшение
-function canAffordUpgrade(skillType: SkillType): boolean {
-  if (!upgradeManager) {
-    // Если UpgradeManager не найден, используем обычную проверку на золото
-    const skill = props.skills.find(s => s.skillType === skillType);
-    return skill ? props.goldCount >= skill.cost : false;
-  }
+// Фильтрация навыков по категории
+const filteredSkills = computed(() => {
+  if (!allSkills.value || allSkills.value.length === 0) return [];
   
-  // Иначе используем метод из UpgradeManager
-  try {
-    return upgradeManager.canAffordUpgrade(skillType, CurrencyType.GOLD);
-  } catch (error) {
-    console.error('Error checking if player can afford upgrade:', error);
-    return false;
+  const categorySkillTypes = SKILL_CATEGORIES[props.categoryId] || [];
+  return allSkills.value.filter(skill => categorySkillTypes.includes(skill.type));
+});
+
+// Очистка при размонтировании
+onUnmounted(() => {
+  if (gameScene.value) {
+    gameScene.value.events.off('updateGold', loadAvailableSkills);
   }
-}
+});
 
-// Оригинальный обработчик улучшения (для совместимости)
-function onUpgrade(id: string) {
-  emit('upgrade', id);
-}
-
-// Обработчик успешной покупки через UpgradeManager
-function handlePurchaseSuccess(skillType: SkillType) {
-  // Запросить обновление списка навыков
-  emit('refresh-skills');
-}
+// Следим за изменением категории
+watch(() => props.categoryId, () => {
+  console.log('Category changed to:', props.categoryId);
+});
 </script>
 
 <style scoped>
@@ -107,6 +128,7 @@ function handlePurchaseSuccess(skillType: SkillType) {
   flex-direction: column;
   align-items: center;
   padding: 5px;
+  background-color: transparent;
 }
 
 .skills-container {
@@ -119,6 +141,7 @@ function handlePurchaseSuccess(skillType: SkillType) {
   width: 100%;
   max-width: 320px;
   margin-bottom: 5px;
+  background-color: transparent;
 }
 
 .no-skills {
@@ -130,5 +153,6 @@ function handlePurchaseSuccess(skillType: SkillType) {
   font-size: 16px;
   color: #aaa;
   text-align: center;
+  background-color: transparent;
 }
 </style> 

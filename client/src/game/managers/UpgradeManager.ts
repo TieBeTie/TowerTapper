@@ -36,28 +36,6 @@ export class UpgradeManager {
     }
 
     // Добавим функцию Фибоначчи для расчета цены
-    private fibonacci(n: number): number {
-        // Явно определяем последовательность для первых элементов
-        const fibValues = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
-        
-        // Возвращаем заранее вычисленное значение для n <= 10
-        if (n >= 0 && n < fibValues.length) {
-            return fibValues[n];
-        }
-        
-        // Для n > 10, рассчитываем динамически
-        let a = fibValues[fibValues.length - 2];
-        let b = fibValues[fibValues.length - 1];
-        let result = 0;
-        
-        for (let i = fibValues.length; i <= n; i++) {
-            result = a + b;
-            a = b;
-            b = result;
-        }
-        
-        return result;
-    }
 
     // Initialize pricing information separately
     private initializePrices(): void {
@@ -433,7 +411,7 @@ export class UpgradeManager {
             case SkillType.LIFESTEAL_AMOUNT:
                 // Value already saved to SkillStateManager
                 break;
-            case SkillType.DAILY_GOLD:
+            case SkillType.WAVE_BONUS:
                 // Value already saved to SkillStateManager
                 break;
             case SkillType.EMBLEM_BONUS:

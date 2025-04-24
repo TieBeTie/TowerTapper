@@ -12,7 +12,7 @@ export enum SkillType {
     KNOCKBACK = 'KNOCKBACK',
     LIFESTEAL_CHANCE = 'LIFESTEAL_CHANCE',
     LIFESTEAL_AMOUNT = 'LIFESTEAL_AMOUNT',
-    DAILY_GOLD = 'DAILY_GOLD',
+    WAVE_BONUS = 'WAVE_BONUS',
     EMBLEM_BONUS = 'EMBLEM_BONUS',
     FREE_UPGRADE = 'FREE_UPGRADE',
     SUPPLY_DROP = 'SUPPLY_DROP',
@@ -57,7 +57,7 @@ export interface SkillState {
     [SkillType.KNOCKBACK]: number;
     [SkillType.LIFESTEAL_CHANCE]: number;
     [SkillType.LIFESTEAL_AMOUNT]: number;
-    [SkillType.DAILY_GOLD]: number;
+    [SkillType.WAVE_BONUS]: number;
     [SkillType.EMBLEM_BONUS]: number;
     [SkillType.FREE_UPGRADE]: number;
     [SkillType.SUPPLY_DROP]: number;

@@ -241,7 +241,7 @@ class EnemyManager {
             }
             console.log("Enemy killed by arrow");
 
-            // Spawn a gold above the castle (Tower)
+            // Spawn a gold above the tower (Tower)
             if (this.scene && this.scene.children && this.scene.children.getByName) {
                 const tower = this.scene.children.getByName('tower') as Tower;
                 if (tower && this.goldCollectionEffectFromEnemy) {

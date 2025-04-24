@@ -88,7 +88,7 @@ export class InitialShopFilterService {
             case InitialUpgradeCategory.UTILITY:
                 return skills.filter(skill => 
                     skill.type === SkillType.COIN_REWARD ||
-                    skill.type === SkillType.DAILY_GOLD ||
+                    skill.type === SkillType.WAVE_BONUS ||
                     skill.type === SkillType.EMBLEM_BONUS ||
                     skill.type === SkillType.FREE_UPGRADE ||
                     skill.type === SkillType.SUPPLY_DROP ||

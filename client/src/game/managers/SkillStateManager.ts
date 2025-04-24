@@ -1,13 +1,13 @@
 import { SkillType } from '../types/SkillType';
 import { ISkillState } from '../types/ISkillState';
-import { SkillSetStorage } from '../storage/SkillSetStorage';
+import { useSkillSetStore } from '../../stores/useSkillSetStore';
 import { InitialSkillService } from '../services/InitialSkillService';
 import { SkillDefinitions } from '../definitions/SkillDefinitions';
 
 export class SkillStateManager {
     private static instance: SkillStateManager;
     private state: Map<SkillType, ISkillState>;
-    private storage: SkillSetStorage;
+    private skillSetStore: ReturnType<typeof useSkillSetStore>;
     private InitialSkillService: InitialSkillService | null = null;
     private currentTowerHealth: number = 0;
     private lastRegenerationTime: number = 0;
@@ -26,16 +26,15 @@ export class SkillStateManager {
         SkillType.LIFESTEAL_AMOUNT,
         SkillType.LIFESTEAL_CHANCE,
         SkillType.COIN_REWARD,
-        SkillType.DAILY_GOLD,
+        SkillType.WAVE_BONUS,
         SkillType.FREE_UPGRADE,
         SkillType.SUPPLY_DROP,
         SkillType.GAME_SPEED
     ]);
     
     private constructor() {
-        this.storage = SkillSetStorage.getInstance();
+        this.skillSetStore = useSkillSetStore();
         this.state = new Map();
-
     }
     
     // Lazy accessor for InitialSkillService to avoid circular dependency
@@ -56,7 +55,7 @@ export class SkillStateManager {
     // Инициализация при старте игры
     public initialize(): void {
         // Пересоздаем хранилище в начале игры
-        this.storage = SkillSetStorage.recreate();
+        this.skillSetStore.recreate();
         
         // Инициализируем пустое состояние
         this.state = new Map();
@@ -70,7 +69,7 @@ export class SkillStateManager {
         }
         
         // Сохраняем начальное состояние
-        this.storage.save(this.state);
+        this.skillSetStore.save(this.state);
     }
     
     // Инициализация перманентных скиллов с сервера
@@ -121,7 +120,7 @@ export class SkillStateManager {
     // Сброс всех навыков кроме перманентных (вызывать при проигрыше)
     public tryResetToTheServer(): void {
         // Пересоздаем хранилище для следующей игры
-        this.storage = SkillSetStorage.recreate();
+        this.skillSetStore.recreate();
         
         // Временное хранилище для перманентных навыков
         const InitialSkills = new Map<SkillType, ISkillState>();
@@ -160,7 +159,7 @@ export class SkillStateManager {
         });
         
         // Сохраняем состояние в новом хранилище
-        this.storage.save(this.state);
+        this.skillSetStore.save(this.state);
         
         console.log('Skill states reset on game over. Initial skills preserved.');
     }
@@ -180,7 +179,7 @@ export class SkillStateManager {
         });
         
         // Save to storage
-        this.storage.save(this.state);
+        this.skillSetStore.save(this.state);
     }
     
     // Получение состояния

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="gameStore.gameUIVisible" class="game-ui">
+  <div v-if="gameStore.isTowerAlive" class="game-ui">
     <!-- Верхняя панель с информацией о ресурсах (15% высоты) -->
     <div class="stats-view">
       <StatsView />
@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useGameStore } from '../../stores/game';
 import StatsView from './StatsView.vue';
 import UpgradePanel from './UpgradePanel.vue';
@@ -27,15 +27,24 @@ const gameStore = useGameStore();
 onMounted(() => {
   console.log('[GameGeneralUIPanel] Component mounted');
   
-  // При монтировании сразу показываем UI
-  gameStore.showGameUI();
-  
-  // Также показываем панель улучшений
+  // При монтировании показываем панель улучшений
   gameStore.showUpgradesPanel();
   
   // Добавляем инициализацию начальных данных для тестирования
   if (gameStore.stats.gold === 0) {
     gameStore.updateGold(100);
+  }
+});
+
+// Следим за изменением состояния башни
+watch(() => gameStore.isTowerAlive, (isAlive) => {
+  console.log(`[GameGeneralUIPanel] Tower state changed: ${isAlive ? 'alive' : 'dead'}`);
+  
+  // Автоматически показываем или скрываем UI в зависимости от состояния башни
+  if (isAlive) {
+    gameStore.showGameUI();
+  } else {
+    gameStore.hideGameUI();
   }
 });
 </script>
@@ -53,25 +62,25 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: rgba(20, 20, 20, 0.8);
-  box-shadow: 0 -2px 10px 0 rgba(0, 0, 0, 0.5);
-  border-top: 1px solid #666;
+  background: transparent;
+  box-shadow: none;
+  border-top: none;
   overflow: hidden;
 }
 
-/* Панель StatsView - 15% высоты UI */
+/* Панель StatsView - 12% высоты UI */
 .stats-view {
-  flex: 0 0 15%;
+  flex: 0 0 10%;
   width: 100%;
   overflow: hidden;
   pointer-events: auto; /* Разрешаем взаимодействие со статистикой */
 }
 
-/* Панель улучшений - 85% высоты UI (включая категории) */
+/* Панель улучшений - 90% высоты UI (включая категории) */
 .upgrade-showcase {
-  flex: 0 0 85%;
+  flex: 0 0 90%;
   width: 100%;
-  background: rgba(0, 0, 0, 0.3);
+  background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;

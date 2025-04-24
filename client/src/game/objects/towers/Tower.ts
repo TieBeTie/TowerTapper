@@ -284,6 +284,14 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         // Reset gold to zero when tower dies
         if (this.scene) {
             const gameScene = this.scene.scene.get('GameScene');
+            // Обновляем статус башни в хранилище Pinia
+            try {
+                const gameStore = useGameStore();
+                gameStore.setTowerAlive(false);
+            } catch (err) {
+                console.warn('Could not update tower alive status in store', err);
+            }
+            
             if ((gameScene as any).goldManager) {
                 (gameScene as any).goldManager.updateGoldDirectly(0);
             }

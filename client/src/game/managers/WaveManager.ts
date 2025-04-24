@@ -192,7 +192,7 @@ export class WaveManager extends Phaser.Events.EventEmitter {
 
     // Add a new method to apply daily gold bonus
     private applyDailyGoldBonus(): void {
-        const dailyGoldLevel = this.skillStateManager.getState(SkillType.DAILY_GOLD);
+        const dailyGoldLevel = this.skillStateManager.getState(SkillType.WAVE_BONUS);
         
         if (dailyGoldLevel > 0) {
             // If daily gold bonus level is 1, give 2 gold; if level 2, give 3 gold; and so on
