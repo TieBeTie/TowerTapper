@@ -17,7 +17,7 @@ COPY . .
 
 # Production stage ------------------------------------------------------------ 
 # Build the application and set permissions
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/bot/main.go && \
+RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/bot &&\
     chown -R appuser:appuser /app
 
 # Switch to non-root user

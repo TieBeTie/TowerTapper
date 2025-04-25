@@ -220,6 +220,10 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         // Мы больше не используем стандартный фон
         // this.screenManager.setupBackground();
 
+        // Инициализируем mysticalBackground
+        this.mysticalBackground = new MysticalBackground(this);
+        //this.mysticalBackground.setDepth(-9999);
+
         // Получаем центр игровой области и масштаб
         const center = this.screenManager.getGameViewCenter();
         const gameScale = this.screenManager.getGameScale();
@@ -260,6 +264,10 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                             // Обновляем состояние башни в хранилище Pinia после построения
                             const gameStore = useGameStore();
                             gameStore.setTowerAlive(true);
+                            // Добавляем проверку на существование mysticalBackground перед вызовом showGlowLayer
+                            if (this.mysticalBackground) {
+                                this.mysticalBackground.showGlowLayer();
+                            }
                         }
                     },
                     repeat: 15

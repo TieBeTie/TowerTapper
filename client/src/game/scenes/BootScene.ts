@@ -6,6 +6,15 @@ import { TelegramService } from '../services/TelegramService';
 import { InitialSkillService } from '../services/InitialSkillService';
 import { EmblemStorage } from '../storage/EmblemStorage';
 import { MysticalBackground } from '../objects/backgrounds/MysticalBackground';
+import { GameServerFactory } from '../../services/api/GameServerFactory';
+import { GameServerGateway } from '../../services/api/GameServerGateway';
+
+// Add WebFont type declaration
+declare global {
+    interface Window {
+        WebFont: any;
+    }
+}
 
 class BootScene extends Phaser.Scene implements IScene {
     public screenManager!: ScreenManager;
@@ -20,6 +29,15 @@ class BootScene extends Phaser.Scene implements IScene {
     private tipText!: Phaser.GameObjects.Text;
     private progressMask!: Phaser.GameObjects.Graphics;
     private progressFill!: Phaser.GameObjects.Image;
+    private connectionAttempts: number = 0;
+    private maxConnectionAttempts: number = 3;
+    private gameServer!: GameServerGateway;
+    private isConnecting: boolean = false;
+    private assetsLoaded: boolean = false;
+    private connectionComplete: boolean = false;
+    private connectionResult: 'success' | 'failure' = 'failure';
+    private loadingComplete: boolean = false;
+    private assetLoadProgress: number = 0;
     
     // Pool of helpful tips to show randomly during loading
     private tips: string[] = [
@@ -47,6 +65,12 @@ class BootScene extends Phaser.Scene implements IScene {
     }
 
     preload() {
+        // Initialize services early
+        this.telegramService = TelegramService.getInstance();
+        this.InitialSkillService = InitialSkillService.getInstance();
+        this.emblemStorage = EmblemStorage.getInstance();
+        this.gameServer = GameServerFactory.createGameServer();
+        
         // Create loading screen first
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
@@ -109,6 +133,23 @@ class BootScene extends Phaser.Scene implements IScene {
         });
         this.percentText.setOrigin(0.5);
         
+        // Calculate position between percentage and loading text
+        const loadingTextY = height - Math.max(120, height * 0.1); // Current loading text position
+        const connectionIconY = height / 2 + 180; // Position it below percentage but above loading text
+        
+        // Create connection status indicator at the new position
+        const connectionStatusIcon = this.add.graphics();
+        connectionStatusIcon.setPosition(width / 2, connectionIconY);
+        
+        // Add loading text to show current step - position it above the tip text
+        this.loadingText = this.add.text(width / 2, loadingTextY, 'Loading assets...', {
+            fontSize: '12px',
+            color: '#ffffff',
+            fontFamily: 'pixelFont',
+            align: 'center'
+        });
+        this.loadingText.setOrigin(0.5);
+        
         // Select random tip from the pool
         const randomTip = this.tips[Math.floor(Math.random() * this.tips.length)];
         
@@ -138,70 +179,25 @@ class BootScene extends Phaser.Scene implements IScene {
             // Scale image appropriately
             const scaleFactor = Math.min(width / displayImage.width * 0.5, height / displayImage.height * 0.25);
             displayImage.setScale(scaleFactor);
-            
-            // Add a subtle animation to the image
-            this.tweens.add({
-                targets: displayImage,
-                y: displayImage.y - 10,
-                duration: 1500,
-                ease: 'Sine.easeInOut',
-                yoyo: true,
-                repeat: -1
-            });
-            
-            // Add to the fade out targets
-            this.load.on('complete', () => {
-                // Animate disappearance of loading screen
-                this.tweens.add({
-                    targets: [this.progressFill, progressBarBg, this.percentText, this.loadingBackground, this.tipText, displayImage],
-                    alpha: 0,
-                    duration: 500,
-                    delay: 300,
-                    ease: 'Power2'
-                });
-            });
         });
         
-        // Track loading progress
+        // Track asset loading progress (worth 80% of total loading)
         this.load.on('progress', (value: number) => {
-            const percent = Math.floor(value * 100);
-            this.percentText.setText(`${percent}%`);
-            
-            // Update the mask for the progress bar fill
-            this.progressMask.clear();
-            this.progressMask.fillStyle(0xffffff);
-            this.progressMask.fillRect(width / 2 - barWidth / 2, height / 2 + 50 - barHeight / 2, barWidth * value, barHeight);
+            this.assetLoadProgress = value;
+            this.updateLoadingProgress();
         });
         
-        // Update when loading completes
+        // When assets finished loading
         this.load.on('complete', () => {
-            // Animate disappearance of loading screen
-            this.tweens.add({
-                targets: [this.progressFill, progressBarBg, this.percentText, this.loadingBackground, this.tipText],
-                alpha: 0,
-                duration: 500,
-                delay: 300,
-                ease: 'Power2'
-            });
+            this.assetsLoaded = true;
+            this.loadingText.setText('Connecting to server...');
+            
+            // Start server connection as part of loading
+            this.getTelegramIdAndConnect();
         });
-
-        // Check if running on iOS for special handling
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-        if (isIOS) {
-            console.log('BootScene: Running on iOS - applying special handling');
-            // Add iOS-specific validation handlers
-            this.load.on('complete', () => {
-                console.log('All assets loaded on iOS');
-            });
-        }
 
         // Load WebFont loader with a properly set callback
         this.load.script('webfont', 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js');
-        
-        // Ensure the script is loaded before proceeding
-        this.load.on('filecomplete-script-webfont', () => {
-            console.log('WebFont script loaded successfully');
-        });
 
         // Load audio assets with MP3 fallback for iOS
         this.load.audio('gameMusic', [
@@ -227,15 +223,6 @@ class BootScene extends Phaser.Scene implements IScene {
         // Load game logo for loading screen
         this.load.image('tower', 'assets/images/towers/Tower-type-3.6@2x.png');
         
-        // Load other game resources
-        this.load.on('filecomplete', (key: string) => {
-            console.log(`File complete: ${key}`);
-        });
-
-        this.load.on('loaderror', (file: any) => {
-            console.error(`Error loading file: ${file.key}`);
-        });
-
         // Load game resources as spritesheets
         this.load.spritesheet('enemy', 'assets/images/enemies/Enemie_anim.png', {
             frameWidth: 75,
@@ -269,41 +256,17 @@ class BootScene extends Phaser.Scene implements IScene {
     create() {
         this.scene.bringToTop('BootScene');
         
-        // Initialize ScreenManager first
+        // Initialize ScreenManager
         this.screenManager = new ScreenManager(this);
         
-        // Initialize services
-        this.telegramService = TelegramService.getInstance();
-        this.InitialSkillService = InitialSkillService.getInstance();
-        this.emblemStorage = EmblemStorage.getInstance();
-        
-        // Create black rectangle for the whole screen
-        const { width, height } = this.screenManager.getScreenSize();
-        const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 1);
-        fadeRect.setOrigin(0);
-
-        // Animate appearance
-        this.tweens.add({
-            targets: fadeRect,
-            alpha: 0,
-            duration: 500,
-            ease: 'Power2',
-            onComplete: () => {
-                fadeRect.destroy();
-            }
-        });
-
-        // Initial setup
-        this.setupBootView();
-
         // Subscribe to screen resize events
         this.events.on('screenResize', this.handleScreenResize, this);
         
-        // Get telegram_id from URL and authenticate
-        this.authenticateUser();
+        // Setup boot view
+        this.setupBootView();
     }
     
-    private authenticateUser(): void {
+    private getTelegramIdAndConnect(): void {
         // Simple check for telegram_id from either Telegram WebApp or URL
         let telegramId = null;
         
@@ -332,150 +295,168 @@ class BootScene extends Phaser.Scene implements IScene {
             }
         }
         
-        // Final check and proceed regardless
+        // Final check and proceed with connection
         if (telegramId) {
             // Store for use in the game
             this.telegramId = telegramId;
             sessionStorage.setItem('telegram_id', telegramId);
             
-            // Show status
-            const { width, height } = this.screenManager.getScreenSize();
-            const statusText = this.add.text(
-                width / 2,
-                height / 2 - 80,
-                'Telegram ID: ' + telegramId,
-                {
-                    fontSize: '16px',
-                    color: '#00ff00',
-                    align: 'center',
-                    fontFamily: 'pixelFont'
-                }
-            );
-            statusText.setOrigin(0.5);
-            
-            // Try to connect but don't block game start
-            const loadingText = this.add.text(
-                width / 2,
-                height / 2 - 40,
-                'Connecting to server...',
-                {
-                    fontSize: '18px',
-                    color: '#ffffff',
-                    align: 'center',
-                    fontFamily: 'pixelFont'
-                }
-            );
-            loadingText.setOrigin(0.5);
-            
-            // Add start game button that's always enabled
-            this.showGameStartButton(false, loadingText);
-            
-            // Try to connect to server in background
-            Promise.all([
-                this.InitialSkillService.connect(telegramId),
-                this.emblemStorage.connect(telegramId)
-            ])
-                .then(() => {
-                    console.log('Connected to server successfully');
-                    loadingText.setText('Connected to server!');
-                    loadingText.setColor('#00ff00');
-                    // Game already has a start button, so user can proceed when ready
-                })
-                .catch(error => {
-                    console.error('Server connection failed:', error);
-                    loadingText.setText('Warning: Playing without server connection.\nProgress will not be saved.');
-                    loadingText.setColor('#ffaa00');
-                    // Game can still be played, but progress won't be saved
-                    sessionStorage.setItem('local_mode', 'true');
-                });
+            // Connect to server
+            this.connectToServer(telegramId);
         } else {
-            // No telegram_id found from any source - still allow playing locally
-            const { width, height } = this.screenManager.getScreenSize();
-            const warningText = this.add.text(
-                width / 2,
-                height / 2 - 80,
-                'No Telegram ID found.\nPlaying in local mode (progress will not be saved).',
-                {
-                    fontSize: '16px',
-                    color: '#ffaa00',
-                    align: 'center',
-                    fontFamily: 'pixelFont'
-                }
-            );
-            warningText.setOrigin(0.5);
+            // No telegram_id found - skip connection phase
+            this.connectionComplete = true;
+            this.connectionResult = 'failure';
+            this.loadingText.setText('No Telegram ID found. Playing in local mode.');
             
             // Set local mode flag
             sessionStorage.setItem('local_mode', 'true');
             
-            // Show start button
-            this.showGameStartButton(true);
+            // Finish loading process
+            this.checkLoadingComplete();
         }
     }
     
-    private showGameStartButton(isLocalMode: boolean, loadingText?: Phaser.GameObjects.Text): void {
-        const { width, height } = this.screenManager.getScreenSize();
+    private connectToServer(telegramId: string): void {
+        if (this.isConnecting) return;
         
-        // Create start game button
-        const startButton = this.add.text(
-            width / 2,
-            height / 2 + 50,
-            'Start Game',
-            {
-                fontSize: '24px',
-                color: '#ffffff',
-                backgroundColor: '#4a6fe3',
-                padding: {
-                    left: 20,
-                    right: 20,
-                    top: 10,
-                    bottom: 10
-                },
-                fontFamily: 'pixelFont'
-            }
-        );
-        startButton.setOrigin(0.5);
-        startButton.setInteractive({ useHandCursor: true });
+        this.isConnecting = true;
+        this.connectionAttempts++;
         
-        // Add hover effect
-        startButton.on('pointerover', () => {
-            startButton.setScale(1.1);
-        });
-        startButton.on('pointerout', () => {
-            startButton.setScale(1.0);
-        });
+        console.log(`Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`);
         
-        // Start game when clicked
-        startButton.on('pointerdown', () => {
-            if (loadingText) {
-                loadingText.destroy();
-            }
-            
-            // Create fancy transition effect
-            const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 0);
-            fadeRect.setOrigin(0);
-            
-            this.tweens.add({
-                targets: fadeRect,
-                alpha: 1,
-                duration: 500,
-                onComplete: () => {
-                    // Don't wait for font loading, just transition to game
-                    this.createAnimations();
-                    this.scene.stop('BootScene');
-                    this.scene.start('MenuScene');
+        // Update loading text
+        if (this.connectionAttempts > 1) {
+            this.loadingText.setText(`Connecting to server (Attempt ${this.connectionAttempts}/${this.maxConnectionAttempts})...`);
+        }
+        
+        // Try to connect to server
+        Promise.all([
+            this.InitialSkillService.connect(telegramId),
+            this.emblemStorage.connect(telegramId)
+        ])
+            .then(() => {
+                console.log('Connected to server successfully');
+                this.connectionComplete = true;
+                this.connectionResult = 'success';
+                this.isConnecting = false;
+                this.loadingText.setText('Connected to server!');
+                
+                // Update progress and check if loading is complete
+                this.checkLoadingComplete();
+            })
+            .catch(error => {
+                console.error('Server connection failed:', error);
+                
+                if (this.connectionAttempts < this.maxConnectionAttempts) {
+                    // Retry connection after a delay
+                    this.loadingText.setText(`Connection failed. Retrying (${this.connectionAttempts}/${this.maxConnectionAttempts})...`);
+                    
+                    setTimeout(() => {
+                        this.isConnecting = false;
+                        this.connectToServer(telegramId);
+                    }, 2000);
+                } else {
+                    // Give up after max attempts
+                    console.error(`Failed to connect after ${this.maxConnectionAttempts} attempts.`);
+                    this.connectionComplete = true;
+                    this.connectionResult = 'failure';
+                    this.isConnecting = false;
+                    this.loadingText.setText('Connection failed. Playing in local mode.');
+                    
+                    // Game can still be played, but progress won't be saved
+                    sessionStorage.setItem('local_mode', 'true');
+                    
+                    // Update progress and check if loading is complete
+                    this.checkLoadingComplete();
                 }
             });
+    }
+    
+    private updateLoadingProgress(): void {
+        // Calculate the total progress 
+        // - First 80% is asset loading
+        // - Last 20% is connection
+        let totalProgress = 0;
+        
+        if (!this.assetsLoaded) {
+            // Assets are still loading (0-80%)
+            totalProgress = this.assetLoadProgress * 0.8;
+        } else if (!this.connectionComplete) {
+            // Connection phase (80-100%)
+            totalProgress = 0.8 + (this.connectionAttempts / (this.maxConnectionAttempts + 1)) * 0.2;
+        } else {
+            // Everything complete
+            totalProgress = 1.0;
+        }
+        
+        // Update percentage display
+        const percent = Math.floor(totalProgress * 100);
+        if (this.percentText) {
+            this.percentText.setText(`${percent}%`);
+        }
+        
+        // Update progress bar
+        if (this.progressMask && this.cameras.main) {
+            const width = this.cameras.main.width;
+            const barWidth = Math.min(320, width * 0.8);
+            
+            this.progressMask.clear();
+            this.progressMask.fillStyle(0xffffff);
+            this.progressMask.fillRect(width / 2 - barWidth / 2, this.cameras.main.height / 2 + 50 - 15, barWidth * totalProgress, 30);
+        }
+    }
+    
+    private checkLoadingComplete(): void {
+        // Update loading progress
+        this.updateLoadingProgress();
+        
+        // Check if all loading steps are complete
+        if (this.assetsLoaded && this.connectionComplete && !this.loadingComplete) {
+            this.loadingComplete = true;
+            
+            // Crear una transición simple de oscurecimiento al final
+            this.fadeToBlackAndTransition();
+        }
+    }
+    
+    private fadeToBlackAndTransition(): void {
+        console.log('[BootScene] Fading to black and transitioning to MenuScene');
+        
+        // Crear un único rectángulo negro para la transición
+        const darkOverlay = this.add.graphics();
+        darkOverlay.clear();
+        darkOverlay.setDepth(9999);
+        
+        // Dibujar un rectángulo negro con alfa 0 (transparente)
+        darkOverlay.fillStyle(0x000000, 1);
+        darkOverlay.fillRect(0, 0, this.cameras.main.width, this.cameras.main.height);
+        darkOverlay.alpha = 0;
+        
+        // Realizar una única animación de transparente a negro
+        this.tweens.add({
+            targets: darkOverlay,
+            alpha: 1,
+            duration: 1000,
+            ease: 'Linear',
+            onComplete: () => {
+                console.log('[BootScene] Transition complete, going to MenuScene');
+                
+                // Crear las animaciones necesarias 
+                this.createAnimations();
+                
+                // Ir a la escena del menú principal
+                this.scene.stop('BootScene');
+                this.scene.start('MenuScene');
+            }
         });
     }
-
+    
     private setupBootView(): void {
-        // Создаем фон через ScreenManager
-        // this.screenManager.setupBackground();
-
         // Check if running on iOS for special handling
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
-        // Создаем текстуру частиц
+        // Create particle texture
         const graphics = this.add.graphics();
         graphics.fillStyle(0xffffff, 1);
         graphics.fillCircle(4, 4, 4);
@@ -500,41 +481,38 @@ class BootScene extends Phaser.Scene implements IScene {
             }
         }
 
-        // @ts-ignore
-        WebFont.load({
-            custom: {
-                families: ['pixelFont'],
-                urls: ['assets/fonts/pixelFont.css']
-            },
-            active: () => {
-                console.log('Font loaded successfully');
-                
-                // Добавляем тестовый элемент для прогрузки шрифта
-                const testText = document.createElement('div');
-                testText.style.fontFamily = 'pixelFont';
-                testText.style.fontSize = '0px';
-                testText.style.visibility = 'hidden';
-                testText.innerHTML = 'Font preload';
-                document.body.appendChild(testText);
-                
-                // Удаляем элемент после короткой задержки
-                setTimeout(() => {
-                    document.body.removeChild(testText);
-                    // Переходим к следующей сцене только после полной инициализации
-                    this.createAnimations();
-                    this.scene.start('MenuScene');
-                }, 500);
-            },
-            inactive: () => {
-                console.error('Font failed to load');
-            }
-        });
+        // Font loading setup
+        if (window.WebFont) {
+            // @ts-ignore
+            WebFont.load({
+                custom: {
+                    families: ['pixelFont'],
+                    urls: ['assets/fonts/pixelFont.css']
+                },
+                active: () => {
+                    console.log('Font loaded successfully');
+                    
+                    // Add test element for font preload
+                    const testText = document.createElement('div');
+                    testText.style.fontFamily = 'pixelFont';
+                    testText.style.fontSize = '0px';
+                    testText.style.visibility = 'hidden';
+                    testText.innerHTML = 'Font preload';
+                    document.body.appendChild(testText);
+                    
+                    // Remove element after delay
+                    setTimeout(() => {
+                        document.body.removeChild(testText);
+                    }, 500);
+                },
+                inactive: () => {
+                    console.error('Font failed to load');
+                }
+            });
+        }
     }
 
     private handleScreenResize(gameScale: number): void {
-        // Обновляем фон
-        // this.screenManager.setupBackground();
-        
         const { width, height } = this.screenManager.getScreenSize();
         
         // Update tip text position and wrapping if it exists
@@ -542,6 +520,12 @@ class BootScene extends Phaser.Scene implements IScene {
             this.tipText.setPosition(width / 2, height - Math.max(50, height * 0.08));
             this.tipText.setWordWrapWidth(width * 0.9);
             this.tipText.setFontSize(Math.max(12, Math.round(14 * (width / 800))));
+        }
+        
+        // Update loading text
+        if (this.loadingText && this.loadingText.active) {
+            const loadingTextY = height - Math.max(120, height * 0.1);
+            this.loadingText.setPosition(width / 2, loadingTextY);
         }
         
         // Update progress bar if it exists
@@ -599,12 +583,15 @@ class BootScene extends Phaser.Scene implements IScene {
     }
 
     destroy(): void {
-        // Удаляем подписку на событие resize
+        // Remove event subscriptions
         this.events.off('screenResize', this.handleScreenResize, this);
         
         if (this.screenManager) {
             this.screenManager.destroy();
         }
+        
+        // Clean up tweens
+        this.tweens.killAll();
     }
 }
 
