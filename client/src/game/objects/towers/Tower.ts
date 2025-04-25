@@ -37,6 +37,9 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private attackRangeCircle: Phaser.GameObjects.Graphics | null;
     private attackRange: number;
     private isTakingDamageAnimation: boolean = false;
+    // Add throttling to prevent excessive updates
+    private lastCircleUpdateTime: number = 0;
+    private readonly CIRCLE_UPDATE_INTERVAL: number = 500; // ms
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
         super(scene, x, y, texture);
@@ -82,7 +85,12 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         
         // Use the new specific event name to avoid recursion
         this.scene.events.on('tower-force-attack-circle', () => {
-            console.log('Received tower-force-attack-circle event');
+            // Apply throttling to event handling
+            const currentTime = Date.now();
+            if (currentTime - this.lastCircleUpdateTime < this.CIRCLE_UPDATE_INTERVAL) {
+                return; // Skip this update if not enough time has passed
+            }
+            this.lastCircleUpdateTime = currentTime;
             this.safeUpdateAttackCircle();
         }, this);
         
@@ -106,6 +114,13 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         
         // Сохраняем небольшой наклон башни влево при изменении размера экрана
         this.setAngle(Tower.TOWER_ANGLE);
+        
+        // Apply throttling to screen resize handling
+        const currentTime = Date.now();
+        if (currentTime - this.lastCircleUpdateTime < this.CIRCLE_UPDATE_INTERVAL) {
+            return; // Skip this update if not enough time has passed
+        }
+        this.lastCircleUpdateTime = currentTime;
         
         // Use the safer method that doesn't recreate the graphics object
         this.safeUpdateAttackCircle();
@@ -142,6 +157,12 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             return;
         }
         
+        // Apply throttling directly in the update method as well
+        const currentTime = Date.now();
+        if (currentTime - this.lastCircleUpdateTime < this.CIRCLE_UPDATE_INTERVAL && this.attackRangeCircle) {
+            return; // Skip if not enough time has passed and circle already exists
+        }
+        this.lastCircleUpdateTime = currentTime;
         
         // Make sure the circle exists
         if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {
@@ -393,7 +414,6 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         if (this.scene && this.scene.events) {
             this.scene.events.off('screenResize', this.handleScreenResize, this);
             this.scene.events.off('tower-force-attack-circle', () => {
-                console.log('Received tower-force-attack-circle event');
                 this.safeUpdateAttackCircle();
             }, this);
             this.scene.events.off('update', this.onUpdate, this);

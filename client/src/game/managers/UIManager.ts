@@ -66,7 +66,6 @@ export class UIManager {
 
     private initilizeUpgradePanel(): void {
         // Stub implementation - no longer creates actual UI elements
-        console.log("[UIManager] initilizeUpgradePanel: UI replaced with Vue components");
     }
     
     private createAttackUpgradeButtons(fontSize: number): Phaser.GameObjects.GameObject[] {
@@ -82,7 +81,6 @@ export class UIManager {
     }
 
     private initialize(): void {
-        console.log("[UIManager] initialize: Using Vue components instead of Phaser UI");
         // Ensure game store is updated
         try {
             const gameStore = useGameStore();
@@ -93,18 +91,36 @@ export class UIManager {
     }
 
     public updatePositions(): void {
+        // Throttle updates by checking the time since last update
+        const currentTime = Date.now();
+        if (currentTime - this.lastUpdateTime < this.UPDATE_INTERVAL) {
+            return; // Skip this update if not enough time has passed
+        }
+        this.lastUpdateTime = currentTime;
+        
         // Stub implementation - no longer updates UI positions
-        console.log("[UIManager] updatePositions: UI replaced with Vue components");
     }
 
     private handleScreenResize(gameScale: number): void {
+        // Throttle resize events by checking the time since last update
+        const currentTime = Date.now();
+        if (currentTime - this.lastUpdateTime < this.UPDATE_INTERVAL) {
+            return; // Skip this resize event if not enough time has passed
+        }
+        this.lastUpdateTime = currentTime;
+        
         // Stub implementation - no longer handles resizing of UI
-        console.log("[UIManager] handleScreenResize: UI replaced with Vue components");
     }
 
     private forceAllButtonsVisible(): void {
+        // Throttle visibility updates by checking the time since last update
+        const currentTime = Date.now();
+        if (currentTime - this.lastUpdateTime < this.UPDATE_INTERVAL) {
+            return; // Skip this update if not enough time has passed
+        }
+        this.lastUpdateTime = currentTime;
+        
         // Stub implementation - no longer forces visibility of UI buttons
-        console.log("[UIManager] forceAllButtonsVisible: UI replaced with Vue components");
     }
 
     public updateGold(gold: number): void {
@@ -124,7 +140,7 @@ export class UIManager {
     }
 
     showNotification(message: string, color: number = 0xFFFFFF): void {
-        console.log(`[UIManager] showNotification: ${message}`);
+        // Stub implementation
     }
 
     getGoldCount(): number {
@@ -137,9 +153,6 @@ export class UIManager {
         this.scene.events.off('ui-refresh-visibility', this.forceAllButtonsVisible, this);
         this.scene.events.off('updateEmblems', this.updateEmblemCount, this);
         this.scene.events.off('update', this.onUpdate, this);
-        
-        console.log('[UIManager] Destroying UI components...');
-        console.log('[UIManager] UI components destroyed');
     }
 
     private updateEmblemCount(emblems: number): void {
@@ -154,7 +167,6 @@ export class UIManager {
 
     updateCounts(): void {
         // Stub implementation - no longer updates UI counts
-        console.log("[UIManager] updateCounts: UI replaced with Vue components");
     }
 
     private onUpdate(time: number): void {
@@ -173,12 +185,9 @@ export class UIManager {
 
     public reset(): void {
         // Stub implementation - no longer resets UI
-        console.log("[UIManager] reset: UI replaced with Vue components");
-        console.log('[UIManager] Reset complete');
     }
 
     public setVisible(visible: boolean): void {
         // Stub implementation - no longer sets visibility of UI
-        console.log(`[UIManager] setVisible(${visible}): UI replaced with Vue components`);
     }
 }

@@ -68,7 +68,11 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         gameStore.showGameUI();
         
         this.scene.bringToTop('GameScene');
-        this.scene.launch('BackgroundScene');
+        
+        // Останавливаем BackgroundScene, чтобы избежать двоения фона
+        if (this.scene.isActive('BackgroundScene')) {
+            this.scene.stop('BackgroundScene');
+        }
         
         // Initialize ScreenManager first
         this.screenManager = new ScreenManager(this);
@@ -106,7 +110,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         this.events.on('screenResize', this.handleScreenResize, this);
         
         // Listen for force visibility event with a different name to avoid recursion
-        this.events.on('ui-refresh-visibility', this.forceUIVisibility, this);
+        //this.events.on('ui-refresh-visibility', this.forceUIVisibility, this);
 
         // Listen for game speed change events
         this.events.on('gameSpeedChanged', this.handleGameSpeedChanged, this);
@@ -220,7 +224,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         // Мы больше не используем стандартный фон
         // this.screenManager.setupBackground();
 
-        // Инициализируем mysticalBackground
+        // Создаем собственный MysticalBackground в GameScene
         this.mysticalBackground = new MysticalBackground(this);
         //this.mysticalBackground.setDepth(-9999);
 
@@ -264,7 +268,8 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                             // Обновляем состояние башни в хранилище Pinia после построения
                             const gameStore = useGameStore();
                             gameStore.setTowerAlive(true);
-                            // Добавляем проверку на существование mysticalBackground перед вызовом showGlowLayer
+                            
+                            // Теперь используем локальный mysticalBackground
                             if (this.mysticalBackground) {
                                 this.mysticalBackground.showGlowLayer();
                             }
@@ -433,10 +438,10 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 return;
             }
             
-            // Обновляем мистический фон
-            // if (this.mysticalBackground) {
-            //     this.mysticalBackground.update();
-            // }
+            // Обновляем свой mysticalBackground
+            if (this.mysticalBackground) {
+                this.mysticalBackground.update();
+            }
 
             // Apply game speed multiplier to delta time
             const scaledDelta = delta * this.gameSpeedMultiplier;

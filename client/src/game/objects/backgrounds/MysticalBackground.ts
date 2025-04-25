@@ -22,16 +22,18 @@ export class MysticalBackground {
     private layers: BackgroundLayer[] = [];
     private isDestroyed: boolean = false;
     private glowLayer: PerimeterGlowLayer | null = null;
+    
+    // Add throttling for resize handling
+    private lastResizeTime: number = 0;
+    private readonly RESIZE_THROTTLE: number = 1000; // 1 second minimum between resizes
 
     constructor(scene: Phaser.Scene) {
-        console.log('[MysticalBackground] constructor', scene.scene.key);
         this.scene = scene;
         this.screenManager = new ScreenManager(scene);
         this.initialize();
     }
 
     private initialize(): void {
-        console.log('[MysticalBackground] initialize', this.scene.scene.key);
         this.layers = [
             new PlanetLayer(this.scene, this.screenManager),
             new SkyGradientLayer(this.scene, this.screenManager),
@@ -45,6 +47,13 @@ export class MysticalBackground {
     }
 
     private handleScreenResize(): void {
+        // Apply throttling to prevent excessive resize handling
+        const currentTime = Date.now();
+        if (currentTime - this.lastResizeTime < this.RESIZE_THROTTLE) {
+            return; // Skip this resize event if not enough time has passed
+        }
+        this.lastResizeTime = currentTime;
+        
         this.layers.forEach(layer => layer.handleResize && layer.handleResize());
     }
 
@@ -63,7 +72,6 @@ export class MysticalBackground {
     }
 
     public destroy(): void {
-        console.log('[MysticalBackground] destroy called');
         this.isDestroyed = true;
         this.scene.events.off('screenResize', this.handleScreenResize, this);
         this.layers.forEach(layer => layer.destroy());
@@ -75,12 +83,10 @@ export class MysticalBackground {
     }
 
     public update(): void {
-        // console.log('[MysticalBackground] update', this.scene.scene.key);
         this.layers.forEach(layer => layer.update && layer.update());
     }
 
     public setScene(scene: Phaser.Scene) {
-        console.log('[MysticalBackground] setScene called', scene.scene.key);
         if (this.scene === scene) return;
         // Отключаем старый resize listener
         this.scene.events.off('screenResize', this.handleScreenResize, this);
