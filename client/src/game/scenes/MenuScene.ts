@@ -34,18 +34,25 @@ export default class MenuScene extends Phaser.Scene implements IScene {
             console.error('[MenuScene] Error playing music:', err);
         }
 
-        // Update Pinia store to show menu
-        const store = useSceneStore();
-        console.log('[MenuScene] Calling store.setView("menu")');
-        store.setView('menu');
-        console.log('[MenuScene] store.setView("menu") called');
-
         // Register game instance in window object for Vue components to access
         // This ensures Vue components can access Phaser methods
         (window as any).PhaserGame = this.game;
 
         // Listen for navigation events from buttons
         this.setupEventListeners();
+
+        // Подписываемся на системное событие 'create' которое срабатывает ПОСЛЕ завершения create()
+        //this.sys.events.once('ready', () => {
+        console.log('[MenuScene] CREATE event fired - scene fully created');
+
+        // Теперь безопасно обновляем Vue store
+        const store = useSceneStore();
+        console.log('[MenuScene] Calling store.setView("menu") after CREATE event');
+        store.setView('menu');
+        console.log('[MenuScene] MenuView should now be visible');
+        //});
+
+        console.log('[MenuScene] Scene create() method completed, waiting for CREATE event...');
     }
 
     private setupEventListeners(): void {

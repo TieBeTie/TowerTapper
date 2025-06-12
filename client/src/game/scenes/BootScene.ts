@@ -503,15 +503,21 @@ class BootScene extends Phaser.Scene implements IScene {
             duration: 1000,
             ease: 'Linear',
             onComplete: () => {
-                console.log('[BootScene] fadeToBlackAndTransition: Fade animation COMPLETE. Stopping BootScene and starting MenuScene.');
-                console.log('[BootScene] 500ms delay finished. Stopping BootScene and starting MenuScene.'); // Log after delay
+                console.log('[BootScene] fadeToBlackAndTransition: Fade animation COMPLETE.');
 
-                // Crear las animaciones necesarias 
-                // this.createAnimations(); // <-- Removed from here
+                // РЕШЕНИЕ СИНХРОНИЗАЦИИ: Используем Scene Events для гарантированного порядка
+                // Подписываемся на событие 'shutdown' BootScene ПЕРЕД его остановкой
+                this.events.once('shutdown', () => {
+                    console.log('[BootScene] SHUTDOWN event fired - BootScene полностью завершена');
 
-                // Ir a la escena del menú principal
+                    // Теперь БЕЗОПАСНО запускать MenuScene
+                    console.log('[BootScene] Starting MenuScene synchronously after shutdown');
+                    this.scene.start('MenuScene');
+                });
+
+                // Останавливаем BootScene - это вызовет событие 'shutdown'
+                console.log('[BootScene] Stopping BootScene...');
                 this.scene.stop('BootScene');
-                this.scene.start('MenuScene');
             }
         });
     }

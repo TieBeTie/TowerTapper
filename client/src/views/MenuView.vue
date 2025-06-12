@@ -16,8 +16,26 @@
 <script setup lang="ts">
 import { useSceneStore } from '../stores/scene';
 import { playUiSound } from '../services/UIAudioService';
+import { watch, onMounted, onUnmounted } from 'vue';
 
 const scene = useSceneStore();
+
+// Логирование монтирования компонента
+onMounted(() => {
+  console.log('[MenuView] Component MOUNTED - DOM элементы созданы');
+});
+
+onUnmounted(() => {
+  console.log('[MenuView] Component UNMOUNTED');
+});
+
+// Отслеживание изменений view для диагностики задержек рендеринга
+watch(() => scene.view, (newView, oldView) => {
+  console.log(`[MenuView] View changed from "${oldView}" to "${newView}"`);
+  if (newView === 'menu') {
+    console.log('[MenuView] Menu view activated - component should be visible');
+  }
+}, { immediate: true });
 
 // Пункты меню
 const menuItems = [
