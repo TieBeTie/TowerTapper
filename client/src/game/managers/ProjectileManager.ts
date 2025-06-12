@@ -8,6 +8,8 @@ import Tower from '../objects/towers/Tower';
 import { SkillType } from '../types/SkillType';
 import { IGameScene } from '../types/IGameScene';
 import { SkillStateManager } from './SkillStateManager';
+import { Arrow } from '../objects/projectiles/Arrow';
+import { Fireball } from '../objects/projectiles/Fireball';
 
 // ProjectileManager handles the logic for managing and firing projectiles at enemies
 class ProjectileManager {
@@ -49,6 +51,15 @@ class ProjectileManager {
 
     private getTowerDamage(): number {
         return this.skillManager.getState(SkillType.DAMAGE) || ProjectileManager.DEFAULT_DAMAGE;
+    }
+
+    /**
+     * Вспомогательный метод: возвращает нужный снаряд в зависимости от флага критического удара
+     */
+    private createProjectile(x: number, y: number, isCritical: boolean): Arrow {
+        return isCritical
+            ? this.projectileFactory.createFireball(x, y)
+            : this.projectileFactory.createArrow(x, y);
     }
 
     // Проверяет, должен ли сработать мультивыстрел
@@ -109,6 +120,15 @@ class ProjectileManager {
         // 3. With attackSpeed=5.0, the arrow flies twice as fast (multiplier=2)
         const combinedSpeedMultiplier = speedMultiplier * gameSpeed * (attackSpeed / ProjectileManager.ATTACK_SPEED_NORMALIZER);
 
+        // Рассчитываем критический статус ОДИН раз для всей атаки
+        const critChance = this.skillManager.getState(SkillType.CRIT_CHANCE) || 0;
+        const critMultiplier = this.skillManager.getState(SkillType.CRIT_MULTIPLIER) || 0;
+        const isCriticalHit = Math.random() * 100 < critChance;
+
+        // Рассчитываем окончательный урон: если крит, применяем множитель
+        const baseDamage = this.getTowerDamage();
+        const finalDamage = isCriticalHit ? Math.floor(baseDamage * critMultiplier) : baseDamage;
+
         // Находим ближайшего врага в радиусе атаки
         const targetEnemy = this.findNearestEnemyInRange();
         if (targetEnemy) {
@@ -117,10 +137,10 @@ class ProjectileManager {
 
             if (isMultishot) {
                 // Мультивыстрел: 3 стрелы с небольшим отклонением
-                this.fireMultipleArrows(targetEnemy, combinedSpeedMultiplier);
+                this.fireMultipleArrows(targetEnemy, combinedSpeedMultiplier, isCriticalHit, finalDamage);
             } else {
                 // Обычный выстрел одной стрелой
-                this.fireSingleArrow(targetEnemy, combinedSpeedMultiplier);
+                this.fireSingleArrow(targetEnemy, combinedSpeedMultiplier, isCriticalHit, finalDamage);
             }
 
             // Обновляем время последнего выстрела
@@ -135,31 +155,29 @@ class ProjectileManager {
     }
 
     // Стреляем одной стрелой в цель
-    private fireSingleArrow(target: Enemy, speedMultiplier: number): void {
-        // Создаем стрелу
-        const arrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
+    private fireSingleArrow(target: Enemy, speedMultiplier: number, isCritical: boolean, damage: number): void {
+        // Создаём снаряд в зависимости от критического статуса
+        const projectile = this.createProjectile(this.scene.tower.x, this.scene.tower.y, isCritical);
 
-        // Устанавливаем урон
-        const towerDamage = this.getTowerDamage();
-        arrow.setDamage(towerDamage);
+        // Устанавливаем урон уже с учётом крита
+        (projectile as Arrow).setDamage(damage);
 
-        // Запускаем стрелу в направлении врага
-        arrow.fire(target.x, target.y, speedMultiplier);
+        // Запускаем снаряд в направлении врага
+        projectile.fire(target.x, target.y, speedMultiplier);
 
-        // Устанавливаем таймер автоматического удаления стрелы
+        // Устанавливаем таймер автоматического удаления
         this.scene.time.delayedCall(this.projectileMaxLifetime, () => {
-            if (arrow.active) {
-                // Если стрела все еще активна, удаляем её
-                arrow.destroy();
+            if (projectile.active) {
+                projectile.destroy();
             }
         });
 
-        // Добавляем стрелу в группу
-        this.projectiles.add(arrow);
+        // Добавляем в группу
+        this.projectiles.add(projectile);
     }
 
     // Стреляем тремя стрелами с отклонением
-    private fireMultipleArrows(target: Enemy, speedMultiplier: number): void {
+    private fireMultipleArrows(target: Enemy, speedMultiplier: number, isCritical: boolean, damage: number): void {
         // Получаем угол от башни к цели
         const angle = Phaser.Math.Angle.Between(
             this.scene.tower.x,
@@ -171,8 +189,8 @@ class ProjectileManager {
         // Угол отклонения (в радианах) для боковых стрел
         const deviation = Phaser.Math.DegToRad(ProjectileManager.MULTISHOT_DEVIATION_DEGREES);
 
-        // Стреляем центральной стрелой (прямо в цель)
-        this.fireSingleArrow(target, speedMultiplier);
+        // Центральный снаряд
+        this.fireSingleArrow(target, speedMultiplier, isCritical, damage);
 
         // Вычисляем позиции для боковых стрел
         // Левая стрела (угол - отклонение)
@@ -185,19 +203,18 @@ class ProjectileManager {
         const rightX = target.x + Math.cos(rightAngle) * ProjectileManager.MULTISHOT_OFFSET;
         const rightY = target.y + Math.sin(rightAngle) * ProjectileManager.MULTISHOT_OFFSET;
 
-        // Создаем левую стрелу
-        const leftArrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
-        const towerDamage = this.getTowerDamage();
-        leftArrow.setDamage(towerDamage);
+        // Левый снаряд
+        const leftArrow = this.createProjectile(this.scene.tower.x, this.scene.tower.y, isCritical);
+        leftArrow.setDamage(damage);
         leftArrow.fire(leftX, leftY, speedMultiplier);
         this.scene.time.delayedCall(this.projectileMaxLifetime, () => {
             if (leftArrow.active) leftArrow.destroy();
         });
         this.projectiles.add(leftArrow);
 
-        // Создаем правую стрелу
-        const rightArrow = this.projectileFactory.createArrow(this.scene.tower.x, this.scene.tower.y);
-        rightArrow.setDamage(towerDamage);
+        // Правый снаряд
+        const rightArrow = this.createProjectile(this.scene.tower.x, this.scene.tower.y, isCritical);
+        rightArrow.setDamage(damage);
         rightArrow.fire(rightX, rightY, speedMultiplier);
         this.scene.time.delayedCall(this.projectileMaxLifetime, () => {
             if (rightArrow.active) rightArrow.destroy();

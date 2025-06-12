@@ -214,6 +214,7 @@ class BootScene extends Phaser.Scene implements IScene {
         });
 
         this.load.image('projectile', 'assets/images/projectiles/arrow.png');
+        this.load.image('fireball', 'assets/images/projectiles/fireball.png');
         this.load.image('background', 'assets/images/towers/Background1.png');
 
         // Load emblem icon

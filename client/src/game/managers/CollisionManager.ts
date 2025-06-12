@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 import Tower from '../objects/towers/Tower';
 import { Projectile } from '../objects/projectiles/Projectile';
+import { Fireball } from '../objects/projectiles/Fireball';
 import Enemy from '../objects/enemies/Enemy';
 import { DamageNumber } from '../ui/components/DamageNumber';
 import { SkillType } from '../types/SkillType';
 import { IGameScene } from '../types/IGameScene';
 import { SkillStateManager } from './SkillStateManager';
+import { Arrow } from '../objects/projectiles/Arrow';
 
 // CollisionManager handles the logic for managing collisions between projectiles and enemies, as well as between the tower and enemies
 class CollisionManager {
@@ -55,7 +57,7 @@ class CollisionManager {
         // Use built-in physics body check if available
         const body1 = sprite1.body as Phaser.Physics.Arcade.Body;
         const body2 = sprite2.body as Phaser.Physics.Arcade.Body;
-        
+
         if (body1 && body2) {
             // Check if bodies overlap using physics
             return Phaser.Geom.Intersects.CircleToCircle(
@@ -97,32 +99,33 @@ class CollisionManager {
 
         if (!projectile.active || !enemy.active) return;
 
-        // Get damage from SkillStateManager
-        const damage = this.skillManager.getState(SkillType.DAMAGE) || 20;
-        
+        // Базовый урон берём из самого снаряда, если доступен, иначе из SkillStateManager
+        const damage = projectile instanceof Arrow
+            ? (projectile as Arrow).getDamage()
+            : (this.skillManager.getState(SkillType.DAMAGE) || 20);
+
         // Get knockback value from SkillStateManager
         const knockbackForce = this.skillManager.getState(SkillType.KNOCKBACK) || 50;
-        
-        // Get critical hit values
-        const critChance = this.skillManager.getState(SkillType.CRIT_CHANCE) || 0;
+
+        // Get critical multiplier
         const critMultiplier = this.skillManager.getState(SkillType.CRIT_MULTIPLIER) || 0;
-        
-        // Calculate if this is a critical hit
-        const isCriticalHit = Math.random() * 100 < critChance;
-        
+
+        // Проверяем, является ли снаряд фаерболлом (критический удар)
+        const isCriticalHit = projectile instanceof Fireball || (projectile.texture?.key === 'fireball');
+
         // Calculate final damage
         let finalDamage = damage;
         if (isCriticalHit) {
-            // Add the critical multiplier (convert from percentage)
+            // Добавляем критический множитель
             finalDamage = Math.floor(damage * (1 + critMultiplier / 100));
-            
-            // Display critical hit effect (optional)
+
+            // Визуальный эффект критического попадания
             this.showCriticalHitEffect(enemy);
         }
-        
+
         // Уведомляем ProjectileManager о попадании
         this.scene.projectileManager.handleProjectileHit(projectile, enemy);
-        
+
         // Apply knockback effect
         if (knockbackForce > 0) {
             // Calculate knockback direction (away from tower/projectile source)
@@ -130,7 +133,7 @@ class CollisionManager {
                 enemy.x - this.scene.tower.x,
                 enemy.y - this.scene.tower.y
             ).normalize();
-            
+
             // Apply force to enemy
             if (enemy.body) {
                 const body = enemy.body as Phaser.Physics.Arcade.Body;
@@ -138,7 +141,7 @@ class CollisionManager {
                     knockbackDirection.x * knockbackForce,
                     knockbackDirection.y * knockbackForce
                 );
-                
+
                 // Reset the enemy's normal movement after a short delay
                 this.scene.time.delayedCall(300, () => {
                     if (enemy.active && enemy.body) {
@@ -147,10 +150,10 @@ class CollisionManager {
                 });
             }
         }
-        
+
         // Уничтожаем стрелу
         projectile.destroy();
-        
+
         // Наносим урон врагу
         enemy.takeDamage(finalDamage);
 
@@ -162,31 +165,31 @@ class CollisionManager {
             y: enemy.y,
             isCritical: isCriticalHit
         });
-        
+
         // Проверяем, должен ли сработать Lifesteal
         const lifestealChance = this.skillManager.getState(SkillType.LIFESTEAL_CHANCE) || 0;
         const lifestealAmount = this.skillManager.getState(SkillType.LIFESTEAL_AMOUNT) || 0;
-        
+
         if (lifestealAmount > 0 && Math.random() * 100 < lifestealChance) {
             // Lifesteal activated, heal the tower
             if (this.scene.tower && this.scene.tower.active) {
                 const prevHealth = this.skillManager.getCurrentHealth();
                 // Use the centralized health system to heal
                 this.skillManager.healTower(lifestealAmount);
-                
+
                 // Update health bar if needed
                 this.scene.tower.updateHealthBar();
-                
+
                 // Show lifesteal effect
                 this.showLifestealEffect(enemy, this.scene.tower, lifestealAmount);
-                
+
                 // Play heal sound if available
                 if (this.scene.scene.get('GameScene') && (this.scene as any).audioManager) {
                     (this.scene as any).audioManager.playSound('heal');
                 }
             }
         }
-        
+
         if (enemy.health <= 0) {
             this.scene.enemyManager.handleEnemyDeath(enemy);
         }
@@ -203,7 +206,7 @@ class CollisionManager {
 
         // Get damage from enemy or use default value if not set
         const damage = enemy.damage || 100;
-        
+
         enemy.destroy();
         tower.takeDamage(damage);
     }
@@ -229,14 +232,14 @@ class CollisionManager {
             // Play critical hit sound with slightly higher volume
             const audioManager = (this.scene as any).audioManager;
             const originalVolume = audioManager.sounds.get('crit')?.volume || 0.25;
-            
+
             // Temporarily increase volume for this specific play
             if (audioManager.sounds.has('crit')) {
                 const critSound = audioManager.sounds.get('crit');
                 if (critSound) {
                     critSound.setVolume(originalVolume * 1.5); // 50% louder
                     audioManager.playSound('crit');
-                    
+
                     // Reset volume after playing
                     this.scene.time.delayedCall(200, () => {
                         if (critSound) {
@@ -254,7 +257,7 @@ class CollisionManager {
             if (!this.scene || !enemy || !tower || !enemy.active || !tower.active) {
                 return;
             }
-            
+
             // Create a lifesteal text indicator with safety checks
             try {
                 new DamageNumber({
@@ -269,7 +272,7 @@ class CollisionManager {
                 console.warn('Failed to create heal number indicator:', e);
                 // Continue with the effect even if the number indicator fails
             }
-            
+
             // Create a simpler green line effect from enemy to tower
             try {
                 const graphics = this.scene.add.graphics();
@@ -279,7 +282,7 @@ class CollisionManager {
                     graphics.moveTo(enemy.x, enemy.y);
                     graphics.lineTo(tower.x, tower.y);
                     graphics.strokePath();
-                    
+
                     // Use a simple fade-out with a short duration
                     this.scene.tweens.add({
                         targets: graphics,
@@ -296,13 +299,13 @@ class CollisionManager {
             } catch (e) {
                 console.warn('Failed to create lifesteal line effect:', e);
             }
-            
+
             // Add a green tint to the tower with safety check
             if (tower && tower.setTint) {
                 tower.setTint(0x00ff00);
-                
+
                 // Clear the tint after a short delay with safety check
-                this.scene.time.delayedCall(200, () => { 
+                this.scene.time.delayedCall(200, () => {
                     if (tower && tower.active && tower.clearTint) {
                         tower.clearTint();
                     }
