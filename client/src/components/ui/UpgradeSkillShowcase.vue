@@ -68,7 +68,6 @@ const loadAvailableSkills = () => {
   
   try {
     allSkills.value = upgradeManager.value.getAvailableSkills();
-    console.log('Loaded skills:', allSkills.value);
   } catch (error) {
     console.error('Error loading skills:', error);
   }

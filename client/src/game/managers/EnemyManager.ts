@@ -44,21 +44,21 @@ class EnemyManager {
     startSpawningEnemies(waveConfig: any): void {
         // Destroy existing timer if it exists
         this.clearSpawnTimer();
-        
+
         // Extract wave config
         const enemyCount = waveConfig.enemyCount || 10;
-        
+
         // Make each wave last exactly 20 seconds by calculating the appropriate spawn interval
         const waveDuration = 20000; // 20 seconds in milliseconds
         const spawnInterval = waveDuration / enemyCount;
-        
+
         // Apply game speed to spawn interval
         const gameSpeed = this.skillStateManager.getGameSpeed();
         const adjustedSpawnInterval = spawnInterval / gameSpeed;
-        
+
         // Create a spawn counter to track how many enemies need to be spawned
         let enemiesLeftToSpawn = enemyCount;
-        
+
         // Start a timer to spawn enemies at the calculated interval
         this.spawnTimer = this.scene.time.addEvent({
             delay: adjustedSpawnInterval,
@@ -66,7 +66,7 @@ class EnemyManager {
                 if (enemiesLeftToSpawn > 0) {
                     this.spawnEnemy();
                     enemiesLeftToSpawn--;
-                    
+
                     if (enemiesLeftToSpawn <= 0) {
                         this.clearSpawnTimer();
                     }
@@ -84,7 +84,7 @@ class EnemyManager {
                 console.error('Scene or physics not available');
                 return false;
             }
-            
+
             // Check if enemies group exists and recreate if needed
             if (!this.enemies) {
                 console.warn('Enemies group not found, recreating');
@@ -93,12 +93,12 @@ class EnemyManager {
                     runChildUpdate: true
                 });
             }
-            
+
             // Определяем сторону появления врага (0 = сверху, 1 = справа, 2 = снизу, 3 = слева)
             const spawnSide = Phaser.Math.Between(0, 3);
             let xPosition = 0;
             let yPosition = 0;
-            
+
             // Выбираем координаты в зависимости от стороны
             switch (spawnSide) {
                 case 0: // Сверху
@@ -118,32 +118,32 @@ class EnemyManager {
                     yPosition = Phaser.Math.Between(50, this.scene.scale.height - 50);
                     break;
             }
-            
+
             // Generate random enemy type
             const enemyType = Phaser.Math.RND.pick(['orc', 'goblin']) as 'orc' | 'goblin';
 
             // Create the enemy
             const enemy = EnemyFactory.createEnemy(enemyType, this.scene, xPosition, yPosition, this.waveManager);
-            
+
             // Add enemy to group if valid
             if (enemy && this.enemies && this.enemies.add) {
                 this.enemies.add(enemy);
-                
+
                 // Set up reached event
                 enemy.once('reached', () => {
                     // Safely remove from group
                     if (this.enemies && this.enemies.remove) {
                         this.enemies.remove(enemy, true, true);
                     }
-                    
+
                     // Update wave manager
                     if (this.waveManager) {
                         this.waveManager.enemyDefeated();
                     }
-                    
+
                     console.log("Enemy reached tower");
                 });
-                
+
                 return true;
             } else {
                 console.error(`Failed to create enemy of type: ${enemyType}`);
@@ -163,7 +163,7 @@ class EnemyManager {
         if (!this.enemies || !this.enemies.getChildren) {
             return null;
         }
-        
+
         try {
             const children = this.enemies.getChildren();
             if (Array.isArray(children)) {
@@ -190,7 +190,7 @@ class EnemyManager {
         if (!this.enemies || !this.enemies.getChildren) {
             return;
         }
-        
+
         try {
             const children = this.enemies.getChildren();
             if (Array.isArray(children)) {
@@ -239,7 +239,6 @@ class EnemyManager {
             if (this.waveManager) {
                 this.waveManager.enemyDefeated();
             }
-            console.log("Enemy killed by arrow");
 
             // Spawn a gold above the tower (Tower)
             if (this.scene && this.scene.children && this.scene.children.getByName) {

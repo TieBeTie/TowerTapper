@@ -37,10 +37,8 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         // Update Pinia store to show menu
         const store = useSceneStore();
         console.log('[MenuScene] Calling store.setView("menu")');
-        this.time.delayedCall(1000, () => {
-            store.setView('menu');
-            console.log('[MenuScene] store.setView("menu") called');
-        });
+        store.setView('menu');
+        console.log('[MenuScene] store.setView("menu") called');
 
         // Register game instance in window object for Vue components to access
         // This ensures Vue components can access Phaser methods

@@ -13,6 +13,7 @@ class AudioManager {
     private pendingMusicKey: string = '';
     private audioLoadingComplete: boolean = false;
     private currentSceneKey: string = '';
+    private audioCheckInterval: Phaser.Time.TimerEvent | null = null;
 
     private constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -39,19 +40,74 @@ class AudioManager {
         if ((window as any).audioLoaded) {
             this.audioLoadingComplete = true;
             console.log('[AudioManager] Audio already loaded from previous session');
+            // Re-initialize sounds since audio is already loaded
+            this.initializeSounds();
             return;
         }
+
+        // Alternative check: if most critical audio files are in cache, consider audio loaded
+        const criticalSounds = ['enemyDie', 'arrow', 'gameMusic'];
+        const soundsInCache = criticalSounds.filter(key => this.scene.cache.audio.exists(key));
+
+        if (soundsInCache.length === criticalSounds.length) {
+            console.log('[AudioManager] All critical audio files found in cache, considering audio loaded');
+            this.audioLoadingComplete = true;
+            (window as any).audioLoaded = true; // Set global flag
+            this.initializeSounds();
+            return;
+        }
+
+        console.log(`[AudioManager] Audio not fully loaded yet. Found ${soundsInCache.length}/${criticalSounds.length} critical sounds in cache`);
 
         // Listen for global audio loaded event from BootScene
         this.scene.game.events.once('audioLoaded', () => {
             console.log('[AudioManager] Received audioLoaded event');
             this.audioLoadingComplete = true;
 
+            // Initialize sounds now that audio is loaded
+            this.initializeSounds();
+
             // If we have a pending music request and we're still in the same scene, try to play it now
             if (this.pendingMusicKey && !this.isMuted && this.currentSceneKey === this.scene.scene.key) {
                 console.log(`[AudioManager] Audio loaded, attempting to play pending music: ${this.pendingMusicKey}`);
                 this.attemptPlayMusic(this.pendingMusicKey);
             }
+        });
+
+        // Fallback: periodically check if audio has become available
+        this.audioCheckInterval = this.scene.time.addEvent({
+            delay: 2000, // Check every 2 seconds
+            callback: () => {
+                if (this.audioLoadingComplete) {
+                    if (this.audioCheckInterval) {
+                        this.audioCheckInterval.destroy();
+                        this.audioCheckInterval = null;
+                    }
+                    return;
+                }
+
+                const soundsInCacheNow = criticalSounds.filter(key => this.scene.cache.audio.exists(key));
+
+                if (soundsInCacheNow.length === criticalSounds.length) {
+                    console.log('[AudioManager] Audio became available via fallback check');
+                    this.audioLoadingComplete = true;
+                    (window as any).audioLoaded = true;
+                    this.initializeSounds();
+
+                    if (this.audioCheckInterval) {
+                        this.audioCheckInterval.destroy();
+                        this.audioCheckInterval = null;
+                    }
+
+                    // Try pending music if any
+                    if (this.pendingMusicKey && !this.isMuted && this.currentSceneKey === this.scene.scene.key) {
+                        this.attemptPlayMusic(this.pendingMusicKey);
+                    }
+                } else {
+                    console.log(`[AudioManager] Fallback check: ${soundsInCacheNow.length}/${criticalSounds.length} critical sounds available`);
+                }
+            },
+            repeat: 10 // Check for up to 20 seconds (10 * 2s)
         });
     }
 
@@ -60,16 +116,28 @@ class AudioManager {
             // Check if running on iOS
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
-            // Initialize sounds if they haven't been created yet
-            if (this.sounds.size === 0) {
-                // Array of sound keys to add
-                const soundKeys = ['arrow', 'enemyDie', 'towerDie', 'waveCompleted',
-                    'upgradeButton', 'towerDamage', 'usualButton', 'crit', 'heal',
-                    'supply_drop', 'gold_collect', 'purchase_sound', 'tower_building'];
+            // Try to initialize sounds immediately (they will be re-initialized when audio loads)
+            this.initializeSounds();
+        } catch (err) {
+            console.error('Error initializing audio:', err);
+        }
+    }
 
-                // Add each sound only if it exists in cache
-                soundKeys.forEach(key => {
-                    if (this.scene.cache.audio.exists(key)) {
+    private initializeSounds(): void {
+        try {
+            // Array of sound keys to add
+            const soundKeys = ['arrow', 'enemyDie', 'towerDie', 'waveCompleted',
+                'upgradeButton', 'towerDamage', 'usualButton', 'crit', 'heal',
+                'supply_drop', 'gold_collect', 'purchase_sound', 'tower_building'];
+
+            let soundsInitialized = 0;
+            let soundsAlreadyExist = 0;
+
+            // Add each sound only if it exists in cache and is not already initialized
+            soundKeys.forEach(key => {
+                if (this.scene.cache.audio.exists(key)) {
+                    // Only add if not already in the map
+                    if (!this.sounds.has(key)) {
                         const volume = {
                             'arrow': 0.1 * gameVolume,
                             'enemyDie': 0.01 * gameVolume,
@@ -87,11 +155,24 @@ class AudioManager {
                         }[key] || 0.2 * gameVolume;
 
                         this.sounds.set(key, this.scene.sound.add(key, { volume }));
+                        soundsInitialized++;
+                        console.log(`[AudioManager] Initialized sound: ${key}`);
+                    } else {
+                        soundsAlreadyExist++;
                     }
-                });
+                } else {
+                    console.log(`[AudioManager] Sound ${key} not yet available in cache`);
+                }
+            });
+
+            if (soundsInitialized > 0) {
+                console.log(`[AudioManager] Successfully initialized ${soundsInitialized} new sounds`);
+            }
+            if (soundsAlreadyExist > 0) {
+                console.log(`[AudioManager] ${soundsAlreadyExist} sounds were already initialized`);
             }
         } catch (err) {
-            console.error('Error initializing audio:', err);
+            console.error('Error initializing sounds:', err);
         }
     }
 
@@ -221,15 +302,47 @@ class AudioManager {
     public stopRetryMechanism(): void {
         this.stopMusicRetryTimer();
         this.pendingMusicKey = '';
+
+        // Stop audio check interval
+        if (this.audioCheckInterval) {
+            this.audioCheckInterval.destroy();
+            this.audioCheckInterval = null;
+        }
+
         console.log('[AudioManager] Stopped retry mechanism for scene shutdown');
     }
 
     public playSound(soundKey: string): void {
-        if (!this.isMuted && this.sounds.has(soundKey)) {
+        if (this.isMuted) {
+            return;
+        }
+
+        // If sound exists, play it
+        if (this.sounds.has(soundKey)) {
             const sound = this.sounds.get(soundKey);
             if (sound) {
                 sound.play();
+                return;
             }
+        }
+
+        // Sound not found, try to initialize it if audio is loaded
+        if (this.audioLoadingComplete && this.scene.cache.audio.exists(soundKey)) {
+            console.log(`[AudioManager] Sound ${soundKey} not initialized but audio is loaded, attempting to initialize`);
+            this.initializeSounds();
+
+            // Try to play again after initialization
+            if (this.sounds.has(soundKey)) {
+                const sound = this.sounds.get(soundKey);
+                if (sound) {
+                    sound.play();
+                    console.log(`[AudioManager] Successfully played ${soundKey} after lazy initialization`);
+                }
+            }
+        } else if (!this.audioLoadingComplete) {
+            console.log(`[AudioManager] Cannot play sound ${soundKey}, audio not yet loaded`);
+        } else {
+            console.log(`[AudioManager] Sound ${soundKey} not found in cache`);
         }
     }
 

@@ -7,7 +7,7 @@ export class Arrow extends Projectile {
     // Константы класса
     static readonly ARROW_SCALE = 0.2; // Масштаб стрелы
     private static readonly BASE_ARROW_SPEED = 300; // Базовая скорость стрелы
-    
+
     private speed: number;
     private maxSpeed: number;
     private initialDelay: number;
@@ -25,7 +25,7 @@ export class Arrow extends Projectile {
 
         // Set arrow size
         this.setScale(Arrow.ARROW_SCALE);
-        
+
         // Set a circular hitbox for better collision detection
         if (this.body) {
             const circleRadius = Math.max(this.width, this.height);
@@ -46,7 +46,6 @@ export class Arrow extends Projectile {
     }
 
     setDamage(damage: number): void {
-        console.log('Arrow setDamage called with:', damage); // Debug log
         this.damage = damage;
     }
 
