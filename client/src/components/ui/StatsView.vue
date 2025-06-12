@@ -19,12 +19,12 @@
       <div class="right-section">
         <div class="currency-container">
           <div class="currency-item gold">
-            <img class="currency-img gold-img" src="/assets/images/towers/Gold.png" alt="Gold" 
+            <img class="currency-img gold-img" src="/assets/images/currency/gold/gold.png" alt="Gold" 
                  onerror="this.onerror=null; this.src='/assets/images/currency/gold_coin.png';" />
             <div class="currency-text gold-text">{{ goldCount }}</div>
           </div>
           <div class="currency-item emblem">
-            <img class="currency-img emblem-img" src="/assets/images/currency/heraldic_emblem16x16.png" alt="Emblem" 
+            <img class="currency-img emblem-img" src="/assets/images/currency/heraldic_emblem/heraldic_emblem16x16.png" alt="Emblem" 
                  onerror="this.onerror=null; this.src='/assets/images/emblems/emblem.png';" />
             <div class="currency-text emblem-text">{{ emblemCount }}</div>
           </div>

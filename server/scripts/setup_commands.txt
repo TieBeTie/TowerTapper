@@ -1,0 +1,3 @@
+start - Display player statistics and current skills
+paysupport - Contact support for payment issues
+help - Show list of available commands 

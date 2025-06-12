@@ -40,6 +40,8 @@ func (h *TelegramCommandHandler) HandleCommand(update tgbotapi.Update) {
 		h.handleStartCommand(update)
 	case "paysupport":
 		h.handlePaySupportCommand(update)
+	case "help":
+		h.handleHelpCommand(update)
 	default:
 		log.Printf("=== DEBUG === Unknown command: %s", update.Message.Command())
 	}
@@ -83,11 +85,11 @@ func (h *TelegramCommandHandler) handleStartCommand(update tgbotapi.Update) {
 		"KNOCKBACK":        {"Knockback", "👊"},
 		"LIFESTEAL_CHANCE": {"Lifesteal Chance", "🧛"},
 		"LIFESTEAL_AMOUNT": {"Lifesteal Amount", "💉"},
-		"DAILY_GOLD":       {"Daily Gold", "🪙"},
 		"EMBLEM_BONUS":     {"Emblem Bonus", "🎖️"},
 		"FREE_UPGRADE":     {"Free Upgrade Chance", "🎁"},
 		"SUPPLY_DROP":      {"Chest Chance", "📦"},
 		"GAME_SPEED":       {"Game Speed", "⏩"},
+		"WAVE_BONUS":       {"Wave Bonus", "🌊"},
 	}
 
 	welcomeMsg := "🎮 *Tower Tapper - Player Statistics* 🎮\n\n"
@@ -164,6 +166,28 @@ func (h *TelegramCommandHandler) handleStartCommand(update tgbotapi.Update) {
 
 	if _, err := h.bot.Send(msg); err != nil {
 		log.Printf("Error sending message: %v", err)
+	}
+}
+
+// handleHelpCommand обрабатывает команду /help
+func (h *TelegramCommandHandler) handleHelpCommand(update tgbotapi.Update) {
+	chatID := update.Message.Chat.ID
+	log.Printf("=== DEBUG === Processing /help command for user %s (ID: %d)", update.Message.From.UserName, update.Message.From.ID)
+
+	// Формируем сообщение с описанием доступных команд
+	helpMsg := "🎮 *Tower Tapper - Доступные команды* 🎮\n\n"
+	helpMsg += "/start - Показать статистику игрока и текущие навыки\n"
+	helpMsg += "/paysupport - Обратиться в поддержку по вопросам платежей\n"
+	helpMsg += "/help - Показать список доступных команд\n"
+
+	// Создаем и отправляем сообщение
+	msg := tgbotapi.NewMessage(chatID, helpMsg)
+	msg.ParseMode = "Markdown"
+
+	if _, err := h.bot.Send(msg); err != nil {
+		log.Printf("=== ERROR === Error sending help message: %v", err)
+	} else {
+		log.Printf("=== DEBUG === Help message sent successfully to user %d", update.Message.From.ID)
 	}
 }
 

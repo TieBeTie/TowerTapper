@@ -56,8 +56,8 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         
         this.currentWave++;
         
-        // Apply daily gold bonus at the beginning of each wave
-        this.applyDailyGoldBonus();
+        // Apply wave bonus at the beginning of each wave
+        this.applyWaveBonus();
         
         // Apply emblem bonus at the beginning of each wave
         this.applyEmblemBonus();
@@ -190,13 +190,13 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         // Implementation of setupEventListeners method
     }
 
-    // Add a new method to apply daily gold bonus
-    private applyDailyGoldBonus(): void {
-        const dailyGoldLevel = this.skillStateManager.getState(SkillType.WAVE_BONUS);
+    // Add a new method to apply wave bonus
+    private applyWaveBonus(): void {
+        const waveBonus = this.skillStateManager.getState(SkillType.WAVE_BONUS);
         
-        if (dailyGoldLevel > 0) {
-            // If daily gold bonus level is 1, give 2 gold; if level 2, give 3 gold; and so on
-            const goldBonus = dailyGoldLevel + 1;
+        if (waveBonus > 0) {
+            // If wave bonus level is 1, give 2 gold; if level 2, give 3 gold; and so on
+            const goldBonus = waveBonus + 1;
             
             // Add gold to the player's account
             const gameScene = this.scene as GameScene;
@@ -206,7 +206,7 @@ export class WaveManager extends Phaser.Events.EventEmitter {
                 gameScene.goldManager.updateGoldDirectly(currentGold + goldBonus);
                 
                 // Log bonus for debugging
-                console.log(`Applied daily gold bonus: +${goldBonus} gold at wave ${this.currentWave}`);
+                console.log(`Applied wave bonus: +${goldBonus} gold at wave ${this.currentWave}`);
             }
         }
     }

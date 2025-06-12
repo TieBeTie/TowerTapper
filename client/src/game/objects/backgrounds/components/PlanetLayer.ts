@@ -6,7 +6,7 @@ export class PlanetLayer implements BackgroundLayer {
     private scene: Phaser.Scene;
     private screenManager: ScreenManager;
     private planet: Phaser.GameObjects.Image | null = null;
-    private readonly textureKey = 'Earth';
+    private readonly textureKey = 'earth';
     private rotationTween: Phaser.Tweens.Tween | null = null;
     private atmosphere: Phaser.GameObjects.Graphics | null = null;
     private rotationStepTimer: Phaser.Time.TimerEvent | null = null;
@@ -57,7 +57,7 @@ export class PlanetLayer implements BackgroundLayer {
             console.warn(`[PlanetLayer] Texture ${this.textureKey} not found. Skipping planet creation.`);
             return;
         }
-        
+
         const planetTexture = this.scene.textures.get(this.textureKey).getSourceImage() as HTMLImageElement;
 
         // Центр планеты сильно за пределами экрана (влево и вниз)
@@ -71,7 +71,7 @@ export class PlanetLayer implements BackgroundLayer {
         // b = width / 2 --- halfWidth
         // x = halfWidth^2 / 2 / UIHeight - UIHeight / 2
         // planetRadius = x + UIHeight
-        
+
 
         const halfWidth = width / 2;
         const UIHeight = this.screenManager.getScreenSize().height * (1 - this.screenManager.getGameViewHeightRatio());

@@ -58,31 +58,31 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
 
     create(): void {
         console.log('[GameScene] create() start');
-        
+
         // Update Pinia stores
         const gameStore = useGameStore();
         const sceneStore = useSceneStore();
-        
+
         // Show game view and UI
         sceneStore.setView('game');
         gameStore.showGameUI();
-        
+
         this.scene.bringToTop('GameScene');
-        
+
         // Останавливаем BackgroundScene, чтобы избежать двоения фона
         if (this.scene.isActive('BackgroundScene')) {
             this.scene.stop('BackgroundScene');
         }
-        
+
         // Initialize ScreenManager first
         this.screenManager = new ScreenManager(this);
-        
+
         // Store the game instance globally for access from other components
         (window as any).game = this.game;
-        
+
         // Initialize SkillStateManager properly by first resetting it
         this.skillStateManager.tryResetToTheServer();
-        
+
         // Создаем черный прямоугольник на весь экран
         const { width, height } = this.screenManager.getScreenSize();
         const fadeRect = this.add.rectangle(0, 0, width, height, 0x000000, 1);
@@ -98,23 +98,23 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 fadeRect.destroy();
             }
         });
-        
+
         // Initial setup
         this.setupGameView();
-        
+
         // Initialize AudioManager
         this.audioManager = AudioManager.getInstance(this);
         this.audioManager.playMusic();
 
         // Подписываемся на изменение размера экрана
         this.events.on('screenResize', this.handleScreenResize, this);
-        
+
         // Listen for force visibility event with a different name to avoid recursion
         //this.events.on('ui-refresh-visibility', this.forceUIVisibility, this);
 
         // Listen for game speed change events
         this.events.on('gameSpeedChanged', this.handleGameSpeedChanged, this);
-        
+
         // Initialize game speed from skill manager
         this.gameSpeedMultiplier = this.skillStateManager.getGameSpeed();
     }
@@ -122,25 +122,25 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     private handleScreenResize(gameScale: number): void {
         // Мистический фон обрабатывает изменение размера самостоятельно
         // через подписку на события
-        
+
         // Make sure all UI components are properly positioned and visible after resize
         const { width, height } = this.screenManager.getScreenSize();
-        
+
         // Update other UI components if needed
         if (this.uiManager) {
             this.uiManager.updatePositions();
         }
-        
+
         // Ensure the tower is properly positioned
         if (this.tower) {
             const center = this.screenManager.getGameViewCenter();
             this.tower.updateAttackRangeVisual();
         }
-        
+
         // Force re-layout of all buttons and UI components using a different event
         // to avoid recursion
         this.events.emit('ui-refresh');
-        
+
         // Trigger visibility refresh with non-recursive event
         this.events.emit('ui-refresh-visibility');
     }
@@ -151,21 +151,21 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             // Instead of calling these methods, emit the event that the tower listens for
             this.tower.setVisible(true);
             this.tower.setDepth(10); // Ensure tower has proper depth
-            
+
             // Use a specific event name for the tower to avoid recursion
             this.events.emit('tower-force-attack-circle');
         }
-        
+
         // Force wave indicator visibility
         if (this.waveIndicator) {
             this.waveIndicator.updateUI();
         }
-        
+
         // Force other UI elements visibility
         if (this.uiManager) {
             this.uiManager.updatePositions();
         }
-        
+
         // Force all text elements to be visible
         this.children.list.forEach(child => {
             if (child instanceof Phaser.GameObjects.Text) {
@@ -175,7 +175,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 (child as any).setDepth(100); // Set high depth for all text elements
             }
         });
-        
+
         // Set proper depth for various game elements
         this.sortGameObjectsByDepth();
     }
@@ -188,7 +188,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             if (child.name === 'background') {
                 (child as any).setDepth(-100);
             }
-            
+
             // Attack range circle (should be below tower)
             if (child instanceof Phaser.GameObjects.Graphics) {
                 if (this.tower && Phaser.Math.Distance.Between(
@@ -197,22 +197,22 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                     child.setDepth(-10);
                 }
             }
-            
+
             // Tower (should be above attack range)
             if (child.name === 'tower') {
                 (child as any).setDepth(10);
             }
-            
+
             // Enemies (should be above background, but below UI)
             if (child.name && child.name.includes('enemy')) {
                 (child as any).setDepth(5);
             }
-            
+
             // UI elements should be on top
             if (child instanceof Phaser.GameObjects.Text) {
                 child.setDepth(100);
             }
-            
+
             // Make sure they're visible
             if ('setVisible' in child) {
                 (child as any).setVisible(true);
@@ -248,10 +248,10 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 if (this.audioManager) {
                     this.audioManager.playSound('tower_building');
                 }
-                
+
                 let amplitude = 8;
                 let direction = 1;
-                
+
                 const moveTimer = this.time.addEvent({
                     delay: 50,
                     callback: () => {
@@ -262,13 +262,13 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                         } else {
                             moveTimer.destroy();
                             this.tower.x = center.x;
-                            
+
 
                             this.initializeManagers();
                             // Обновляем состояние башни в хранилище Pinia после построения
                             const gameStore = useGameStore();
                             gameStore.setTowerAlive(true);
-                            
+
                             // Теперь используем локальный mysticalBackground
                             if (this.mysticalBackground) {
                                 this.mysticalBackground.showGlowLayer();
@@ -279,7 +279,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 });
             }
         });
-        
+
     }
 
     private initializeManagers(): void {
@@ -320,7 +320,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         this.enemyManager = new EnemyManager(this, this.uiManager, this.goldManager, this.waveManager);
         this.projectileManager = new ProjectileManager(this, this.enemyManager);
         this.collisionManager = new CollisionManager(this);
-        
+
         // Initialize SupplyDropManager
         this.supplyDropManager = new SupplyDropManager(this);
 
@@ -334,12 +334,12 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
     private initializeWebSocket(): void {
         // Check if we're in local mode
         const localMode = sessionStorage.getItem('local_mode') === 'true';
-        
+
         if (localMode) {
             console.log('Running in local mode - WebSocket connection skipped');
             return;
         }
-        
+
         // Get telegram_id from sessionStorage instead of URL parameters
         const telegramId = sessionStorage.getItem('telegram_id');
 
@@ -354,7 +354,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         // If port is not specified in URL, use default port 8080
         const wsPort = port || '8080';
         const wsUrl = port ? `${protocol}://${host}:${wsPort}/ws` : `${protocol}://${host}/ws`;
-        
+
         const fullUrl = `${wsUrl}?telegram_id=${telegramId}`;
         console.log('Attempting to connect to WebSocket at:', fullUrl);
 
@@ -365,10 +365,10 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 console.error(`Failed to connect after ${maxAttempts} attempts. Giving up.`);
                 return;
             }
-            
+
             connectionAttempts++;
             console.log(`WebSocket connection attempt ${connectionAttempts}/${maxAttempts}`);
-            
+
             try {
                 this.socket = new WebSocket(fullUrl);
 
@@ -387,7 +387,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
 
                 this.socket.onclose = (event) => {
                     console.log(`WebSocket connection closed. Code: ${event.code}, Reason: ${event.reason}`);
-                    
+
                     // If this wasn't a normal closure and we haven't exceeded attempts, try again
                     if (event.code !== 1000 && connectionAttempts < maxAttempts) {
                         console.log(`Attempting to reconnect in 2 seconds...`);
@@ -402,7 +402,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 };
             } catch (error) {
                 console.error('Error creating WebSocket connection:', error);
-                
+
                 // Try again after delay if not exceeded max attempts
                 if (connectionAttempts < maxAttempts) {
                     console.log(`Attempting to reconnect in 2 seconds...`);
@@ -410,7 +410,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
                 }
             }
         };
-        
+
         // Initial delay before first connection attempt
         // This gives time for the server to recognize the telegram_id
         setTimeout(() => attemptConnection(), 1000);
@@ -437,7 +437,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
             if (!this.waveManager || !this.enemyManager) {
                 return;
             }
-            
+
             // Обновляем свой mysticalBackground
             if (this.mysticalBackground) {
                 this.mysticalBackground.update();
@@ -448,32 +448,32 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
 
             // Обновляем менеджеры с измененным delta
             this.enemyManager.update(time, scaledDelta);
-            
+
             if (this.projectileManager) {
                 this.projectileManager.update(time, scaledDelta);
             }
-            
+
             // Обновляем информацию о волне
             if (this.waveIndicator) {
                 this.waveIndicator.updateUI();
             }
-            
+
             // Update emblem count in UI
             if (this.emblemManager) {
                 this.events.emit('updateEmblems', this.emblemManager.getEmblemCount());
             }
-            
+
             // Проверка на "зависшую" волну - только если нет врагов на экране и нет таймера спавна
-            if (this.waveManager.isCurrentWaveActive() && 
-                this.enemyManager.enemies && 
+            if (this.waveManager.isCurrentWaveActive() &&
+                this.enemyManager.enemies &&
                 typeof this.enemyManager.enemies.getLength === 'function' &&
-                this.enemyManager.enemies.getLength() === 0 && 
-                !this.enemyManager.isSpawnTimerActive() && 
+                this.enemyManager.enemies.getLength() === 0 &&
+                !this.enemyManager.isSpawnTimerActive() &&
                 this.waveManager.getRemainingEnemies() > 0) {
-                
+
                 console.log("Detected stuck wave: no enemies, no spawn timer, but wave is active");
                 console.log(`Remaining enemies according to WaveManager: ${this.waveManager.getRemainingEnemies()}`);
-                
+
                 // Фиксим: завершаем все оставшиеся счетчики врагов
                 const remaining = this.waveManager.getRemainingEnemies();
                 for (let i = 0; i < remaining; i++) {
@@ -493,17 +493,17 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         } catch (err) {
             console.warn('[GameScene] Could not update game store in destroy()', err);
         }
-        
+
         // Clean up all manager resources
         if (this.socket) {
             this.socket.close();
         }
-        
+
         // Destroy all managers properly
         if (this.waveManager) {
             this.waveManager.removeAllListeners('waveComplete');
         }
-        
+
         if (this.audioManager) {
             this.audioManager.destroy();
         }
@@ -540,7 +540,7 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         } catch (err) {
             console.warn('[GameScene] Could not update health in store', err);
         }
-        
+
         // Notify UI manager if available
         if (this.uiManager) {
             this.uiManager.updateHealthDisplay(currentHP, maxHP);
@@ -556,14 +556,19 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         } catch (err) {
             console.warn('[GameScene] Could not update game store in shutdown()', err);
         }
-        
+
         console.log('GameScene shutdown started...');
-        
+
+        // Stop audio retry mechanism when scene shuts down
+        if (this.audioManager) {
+            this.audioManager.stopRetryMechanism();
+        }
+
         // MysticalBackground больше не уничтожаем!
         // if (this.mysticalBackground) {
         //     this.mysticalBackground.destroy();
         // }
-        
+
         // Отписываемся от событий
         this.events.off('screenResize');
         this.events.off('ui-refresh-visibility');
@@ -573,55 +578,55 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
         this.events.off('upgradeButtonsVisibility');
         this.events.off('updateGold');
         this.events.off('updateEmblems');
-        
+
         // Уничтожаем менеджеры и UI
         if (this.uiManager) {
             this.uiManager.destroy();
         }
-        
+
         if (this.upgradeManager) {
             this.upgradeManager.destroy();
         }
-        
+
         // Clean up SkillStateManager properly
         if (this.skillStateManager) {
             // Reset any temporary game-specific state
             this.skillStateManager.tryResetToTheServer();
         }
-        
+
         // Уничтожаем компоненты игрового процесса
         if (this.waveIndicator) {
             this.waveIndicator.destroy();
         }
-        
+
         if (this.waveClearEffect) {
             // Если у WaveClearEffect нет метода destroy, 
             // просто обнуляем ссылку на него
             // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
             this.waveClearEffect = null;
         }
-        
+
         if (this.enemyManager) {
             // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
             this.enemyManager = null;
         }
-        
+
         if (this.projectileManager) {
             // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
             this.projectileManager = null;
         }
-        
+
         if (this.collisionManager) {
             // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
             this.collisionManager = null;
         }
-        
+
         // Обнуляем ссылки на менеджеры
         // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
         this.uiManager = null;
         // @ts-ignore - Обнуляем ссылки для предотвращения утечек памяти
         this.upgradeManager = null;
-        
+
         console.log('GameScene shutdown complete');
     }
 }

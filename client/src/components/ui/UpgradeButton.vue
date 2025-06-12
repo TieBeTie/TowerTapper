@@ -13,7 +13,7 @@
       <div class="info-container">
         <div class="level-text">{{ formatSkillValue(props.skill.type, skillValue || 0) }}</div>
         <div class="cost-container">
-          <img class="currency-img gold-img" src="/assets/images/towers/Gold.png" alt="Gold" 
+          <img class="currency-img gold-img" src="/assets/images/currency/gold/gold.png" alt="Gold" 
                onerror="this.onerror=null; this.src='/assets/images/currency/gold_coin.png';" />
           <div class="cost-text" :class="{ 'cost-unavailable': !canAfford }">{{ skillCost }}</div>
         </div>

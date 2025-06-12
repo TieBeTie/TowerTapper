@@ -18,33 +18,38 @@ export default class MenuScene extends Phaser.Scene implements IScene {
 
     create(): void {
         console.log('[MenuScene] create() called');
-        
+
         // Initialize managers
         this.screenManager = new ScreenManager(this);
         this.audioManager = AudioManager.getInstance(this);
-        
+
         // Launch background scene
         this.scene.launch('BackgroundScene');
-        
+
         // Set up audio
         try {
             this.audioManager.playMusic();
+            console.log('[MenuScene] Music started.');
         } catch (err) {
             console.error('[MenuScene] Error playing music:', err);
         }
-        
+
         // Update Pinia store to show menu
         const store = useSceneStore();
-        store.setView('menu');
-        
+        console.log('[MenuScene] Calling store.setView("menu")');
+        this.time.delayedCall(1000, () => {
+            store.setView('menu');
+            console.log('[MenuScene] store.setView("menu") called');
+        });
+
         // Register game instance in window object for Vue components to access
         // This ensures Vue components can access Phaser methods
         (window as any).PhaserGame = this.game;
-        
+
         // Listen for navigation events from buttons
         this.setupEventListeners();
     }
-    
+
     private setupEventListeners(): void {
         // Button event handlers will be set up in Vue components
         // They will update the Pinia store which we can react to
@@ -123,7 +128,12 @@ export default class MenuScene extends Phaser.Scene implements IScene {
         if (store.view === 'menu') {
             store.setView('none');
         }
-        
+
+        // Stop audio retry mechanism when scene shuts down
+        if (this.audioManager) {
+            this.audioManager.stopRetryMechanism();
+        }
+
         // Remove game reference from window
         if ((window as any).PhaserGame === this.game) {
             (window as any).PhaserGame = null;

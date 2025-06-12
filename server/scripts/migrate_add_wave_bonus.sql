@@ -1,0 +1,2 @@
+-- Add migration to ensure WAVE_BONUS skill type is consistent and rename DAILY_GOLD to WAVE_BONUS
+UPDATE player_skills SET skill_type = 'WAVE_BONUS' WHERE skill_type IN ('WAVE_BONUS', 'wavebonus', 'wave_bonus', 'DAILY_GOLD', 'daily_gold', 'DailyGold'); 
