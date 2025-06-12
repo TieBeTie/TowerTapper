@@ -260,6 +260,9 @@ class BootScene extends Phaser.Scene implements IScene {
         const audioLoader = this.load;
 
         // Добавляем все аудио файлы в очередь
+        audioLoader.audio('tower_appearing', 'assets/sounds/tower_appearing.mp3');
+        audioLoader.audio('tower_building', 'assets/sounds/tower_building.wav');
+        audioLoader.audio('purchase_sound', 'assets/sounds/upgrade_button.wav');
         audioLoader.audio('gameMusic', ['assets/music/game_music.mp3']);
         audioLoader.audio('emblem_shop', 'assets/music/emblem_shop.mp3');
         audioLoader.audio('initial_upgrades_shop', 'assets/music/initial_upgrades_shop.mp3');
@@ -274,9 +277,8 @@ class BootScene extends Phaser.Scene implements IScene {
         audioLoader.audio('heal', 'assets/sounds/heal.wav');
         audioLoader.audio('supply_drop', 'assets/sounds/supply_drop.wav');
         audioLoader.audio('gold_collect', 'assets/sounds/gold_collect.wav');
-        audioLoader.audio('purchase_sound', 'assets/sounds/upgrade_button.wav');
-        audioLoader.audio('tower_appearing', 'assets/sounds/tower_appearing.mp3');
-        audioLoader.audio('tower_building', 'assets/sounds/tower_building.wav');
+
+
 
         // Обработчик завершения загрузки аудио
         audioLoader.once('complete', () => {
