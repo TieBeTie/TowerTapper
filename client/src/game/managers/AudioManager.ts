@@ -93,7 +93,7 @@ class AudioManager {
                             'arrow': 0.1 * gameVolume,
                             'enemyDie': 0.01 * gameVolume,
                             'towerDie': 0.05 * gameVolume,
-                            'single_firework_sound': 0.05 * gameVolume,
+                            'single_firework_sound': 0.1 * gameVolume,
                             'upgradeButton': 0.05 * gameVolume,
                             'towerDamage': 0.05 * gameVolume,
                             'usualButton': 1 * gameVolume,
