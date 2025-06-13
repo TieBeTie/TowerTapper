@@ -77,7 +77,7 @@ class AudioManager {
     private initializeSounds(): void {
         try {
             // Array of sound keys to add
-            const soundKeys = ['arrow', 'enemyDie', 'towerDie', 'waveCompleted',
+            const soundKeys = ['arrow', 'enemyDie', 'towerDie', 'single_firework_sound',
                 'upgradeButton', 'towerDamage', 'usualButton', 'crit', 'heal',
                 'supply_drop', 'gold_collect', 'purchase_sound', 'tower_building'];
 
@@ -93,7 +93,7 @@ class AudioManager {
                             'arrow': 0.1 * gameVolume,
                             'enemyDie': 0.01 * gameVolume,
                             'towerDie': 0.05 * gameVolume,
-                            'waveCompleted': 0.02 * gameVolume,
+                            'single_firework_sound': 0.05 * gameVolume,
                             'upgradeButton': 0.05 * gameVolume,
                             'towerDamage': 0.05 * gameVolume,
                             'usualButton': 1 * gameVolume,
@@ -268,7 +268,7 @@ class AudioManager {
             'arrow': 0.1 * gameVolume,
             'enemyDie': 0.01 * gameVolume,
             'towerDie': 0.05 * gameVolume,
-            'waveCompleted': 0.02 * gameVolume,
+            'single_firework_sound': 0.05 * gameVolume,
             'upgradeButton': 0.05 * gameVolume,
             'towerDamage': 0.05 * gameVolume,
             'usualButton': 1 * gameVolume,

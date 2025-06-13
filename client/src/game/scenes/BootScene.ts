@@ -270,7 +270,7 @@ class BootScene extends Phaser.Scene implements IScene {
         audioLoader.audio('arrow', 'assets/sounds/arrow.wav');
         audioLoader.audio('enemyDie', 'assets/sounds/enemy_die.wav');
         audioLoader.audio('towerDie', 'assets/sounds/tower_die.wav');
-        audioLoader.audio('waveCompleted', 'assets/sounds/wave_completed.wav');
+        audioLoader.audio('single_firework_sound', 'assets/sounds/single_firework_sound.mp3');
         audioLoader.audio('upgradeButton', 'assets/sounds/upgrade_button.wav');
         audioLoader.audio('towerDamage', 'assets/sounds/tower_damage.wav');
         audioLoader.audio('usualButton', 'assets/sounds/usual_button.mp3');
