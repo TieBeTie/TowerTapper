@@ -101,7 +101,9 @@ export class WaveManager extends Phaser.Events.EventEmitter {
 
         // Если это был последний враг, завершаем волну
         if (this.enemiesRemaining <= 0) {
-            this.completeWave();
+            this.scene.time.delayedCall(700, () => {
+                this.completeWave();
+            });
         }
     }
 
@@ -125,9 +127,6 @@ export class WaveManager extends Phaser.Events.EventEmitter {
 
         // Play wave completion sound
         const gameScene = this.scene as GameScene;
-        if (gameScene.audioManager) {
-            gameScene.audioManager.playSound('single_firework_sound');
-        }
 
         // === Логика обновления max_wave_completed ===
         // Получаем WebSocket из сцены

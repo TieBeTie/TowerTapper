@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { ScreenManager } from '../../managers/ScreenManager';
 import Ellipse = Phaser.Geom.Ellipse;
+import GameScene from '../../scenes/GameScene';
 
 // Простая реализация 2-D Perlin-шума (Ken Perlin, лицензия public domain)
 class PerlinNoise {
@@ -62,8 +63,14 @@ export class WaveClearEffect {
         this.screenManager = screenManager || new ScreenManager(scene);
     }
 
+
+
     // Показать эффект "Wave Clear"
     public show(waveNumber: number): void {
+        const gameScene = this.scene as GameScene;
+        if (gameScene.audioManager) {
+            gameScene.audioManager.playSound('single_firework_sound');
+        }
         const gameScale = this.screenManager.getGameScale();
 
         // Разные размеры: хвост (тонкая вертикаль) и облако (сильнее видимое)
