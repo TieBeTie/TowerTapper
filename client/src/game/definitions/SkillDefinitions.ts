@@ -20,27 +20,27 @@ export class SkillDefinitions {
         if (level === 10) return 18;
         return 20 + (level - 11) * 2;
     }
-    
+
     private static calculateMaxHealthValue(level: number): number {
         return 50 + (level * 5);
     }
-    
+
     private static calculateMultishotValue(level: number): number {
         return +(level * 0.5).toFixed(2);
     }
-    
+
     private static calculateSupplyDropValue(level: number): number {
         return +(level * 0.25).toFixed(2);
     }
-    
+
     private static calculateDailyGoldValue(level: number): number {
         return Math.round(level * 3);
     }
-    
+
     private static calculateCoinRewardValue(level: number): number {
         return Math.round(level + 1);
     }
-    
+
     // Calculation functions for skill costs
     private static calculateMultishotCost(level: number): number {
         return Math.ceil(10 + (level * 5));
@@ -69,80 +69,80 @@ export class SkillDefinitions {
     private static calculateCritChanceCost(level: number): number {
         return Math.ceil(5 + (level * 6));
     }
-    
+
     private static calculateCritChanceValue(level: number): number {
         return +(level * 0.5).toFixed(2);
     }
-    
+
     // Calculation functions for other skill values
     private static calculateHealthRegenValue(level: number): number {
         return +(level * 0.1).toFixed(2);
     }
-    
+
     private static calculateHealthRegenCost(level: number): number {
         return Math.ceil(5 + (level * 9));
     }
-    
+
     private static calculateAttackSpeedValue(level: number): number {
         return +(2.50 + (level * 0.1)).toFixed(2);
     }
-    
+
     private static calculateAttackSpeedCost(level: number): number {
         return Math.ceil(5 + 40 * Math.exp(0.2 * level) - 40); // 5 + 3 * e^(0.18 * level)
     }
-    
+
     private static calculateAttackRangeValue(level: number): number {
         return Math.round(100 + (level * 2));
     }
-    
+
     private static calculateAttackRangeCost(level: number): number {
         return Math.ceil(20 + 30 * Math.exp(0.12 * level)); // 20 + 7 * e^(0.09 * level)
     }
-    
+
     private static calculateCritMultiplierValue(level: number): number {
         return +(2 + (level * 0.25)).toFixed(2);
     }
-    
+
     private static calculateCritMultiplierCost(level: number): number {
         return Math.ceil(5 + 3 * Math.exp(0.11 * level)); // 5 + 3 * e^(0.11 * level)
     }
-    
+
     private static calculateKnockbackValue(level: number): number {
-        return +(1 + (level * 0.5)).toFixed(2);
+        return +(level * 0.5).toFixed(2);
     }
-    
+
     private static calculateKnockbackCost(level: number): number {
         return Math.ceil(15 + (level * 12));
     }
-    
+
     private static calculateLifestealChanceValue(level: number): number {
         return +(level * 0.5).toFixed(2);
     }
-    
+
     private static calculateLifestealChanceCost(level: number): number {
         return Math.ceil(5 + (level * 9));
     }
-    
+
     private static calculateLifestealAmountValue(level: number): number {
         return Math.round(1 + level);
     }
-    
+
     private static calculateLifestealAmountCost(level: number): number {
         return Math.ceil(10 + (level * 16));
     }
-    
+
     private static calculateEmblemBonusValue(level: number): number {
         return Math.round(level);
     }
-    
+
     private static calculateEmblemBonusCost(level: number): number {
         return Math.ceil(25 + 50 * Math.exp(0.3 * level)); // 25 + 2 * e^(0.2 * level)
     }
-    
+
     private static calculateGameSpeedValue(level: number): number {
         return +(1 + (level * 0.25)).toFixed(2);
     }
-    
+
     // Calculation functions for remaining costs
     private static calculateDamageCost(level: number): number {
         if (level === 0) return 5;
@@ -160,7 +160,7 @@ export class SkillDefinitions {
         // For levels beyond the original array
         return Math.ceil(5 + Math.pow(level, 1.6) * 2);
     }
-    
+
     private static calculateMaxHealthCost(level: number): number {
         if (level === 0) return 5;
         if (level === 1) return 12;
@@ -178,11 +178,11 @@ export class SkillDefinitions {
         // For levels beyond the original array
         return Math.ceil(5 + (level * 7));
     }
-    
+
     private static calculateCoinRewardCost(level: number): number {
         return Math.ceil(25 + 50 * Math.exp(0.3 * level) - 50); // 25 + 2 * e^(0.2 * level)
     }
-    
+
     /**
      * Get maximum level for a skill type
      * @param skillType Skill type to get max level for
@@ -217,7 +217,7 @@ export class SkillDefinitions {
             case SkillType.WAVE_BONUS:
                 return 1000;
             case SkillType.EMBLEM_BONUS:
-                return 100; 
+                return 100;
             case SkillType.FREE_UPGRADE:
                 return 100;
             case SkillType.SUPPLY_DROP:
@@ -230,7 +230,7 @@ export class SkillDefinitions {
                 return 100;
         }
     }
-    
+
     // Helper function to get value from skill table
     private static getValueForSkill(skillType: SkillType, level: number): number {
         switch (skillType) {
@@ -274,7 +274,7 @@ export class SkillDefinitions {
                 return 0;
         }
     }
-    
+
     // Helper function to get cost from lookup table
     private static getCostForSkill(skillType: SkillType, level: number): number {
         switch (skillType) {

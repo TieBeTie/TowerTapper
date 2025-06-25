@@ -203,7 +203,7 @@ class BootScene extends Phaser.Scene implements IScene {
         this.load.image('tower', 'assets/images/towers/tower.png');
 
         // Load game resources as spritesheets
-        this.load.spritesheet('enemy', 'assets/images/enemies/orby/orby_move_spritesheet.png', {
+        this.load.spritesheet('orby_move', 'assets/images/enemies/orby/orby_move_spritesheet.png', {
             frameWidth: 75,
             frameHeight: 125
         });
@@ -231,6 +231,9 @@ class BootScene extends Phaser.Scene implements IScene {
             frameWidth: 65,
             frameHeight: 90
         });
+
+        // Загрузка босса Bomb Orb
+        this.load.image('bomb_orb', 'assets/images/enemies/bosses/bomb_orb_move.png');
 
         // Запускаем асинхронную загрузку аудио ПОСЛЕ завершения основной загрузки
         this.load.once('complete', () => {
@@ -278,8 +281,7 @@ class BootScene extends Phaser.Scene implements IScene {
         audioLoader.audio('heal', 'assets/sounds/heal.wav');
         audioLoader.audio('supply_drop', 'assets/sounds/supply_drop.wav');
         audioLoader.audio('gold_collect', 'assets/sounds/gold_collect.wav');
-
-
+        audioLoader.audio('bomb_orb_explosion', 'assets/sounds/bomb_orb_explosion.mp3');
 
         // Обработчик завершения загрузки аудио
         audioLoader.once('complete', () => {
@@ -540,13 +542,13 @@ class BootScene extends Phaser.Scene implements IScene {
         if (isIOS) {
             console.log('Verifying sprite availability on iOS...');
             // Check if key sprites are available
-            const testEnemy = this.textures.exists('enemy');
+            const testEnemy = this.textures.exists('orby_move');
             const testBackground = this.textures.exists('background');
             console.log(`iOS texture check - enemy: ${testEnemy}, background: ${testBackground}`);
 
             // Pre-create a test frame to warm up the animation system
             if (testEnemy) {
-                const testSprite = this.add.sprite(-100, -100, 'enemy');
+                const testSprite = this.add.sprite(-100, -100, 'orby_move');
                 testSprite.setVisible(false);
                 this.time.delayedCall(100, () => {
                     testSprite.destroy();
@@ -635,7 +637,7 @@ class BootScene extends Phaser.Scene implements IScene {
     createAnimations() {
         this.anims.create({
             key: 'enemy_walk',
-            frames: this.anims.generateFrameNumbers('enemy', { start: 0, end: 7 }),
+            frames: this.anims.generateFrameNumbers('orby_move', { start: 0, end: 7 }),
             frameRate: 32,
             repeat: -1
         });

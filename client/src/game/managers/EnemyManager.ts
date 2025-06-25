@@ -28,7 +28,7 @@ class EnemyManager {
         this.skillStateManager = SkillStateManager.getInstance();
 
         // Подписка на события волн
-        this.waveManager.on('waveStart', (waveConfig: { number: number; enemyHealthMultiplier: number; enemyCount: number; spawnInterval: number }) => {
+        this.waveManager.on('waveStart', (waveConfig: any) => {
             this.startSpawningEnemies(waveConfig);
         });
 
@@ -41,35 +41,29 @@ class EnemyManager {
         return this.spawnTimer !== null && !this.spawnTimer.hasDispatched;
     }
 
-    startSpawningEnemies(waveConfig: any): void {
-        // Destroy existing timer if it exists
+    startSpawningEnemies(waveConfig: { enemyQueue: ('orby' | 'strong_orby' | 'bomb_orb')[] }): void {
+        // Останавливаем предыдущий таймер спавна, если был
         this.clearSpawnTimer();
 
-        // Extract wave config
-        const enemyCount = waveConfig.enemyCount || 10;
+        const queue = [...waveConfig.enemyQueue];
+        const enemyCount = queue.length;
 
-        // Make each wave last exactly 20 seconds by calculating the appropriate spawn interval
-        const waveDuration = 20000; // 20 seconds in milliseconds
-        const spawnInterval = waveDuration / enemyCount;
+        const waveDuration = 20000; // 20 секунд
+        const spawnInterval = enemyCount > 0 ? waveDuration / enemyCount : waveDuration;
 
-        // Apply game speed to spawn interval
         const gameSpeed = this.skillStateManager.getGameSpeed();
         const adjustedSpawnInterval = spawnInterval / gameSpeed;
 
-        // Create a spawn counter to track how many enemies need to be spawned
-        let enemiesLeftToSpawn = enemyCount;
-
-        // Start a timer to spawn enemies at the calculated interval
         this.spawnTimer = this.scene.time.addEvent({
             delay: adjustedSpawnInterval,
             callback: () => {
-                if (enemiesLeftToSpawn > 0) {
-                    this.spawnEnemy();
-                    enemiesLeftToSpawn--;
+                if (queue.length > 0) {
+                    const type = queue.shift() as 'orby' | 'strong_orby' | 'bomb_orb';
+                    this.spawnEnemy(type);
+                }
 
-                    if (enemiesLeftToSpawn <= 0) {
-                        this.clearSpawnTimer();
-                    }
+                if (queue.length === 0) {
+                    this.clearSpawnTimer();
                 }
             },
             callbackScope: this,
@@ -77,7 +71,10 @@ class EnemyManager {
         });
     }
 
-    spawnEnemy(): boolean {
+    /**
+     * Создать врага. Если передан тип, создаём именно его, иначе случайного.
+     */
+    spawnEnemy(enemyTypeParam?: 'orby' | 'strong_orby' | 'bomb_orb'): boolean {
         try {
             // First make sure we have a valid scene and physics system
             if (!this.scene || !this.scene.physics) {
@@ -120,7 +117,13 @@ class EnemyManager {
             }
 
             // Generate random enemy type
-            const enemyType = Phaser.Math.RND.pick(['orc', 'goblin']) as 'orc' | 'goblin';
+            let enemyType: 'orby' | 'strong_orby' | 'bomb_orb';
+
+            if (enemyTypeParam) {
+                enemyType = enemyTypeParam;
+            } else {
+                enemyType = Phaser.Math.RND.pick(['orby', 'strong_orby']) as 'orby' | 'strong_orby';
+            }
 
             // Create the enemy
             const enemy = EnemyFactory.createEnemy(enemyType, this.scene, xPosition, yPosition, this.waveManager);
@@ -244,7 +247,7 @@ class EnemyManager {
             if (this.scene && this.scene.children && this.scene.children.getByName) {
                 const tower = this.scene.children.getByName('tower') as Tower;
                 if (tower && this.goldCollectionEffectFromEnemy) {
-                    this.goldCollectionEffectFromEnemy.spawnGold(new Phaser.Math.Vector2(x, y), tower);
+                    this.goldCollectionEffectFromEnemy.spawnGold(new Phaser.Math.Vector2(x, y), tower, (enemy as any).cost || 1);
                 } else {
                     console.warn('Башня не найдена в сцене.');
                 }

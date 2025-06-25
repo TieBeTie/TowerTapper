@@ -77,7 +77,7 @@ class AudioManager {
     private initializeSounds(): void {
         try {
             // Array of sound keys to add
-            const soundKeys = ['arrow', 'enemyDie', 'towerDie', 'single_firework_sound',
+            const soundKeys = ['arrow', 'enemyDie', 'towerDie', 'single_firework_sound', 'bomb_orb_explosion',
                 'upgradeButton', 'towerDamage', 'usualButton', 'crit', 'heal',
                 'supply_drop', 'gold_collect', 'purchase_sound', 'tower_building'];
 
@@ -102,7 +102,8 @@ class AudioManager {
                             'supply_drop': 0.2 * gameVolume,
                             'gold_collect': 0.15 * gameVolume,
                             'purchase_sound': 0.1 * gameVolume,
-                            'tower_building': 0.1 * gameVolume
+                            'tower_building': 0.1 * gameVolume,
+                            'bomb_orb_explosion': 0.12 * gameVolume
                         }[key] || 0.2 * gameVolume;
 
                         this.sounds.set(key, this.scene.sound.add(key, { volume }));
@@ -268,7 +269,7 @@ class AudioManager {
             'arrow': 0.1 * gameVolume,
             'enemyDie': 0.01 * gameVolume,
             'towerDie': 0.05 * gameVolume,
-            'single_firework_sound': 0.05 * gameVolume,
+            'single_firework_sound': 0.1 * gameVolume,
             'upgradeButton': 0.05 * gameVolume,
             'towerDamage': 0.05 * gameVolume,
             'usualButton': 1 * gameVolume,
@@ -277,7 +278,8 @@ class AudioManager {
             'supply_drop': 0.2 * gameVolume,
             'gold_collect': 0.15 * gameVolume,
             'purchase_sound': 0.1 * gameVolume,
-            'tower_building': 0.1 * gameVolume
+            'tower_building': 0.1 * gameVolume,
+            'bomb_orb_explosion': 0.12 * gameVolume
         };
         return volumeMap[key] ?? 0.2 * gameVolume;
     }

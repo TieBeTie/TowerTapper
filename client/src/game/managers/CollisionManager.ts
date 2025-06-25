@@ -105,7 +105,7 @@ class CollisionManager {
             : (this.skillManager.getState(SkillType.DAMAGE) || 20);
 
         // Get knockback value from SkillStateManager
-        const knockbackForce = this.skillManager.getState(SkillType.KNOCKBACK) || 50;
+        const knockbackForce = this.skillManager.getState(SkillType.KNOCKBACK) || 0;
 
         // Get critical multiplier
         const critMultiplier = this.skillManager.getState(SkillType.CRIT_MULTIPLIER) || 0;
@@ -141,13 +141,6 @@ class CollisionManager {
                     knockbackDirection.x * knockbackForce,
                     knockbackDirection.y * knockbackForce
                 );
-
-                // Reset the enemy's normal movement after a short delay
-                this.scene.time.delayedCall(300, () => {
-                    if (enemy.active && enemy.body) {
-                        body.setVelocity(0, 0);
-                    }
-                });
             }
         }
 

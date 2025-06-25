@@ -7,7 +7,7 @@ class GoldManager {
     private gold: GoldAnimation[] = [];
     private uiManager: UIManager;
     private scene: Phaser.Scene;
-    
+
     // Для совместимости с существующим кодом, который может обращаться к gold_count напрямую
     get gold_count(): number {
         // Получаем значение из Pinia store
@@ -19,7 +19,7 @@ class GoldManager {
             return 0;
         }
     }
-    
+
     set gold_count(value: number) {
         // Обновляем значение в Pinia store
         try {
@@ -35,7 +35,7 @@ class GoldManager {
     constructor(scene: Phaser.Scene, uiManager: UIManager) {
         this.uiManager = uiManager;
         this.scene = scene;
-        
+
         // Инициализация золота в store при создании менеджера
         try {
             const gameStore = useGameStore();
@@ -45,12 +45,10 @@ class GoldManager {
         }
     }
 
-    spawnGold(position: Phaser.Math.Vector2, target: Phaser.GameObjects.Sprite) {
+    spawnGold(position: Phaser.Math.Vector2, target: Phaser.GameObjects.Sprite, reward: number = 1) {
         const gameScene = this.scene.scene.get('GameScene');
         const goldRewardMultiplier = (gameScene as any).getGoldRewardMultiplier?.() || 1;
-        const baseReward = 1;
-        const bonusGold = goldRewardMultiplier - 1; // Get the bonus gold from the multiplier
-        const finalReward = baseReward + bonusGold;
+        const finalReward = reward * goldRewardMultiplier;
 
         const gold = GoldAnimation.createCollectAnimation(
             this.scene,

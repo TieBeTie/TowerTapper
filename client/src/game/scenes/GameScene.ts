@@ -288,9 +288,11 @@ export default class GameScene extends Phaser.Scene implements IGameScene {
 
         // Подписываемся на событие завершения волны для отображения эффекта
         this.waveManager.on('waveComplete', (waveNumber: number) => {
-            // Создаем и показываем эффект "Wave Clear"
-            this.waveClearEffect = new WaveClearEffect(this, this.tower);
-            this.waveClearEffect.show(waveNumber);
+            const delay = waveNumber % 5 === 0 ? 800 : 0; // чуть больше пауза после босса
+            this.time.delayedCall(delay, () => {
+                this.waveClearEffect = new WaveClearEffect(this, this.tower);
+                this.waveClearEffect.show(waveNumber);
+            });
         });
 
         // Initialize emblem manager first

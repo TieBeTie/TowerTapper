@@ -9,10 +9,14 @@ interface WaveConfig {
     enemyCount: number;
     spawnInterval: number;
     enemySpeedMultiplier: number;
+    enemyQueue: ('orby' | 'strong_orby' | 'bomb_orb')[];
 }
 
 export class WaveManager extends Phaser.Events.EventEmitter {
-    private currentWave: number = 0;
+    // Для быстрого теста можем стартовать не с 1-й волны, а с произвольной.
+    private static readonly DEBUG_START_WAVE: number = 1; // старт с первой волны
+
+    private currentWave: number = WaveManager.DEBUG_START_WAVE - 1;
     private currentWaveConfig: WaveConfig | null = null;
     private isWaveActive: boolean = false;
     private enemiesRemaining: number = 0;
@@ -39,12 +43,26 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         // Рассчитываем множитель скорости: начинаем с 1 и увеличиваем на 3% с каждой волной
         const speedMultiplier = 1 + (waveNumber - 1) * 0.03;
 
+        const enemyCount = 13 + waveNumber * 2;
+
+        // Собираем очередь типов врагов на волну
+        const enemyQueue: ('orby' | 'strong_orby' | 'bomb_orb')[] = [];
+        for (let i = 0; i < enemyCount; i++) {
+            enemyQueue.push(Math.random() < 0.5 ? 'orby' : 'strong_orby');
+        }
+
+        // Каждая 5-я волна: последний враг — босс bomb_orb
+        if (waveNumber % 5 === 0) {
+            enemyQueue[enemyQueue.length - 1] = 'bomb_orb';
+        }
+
         return {
             number: waveNumber,
-            enemyHealthMultiplier: waveNumber, // Увеличиваем здоровье на 1 с каждой волной
-            enemyCount: 13 + waveNumber * 2, // Начинаем с 20 врагов и увеличиваем на 2 с каждой волной
-            spawnInterval: 1000, // Интервал спавна в мс
-            enemySpeedMultiplier: speedMultiplier // Увеличиваем скорость на 3% с каждой волной
+            enemyHealthMultiplier: waveNumber,
+            enemyCount,
+            spawnInterval: 1000,
+            enemySpeedMultiplier: speedMultiplier,
+            enemyQueue
         };
     }
 
