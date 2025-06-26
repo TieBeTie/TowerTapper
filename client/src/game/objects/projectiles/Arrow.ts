@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Projectile } from './Projectile';
 import { SkillType } from '../../types/SkillType';
 import { SkillStateManager } from '../../managers/SkillStateManager';
+import { ScreenManager } from '../../managers/ScreenManager';
 
 export class Arrow extends Projectile {
     // Константы класса
@@ -23,10 +24,22 @@ export class Arrow extends Projectile {
         this.skillManager = SkillStateManager.getInstance();
         this.damage = this.skillManager.getState(SkillType.DAMAGE) || 0;
 
-        // Set arrow size
-        this.setScale(Arrow.ARROW_SCALE);
+        // Определяем масштаб игры, чтобы адаптировать размеры под экран
+        let gameScale = 1;
+        const gs: any = scene.scene.get('GameScene');
+        if (gs && gs.screenManager) {
+            gameScale = gs.screenManager.getGameScale();
+        } else {
+            // Фоллбэк: приближенная формула из ScreenManager
+            const { width, height } = scene.scale;
+            const baseScale = Math.min(width / 600, height / 1000);
+            gameScale = baseScale * (height > width ? 1.2 : 1.5);
+        }
 
-        // Set a circular hitbox for better collision detection
+        // Масштаб стрелы с учётом экрана
+        this.setScale(Arrow.ARROW_SCALE * gameScale);
+
+        // Устанавливаем хитбокс пропорционально масштабу
         if (this.body) {
             const circleRadius = Math.max(this.width, this.height);
             (this.body as Phaser.Physics.Arcade.Body).setCircle(

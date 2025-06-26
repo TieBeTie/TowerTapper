@@ -9,7 +9,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private static readonly COLOR_RED = 0xff6b6b;  // Более розовый оттенок
     private static readonly COLOR_WHITE = 0xffffff;
     private static readonly COLOR_CIRCLE = 0xffffff; // Голубой цвет для круга
-    
+
     // Константа масштаба башни
     private static readonly TOWER_SCALE = 0.27;
     private static readonly TOWER_ANGLE = -4;
@@ -21,16 +21,16 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     // around the centralized health system
     get health(): number { return this.skillManager.getCurrentHealth(); }
     set health(value: number) { /* Do nothing, use methods instead */ }
-    
+
     get maxHealth(): number { return this.skillManager.getMaxHealth(); }
     set maxHealth(value: number) { /* Do nothing, use methods instead */ }
-    
+
     get defense(): number { return this.skillManager.getState(SkillType.DEFENSE) || 0; }
     set defense(value: number) { /* Do nothing, use methods instead */ }
-    
+
     get regeneration(): number { return this.skillManager.getState(SkillType.HEALTH_REGEN) || 0; }
     set regeneration(value: number) { /* Do nothing, use methods instead */ }
-    
+
     private isDying: boolean = false;
     private skillManager: SkillStateManager;
     private screenManager: ScreenManager;
@@ -62,15 +62,15 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
 
         this.setImmovable(true);
         this.setCollideWorldBounds(true);
-        
+
         // Установка точного положения башни по центру игровой области
         const center = this.screenManager.getGameViewCenter();
         this.setPosition(center.x, center.y);
-        
+
         // Масштаб с учетом коэффициента из ScreenManager
         const gameScale = this.screenManager.getGameScale();
         this.setScale(Tower.TOWER_SCALE * gameScale);
-        
+
         // Слегка наклоняем башню влево
         this.setAngle(Tower.TOWER_ANGLE);
 
@@ -78,11 +78,11 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             this.body.setSize(this.width * 0.6, this.height * 0.6);
             this.body.setOffset(this.width * 0.2, this.height * 0.2);
         }
-        
+
         // Set tower to a high depth to ensure it's above the attack circle
         this.setDepth(10);
         this.scene.events.on('screenResize', this.handleScreenResize, this);
-        
+
         // Use the new specific event name to avoid recursion
         this.scene.events.on('tower-force-attack-circle', () => {
             // Apply throttling to event handling
@@ -93,35 +93,35 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             this.lastCircleUpdateTime = currentTime;
             this.safeUpdateAttackCircle();
         }, this);
-        
+
         // Start update loop to handle regeneration properly
         this.scene.events.on('update', this.onUpdate, this);
     }
-    
+
     // Method to handle continuous regeneration in the update loop
     private onUpdate = (time: number, delta: number): void => {
         // Process regeneration through the centralized system
         this.skillManager.processRegeneration(delta);
-        
+
         // Update health bar to reflect new health
         this.updateHealthBar();
     }
-    
+
     private handleScreenResize(gameScale: number): void {
         this.setScale(Tower.TOWER_SCALE * gameScale);
         const center = this.screenManager.getGameViewCenter();
         this.setPosition(center.x, center.y);
-        
+
         // Сохраняем небольшой наклон башни влево при изменении размера экрана
         this.setAngle(Tower.TOWER_ANGLE);
-        
+
         // Apply throttling to screen resize handling
         const currentTime = Date.now();
         if (currentTime - this.lastCircleUpdateTime < this.CIRCLE_UPDATE_INTERVAL) {
             return; // Skip this update if not enough time has passed
         }
         this.lastCircleUpdateTime = currentTime;
-        
+
         // Use the safer method that doesn't recreate the graphics object
         this.safeUpdateAttackCircle();
     }
@@ -132,18 +132,18 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             console.warn('Cannot upgrade tower: scene is undefined');
             return;
         }
-        
+
         const skills = this.skillManager.getState(SkillType.MAX_HEALTH) || this.maxHealth;
         this.maxHealth = skills;
         this.defense = this.skillManager.getState(SkillType.DEFENSE) || this.defense;
         this.regeneration = this.skillManager.getState(SkillType.HEALTH_REGEN) || this.regeneration;
-        
+
         // Обновляем радиус атаки при улучшении
         this.attackRange = this.skillManager.getState(SkillType.ATTACK_RANGE);
-        
+
         // Update the attack range circle using the safe method
         this.safeUpdateAttackCircle();
-        
+
         if (this.regeneration > 0) {
             this.startRegeneration();
         }
@@ -151,19 +151,21 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
 
     // Add a safe method that doesn't destroy and recreate the circle
     private safeUpdateAttackCircle(): void {
+        // Получаем актуальное значение радиуса прямо из SkillStateManager
+        this.attackRange = this.skillManager.getState(SkillType.ATTACK_RANGE);
         // Only update if active and has a scene
         if (!this.active || !this.scene) {
             console.warn('Cannot update attack circle: inactive tower or missing scene');
             return;
         }
-        
+
         // Apply throttling directly in the update method as well
         const currentTime = Date.now();
         if (currentTime - this.lastCircleUpdateTime < this.CIRCLE_UPDATE_INTERVAL && this.attackRangeCircle) {
             return; // Skip if not enough time has passed and circle already exists
         }
         this.lastCircleUpdateTime = currentTime;
-        
+
         // Make sure the circle exists
         if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {
             this.attackRangeCircle = this.scene.add.graphics();
@@ -172,7 +174,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             // Just clear the existing one instead of destroying and recreating
             this.attackRangeCircle.clear();
         }
-        
+
         // Draw with more visible style 
         this.attackRangeCircle.lineStyle(3, Tower.COLOR_CIRCLE, Tower.ATTACK_RANGE_CIRCLE_LINE_ALPHA);
         // Добавляем полупрозрачную белую заливку
@@ -190,7 +192,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             console.warn('Cannot update attack range visual: scene is undefined');
             return;
         }
-        
+
         // First, ensure the graphics object exists
         if (!this.attackRangeCircle || !this.attackRangeCircle.scene) {
             this.attackRangeCircle = this.scene.add.graphics();
@@ -199,7 +201,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             // Just clear it rather than destroying and recreating
             this.attackRangeCircle.clear();
         }
-        
+
         // Draw with more visible style
         this.attackRangeCircle.lineStyle(3, Tower.COLOR_CIRCLE, Tower.ATTACK_RANGE_CIRCLE_LINE_ALPHA);
         this.attackRangeCircle.fillStyle(Tower.COLOR_WHITE, Tower.ATTACK_RANGE_CIRCLE_ALPHA);
@@ -218,31 +220,33 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     // Проверяем, находится ли враг в радиусе атаки
     isInAttackRange(enemy: Phaser.GameObjects.GameObject): boolean {
         if (!enemy || !enemy.active) return false;
-        
+
         const distance = Phaser.Math.Distance.Between(
-            this.x, 
-            this.y, 
-            (enemy as Phaser.Physics.Arcade.Sprite).x, 
+            this.x,
+            this.y,
+            (enemy as Phaser.Physics.Arcade.Sprite).x,
             (enemy as Phaser.Physics.Arcade.Sprite).y
         );
-        
+
         return distance <= this.attackRange;
     }
 
     // Получаем текущий радиус атаки
     getAttackRange(): number {
-        return this.attackRange;
+        // Берём актуальное значение из SkillStateManager,
+        // чтобы не зависеть от устаревшего свойства
+        return this.skillManager.getState(SkillType.ATTACK_RANGE);
     }
 
     // Method required by UpgradeManager
     updateHealthBar(): void {
         // Safety check for scene existence
         if (!this.scene) return;
-        
+
         // Get current health values from the centralized system
         const currentHealth = this.skillManager.getCurrentHealth();
         const maxHealth = this.skillManager.getMaxHealth();
-        
+
         // Update Pinia store
         try {
             const gameStore = useGameStore();
@@ -250,7 +254,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
         } catch (err) {
             console.warn('Could not update Pinia store with health', err);
         }
-        
+
         // If a GameScene health bar needs to be updated
         if ('updateHealthBar' in this.scene) {
             (this.scene as any).updateHealthBar(currentHealth, maxHealth);
@@ -312,7 +316,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             } catch (err) {
                 console.warn('Could not update tower alive status in store', err);
             }
-            
+
             if ((gameScene as any).goldManager) {
                 (gameScene as any).goldManager.updateGoldDirectly(0);
             }
@@ -404,7 +408,7 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
     private stopRegeneration(): void {
         // Nothing to do here anymore since regeneration is handled in update
     }
-    
+
     private startRegeneration(): void {
         // Nothing to do here anymore since regeneration is handled in update
     }
@@ -418,12 +422,12 @@ class Tower extends Phaser.Physics.Arcade.Sprite {
             }, this);
             this.scene.events.off('update', this.onUpdate, this);
         }
-        
+
         // Destroy the attack range circle
         if (this.attackRangeCircle) {
             this.attackRangeCircle.destroy();
         }
-        
+
         super.destroy(fromScene);
     }
 
