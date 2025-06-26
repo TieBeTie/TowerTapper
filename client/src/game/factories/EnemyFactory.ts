@@ -1,30 +1,21 @@
 import Phaser from 'phaser';
 import Enemy from '../objects/enemies/Enemy';
-import GoblinEnemy from '../objects/enemies/GoblinEnemy';
-import OrcEnemy from '../objects/enemies/OrcEnemy';
+import Orby from '../objects/enemies/Orby';
 import BombOrbEnemy from '../objects/enemies/BombOrbEnemy';
 import { WaveManager } from '../managers/WaveManager';
-
-type EnemyType = 'orby' | 'strong_orby' | 'bomb_orb';
+import { ENEMY_ATTRIBUTES, EnemyType } from '../definitions/EnemyAttributes';
 
 class EnemyFactory {
     static createEnemy(type: EnemyType, scene: Phaser.Scene, x: number, y: number, waveManager?: WaveManager): Enemy | null {
+        const attrs = ENEMY_ATTRIBUTES[type];
         let enemy: Enemy | null = null;
-
-        // Базовая стоимость врагов
-        const orbyCost = 1;
-        const strongOrbyCost = 2;
-        const bossCost = 30;
 
         switch (type) {
             case 'orby':
-                enemy = new GoblinEnemy(scene, x, y, 'orby_move', orbyCost);
-                break;
-            case 'strong_orby':
-                enemy = new OrcEnemy(scene, x, y, 'orby_move', strongOrbyCost);
+                enemy = new Orby(scene, x, y, 'orby_move', attrs.cost);
                 break;
             case 'bomb_orb':
-                enemy = new BombOrbEnemy(scene, x, y, 'bomb_orb', bossCost);
+                enemy = new BombOrbEnemy(scene, x, y, 'bomb_orb', attrs.cost);
                 break;
             default:
                 console.error(`Unknown enemy type: ${type}`);
@@ -40,8 +31,8 @@ class EnemyFactory {
             const damage = waveManager.getEnemyDamage();
             enemy.setDamage(damage);
 
-            const speed = waveManager.getEnemySpeed();
-            enemy.setSpeed(speed);
+            const speedMultiplier = waveManager.getSpeedMultiplier();
+            enemy.setSpeed(attrs.baseSpeed * speedMultiplier);
         }
 
         return enemy;

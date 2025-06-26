@@ -3,7 +3,7 @@ import { ProjectileFactory } from '../../factories/ProjectileFactory';
 import { SkillStateManager } from '../../managers/SkillStateManager';
 import { SkillType } from '../../types/SkillType';
 
-export class Enemy extends Phaser.Physics.Arcade.Sprite {
+export abstract class Enemy extends Phaser.Physics.Arcade.Sprite {
     speed: number;
     health: number;
     maxHealth: number;
@@ -25,7 +25,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.speed = 100;
+
         this.health = 0;
         this.maxHealth = 0;
         this.cost = Number(cost);

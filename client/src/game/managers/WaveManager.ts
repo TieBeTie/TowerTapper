@@ -9,7 +9,7 @@ interface WaveConfig {
     enemyCount: number;
     spawnInterval: number;
     enemySpeedMultiplier: number;
-    enemyQueue: ('orby' | 'strong_orby' | 'bomb_orb')[];
+    enemyQueue: ('orby' | 'bomb_orb')[];
 }
 
 export class WaveManager extends Phaser.Events.EventEmitter {
@@ -46,9 +46,9 @@ export class WaveManager extends Phaser.Events.EventEmitter {
         const enemyCount = 13 + waveNumber * 2;
 
         // Собираем очередь типов врагов на волну
-        const enemyQueue: ('orby' | 'strong_orby' | 'bomb_orb')[] = [];
+        const enemyQueue: ('orby' | 'bomb_orb')[] = [];
         for (let i = 0; i < enemyCount; i++) {
-            enemyQueue.push(Math.random() < 0.5 ? 'orby' : 'strong_orby');
+            enemyQueue.push('orby');
         }
 
         // Каждая 5-я волна: последний враг — босс bomb_orb
@@ -253,5 +253,14 @@ export class WaveManager extends Phaser.Events.EventEmitter {
     public getEnemySpeed(): number {
         const waveConfig = this.getCurrentWaveConfig();
         return this.baseEnemySpeed * waveConfig.enemySpeedMultiplier;
+    }
+
+    /**
+     * Множитель скорости, зависящий от текущей волны.
+     * Используйте attrs.baseSpeed * getSpeedMultiplier() для расчёта итоговой скорости.
+     */
+    public getSpeedMultiplier(): number {
+        const waveConfig = this.getCurrentWaveConfig();
+        return waveConfig.enemySpeedMultiplier;
     }
 } 

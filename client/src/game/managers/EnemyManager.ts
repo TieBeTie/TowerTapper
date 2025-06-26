@@ -41,7 +41,7 @@ class EnemyManager {
         return this.spawnTimer !== null && !this.spawnTimer.hasDispatched;
     }
 
-    startSpawningEnemies(waveConfig: { enemyQueue: ('orby' | 'strong_orby' | 'bomb_orb')[] }): void {
+    startSpawningEnemies(waveConfig: { enemyQueue: ('orby' | 'bomb_orb')[] }): void {
         // Останавливаем предыдущий таймер спавна, если был
         this.clearSpawnTimer();
 
@@ -58,7 +58,7 @@ class EnemyManager {
             delay: adjustedSpawnInterval,
             callback: () => {
                 if (queue.length > 0) {
-                    const type = queue.shift() as 'orby' | 'strong_orby' | 'bomb_orb';
+                    const type = queue.shift() as 'orby' | 'bomb_orb';
                     this.spawnEnemy(type);
                 }
 
@@ -74,7 +74,7 @@ class EnemyManager {
     /**
      * Создать врага. Если передан тип, создаём именно его, иначе случайного.
      */
-    spawnEnemy(enemyTypeParam?: 'orby' | 'strong_orby' | 'bomb_orb'): boolean {
+    spawnEnemy(enemyTypeParam?: 'orby' | 'bomb_orb'): boolean {
         try {
             // First make sure we have a valid scene and physics system
             if (!this.scene || !this.scene.physics) {
@@ -117,12 +117,12 @@ class EnemyManager {
             }
 
             // Generate random enemy type
-            let enemyType: 'orby' | 'strong_orby' | 'bomb_orb';
+            let enemyType: 'orby' | 'bomb_orb';
 
             if (enemyTypeParam) {
                 enemyType = enemyTypeParam;
             } else {
-                enemyType = Phaser.Math.RND.pick(['orby', 'strong_orby']) as 'orby' | 'strong_orby';
+                enemyType = Phaser.Math.RND.pick(['orby']) as 'orby';
             }
 
             // Create the enemy

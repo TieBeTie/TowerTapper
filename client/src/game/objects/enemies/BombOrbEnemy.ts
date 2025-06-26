@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import Enemy from './Enemy';
 import PerlinNoise from '../../utils/PerlinNoise';
+import { ENEMY_ATTRIBUTES } from '../../definitions/EnemyAttributes';
 
 class BombOrbEnemy extends Enemy {
-    static readonly BOSS_SCALE = 0.3;
+    static readonly BOSS_SCALE = 0.2;
 
     private exploded: boolean = false;
     private jitterX: number = 0;
@@ -23,9 +24,11 @@ class BombOrbEnemy extends Enemy {
                 (this.height - base * 2) * 0.5
             );
         }
-        this.setHealth(60); // фиксированное здоровье
-        this.setDamage(15);  // фиксированный урон по башне
-        this.setSpeed(30);   // гораздо медленнее обычных врагов
+        // Используем атрибуты из единого словаря
+        const attrs = ENEMY_ATTRIBUTES['bomb_orb'];
+        this.setHealth(attrs.baseHealth);
+        this.setDamage(attrs.baseDamage);
+        this.setSpeed(attrs.baseSpeed);
         this.setOrigin(0.5, 0.5);
 
         // У босса статичное изображение: не нужна анимация ходьбы
@@ -68,7 +71,7 @@ class BombOrbEnemy extends Enemy {
         // Повреждаем башню
         const tower = this.scene.children.getByName('tower') as any;
         if (tower && typeof tower.takeDamage === 'function') {
-            tower.takeDamage(15);
+            tower.takeDamage(this.damage);
         }
 
         // Точка взрыва — середина между башней и орбом
